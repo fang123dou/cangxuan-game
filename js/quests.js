@@ -20,7 +20,7 @@ const QU = (() => {
     if (r.dao) { S.daoXin = Math.max(0, Math.min(100, S.daoXin + r.dao)); notes.push(`道心 ${r.dao > 0 ? "+" : ""}${r.dao}`); }
     if (r.attr) for (const k in r.attr) { gainAttr(k, r.attr[k]); notes.push(`${{ str: "力量", agi: "敏捷", int: "智力", con: "体质" }[k]} +${r.attr[k]}`); }
     if (r.item) { const m = /^([a-zA-Z]+):(-?\d+)$/.exec(r.item); if (m) { S.inv[m[1]] = Math.max(0, (S.inv[m[1]] || 0) + (+m[2])); notes.push(`获得物品`); } }
-    if (r.npc) for (const n in r.npc) { addNpc(n, r.npc[n]); notes.push(`${n} 缘分 ${r.npc[n] > 0 ? "+" : ""}${r.npc[n]}`); }
+    if (r.npc) for (const n in r.npc) { addNpc(n, r.npc[n], { special: true }); notes.push(`${n} 缘分 ${r.npc[n] > 0 ? "+" : ""}${r.npc[n]}`); } // 任务酬谢属特殊剧情：不受「日常行为每日一次」之限
     if (r.flag) S.flags[r.flag] = 1;
     computeMods();
     return notes.join("，");
@@ -59,7 +59,7 @@ const QU = (() => {
       desc: "三流小宗青岩门大开山门收徒。测灵碑、问心关、演武台——三关皆过，才是仙途起点。",
       auto: () => S.day >= 10 || !!S.flags.qingyanRumor,
       objectives: [
-        { text: () => "前往山门，参加三关应试", done: () => !!S.flags.qy_step1 },
+        { text: () => "前往山门，参加三关应试", done: () => !!S.flags.qy_tried },
         { text: () => "过测灵碑（灵光显化）", done: () => !!S.flags.qy_step1 },
         { text: () => "过问心关（道心可鉴）", done: () => !!S.flags.qy_step2 },
         { text: () => "过演武台（胜外门教习）", done: () => !!S.flags.qy_step3 },
@@ -207,7 +207,14 @@ const QU = (() => {
   DEFS.dyn_tiejiang = {
     name: "支线：入行 · 铁匠学徒", type: "side", giver: "云游铁匠",
     desc: "炉边缺个打杂的。器火一脉与药庐不同——师傅云游四方，名号每世不同，遇见了就是缘。",
-    offer: () => !hasProfession("tiejiang") && (S.npc[masterOf("tiejiang")] || 0) >= 20,
+    offer: () => {
+      if (hasProfession("tiejiang")) return false;
+      if ((S.npc[masterOf("tiejiang")] || 0) >= 20) { // 入行机缘已近：机缘册至此才翻开这一页
+        revealMaster("tiejiang", `【机缘册】你听闻一位云游铁匠的名号——「${masterOf("tiejiang")}」。炉火的缘分，快到了。`);
+        return true;
+      }
+      return false;
+    },
     offerText: "炉火的召唤：你听闻一位铁匠师傅正在寻个肯下力气、耐得住烟火的学徒。",
     objectives: [dynBondObj("tiejiang", 40), dynDayObj("dyn_tiejiang")],
     reward: {},
@@ -217,7 +224,15 @@ const QU = (() => {
   DEFS.dyn_zhushi = {
     name: "支线：转轨 · 铸师", type: "side", giver: "云游铁匠",
     desc: "铁匠学徒做到凡品之巅，便是瓶颈。想再进一步，须见过更大的炉、打过更硬的铁——铸师之路，从一块不听话的铁坯开始。",
-    offer: () => { const q = profList()["tiejiang"]; return !!q && q.lv >= (TABLES.PROF.tierCaps["0"] || 3) && !hasProfession("zhushi") && (S.npc[masterOf("zhushi")] || 0) >= 20; },
+    offer: () => {
+      const q = profList()["tiejiang"];
+      if (!q || q.lv < (TABLES.PROF.tierCaps["0"] || 3) || hasProfession("zhushi")) return false;
+      if ((S.npc[masterOf("zhushi")] || 0) >= 20) { // 前置（铁匠学徒）登顶、瓶颈之期：机缘册翻开铸师一页
+        revealMaster("zhushi", `【机缘册 · 瓶颈之期】你的锤声已至凡品之巅。你听闻一位铸师的名号——「${masterOf("zhushi")}」。`);
+        return true;
+      }
+      return false;
+    },
     offerText: "瓶颈之期：你的铁匠手艺已至凡品之巅。一位铸师听闻了你的锤声，循着火星寻到了你。",
     objectives: [dynBondObj("zhushi", 80), dynDayObj("dyn_zhushi")],
     reward: {},
@@ -438,6 +453,7 @@ const QU = (() => {
 
   /* ---------- 青岩门三关（主线演出） ---------- */
   async function startTrials() {
+    S.flags.qy_tried = 1; // 应试足迹：主线第一目标「前往山门」就此勾销（成败另说）
     sys("【你踏上了青岩山九百级石阶。山门之前，测灵碑如剑倒插，碑前已排了百余凡人。】");
     log("外门执事瞥你一眼：「排队。灵光过三尺者，留。」", "dim");
     await lingTest();

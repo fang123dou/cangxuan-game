@@ -9,16 +9,16 @@ let META = { world: 1, deaths: 0, ach: [], rebirth: null, sysLv: 1, totalPulls: 
 try { const m = JSON.parse(localStorage.getItem(META_KEY)); if (m && m.world) META = m; } catch (e) {}
 if (!META.sysLv) META.sysLv = 1; // 系统等级随魂（跨周目）
 if (META.totalPulls == null) META.totalPulls = 0;
-if (!META.titles) META.titles = []; // 称号随魂封存（轮回法则：千秋录成就与称号随魂封存）
+if (!META.titles) META.titles = []; // 称号随魂封存（轮回法则：称号与评语随魂封存；千秋录成就自新一世清零重刻）
 if (!META.comments) META.comments = []; // 历世评语钉面板（15.2：评语随魂封存）
 if (!META.dynCards) META.dynCards = {}; // AI 生成词条库（随魂封存：轮盘不局限引擎名录）
 function saveMeta() { try { localStorage.setItem(META_KEY, JSON.stringify(META)); } catch (e) {} }
 
 /* ================= 全局状态 ================= */
 let S = null;
-const REALM_NAMES = TABLES.REALMS.names;   // 判定演算表（tools/calc_tables.py 生成）：凡阶六境→灵泉→玄→圣→天人
+const REALM_NAMES = TABLES.REALMS.names;   // 判定演算表（tools/calc_tables.py 生成）：四阶二十四境（凡/灵/玄/圣各六境）
 const REALM_NEED  = TABLES.REALMS.need;
-const REALM_TOP   = TABLES.REALMS.top;     // 天人境（传说之巅；设定一·天人境以上突破者逐代递减）
+const REALM_TOP   = TABLES.REALMS.top;     // 登仙境（圣阶之巅，传说之顶；此界三万载无人踏足）
 const NAMES = ["小石头", "杏儿", "阿禾", "铁柱", "晚晚", "青禾", "狗子", "阿黎"];
 
 function newLife() {
@@ -35,11 +35,13 @@ function newLife() {
     for (const k in iden.mods) base[k] += iden.mods[k];
     if (rb.attrBonus) { const ks = ["str", "agi", "int", "con"]; for (let i = 0; i < rb.attrBonus; i++) base[ks[i % 4]] += 1; }
     if (rb.luckBonus) base.luck += rb.luckBonus;
-    if (rb.attrMalus) { const ks = ["str", "agi", "int", "con"].sort(() => Math.random() - 0.5); for (let i = 0; i < rb.attrMalus; i++) base[ks[i % 4]] = Math.max(1, base[ks[i % 4]] - (1 + (Math.random() < 0.3 ? 1 : 0))); } // 潦草/败笔：随机不同属性折损（设定：随机两项 -1~2）
+    if (rb.attrMalus) { const ks = ["str", "agi", "int", "con"].sort(() => Math.random() - 0.5); for (let i = 0; i < rb.attrMalus; i++) base[ks[i % 4]] = Math.max(1, base[ks[i % 4]] - (rb.attrMalus >= 2 ? 1 + (Math.random() < 0.5 ? 1 : 0) : 1)); } // 潦草：随机一项 -1；败笔：随机两项 -1~2（设定 15.2 奖励对照）
     if (rb.luckMalus) base.luck = Math.max(1, base.luck - rb.luckMalus);
   }
   S = {
     name, first, iden, world: META.world,
+    gender: META.gender || "男", // 性别：首世由玩家在命名时选定，存入 META 随魂不变；魅魔等词条依此生效
+    place: (iden && iden.place) || null, // 当前所在之地（再世随身份落定；首世在开局剧本落定；顶栏常显）
     day: 1, slot: 0, weather: "大雪",
     base, hp: 0, sta: 0, mp: 0,
     hunger: 55, money, stones: 0, points,
@@ -51,6 +53,9 @@ function newLife() {
     mats: {}, // 材料账（第七九章）：妖兽内丹、灵药等硬通货，剧情中折算
     realm: 0, cult: 0, daoXin: 40,
     npc: {}, npcMin: {}, flags: {}, debuff: null,
+    bondDaily: {}, // 缘分日常账：{ NPC名: 日子 }——日常行为带来的善缘，同一 NPC 每日最多一次（特殊剧情不受限）
+    wound: null, // 受伤部位 { part, day }：伤势升档时登记一处，痊愈自动销记
+    ill: null, // 疾病 { name, days, desc }：夜寒入体、丹毒爆发等落下，逐日痊愈
     job: null, foodStreak: 0, kills: 0,
     realmBreaks: 0, tempLuckDays: 0,
     lastTrainDay: 0, // 三日历练：上次实力机缘的日子（每 3 天必触发一次）
@@ -61,7 +66,7 @@ function newLife() {
     darkWounds: {}, // 暗伤账（第十二章·永久损伤）：{ 属性: 累计损伤 }，压常态，此世难愈
     xinmo: META.world > 1 ? 10 : 0, // 心魔（0~100，半隐藏）：前世死亡记忆是它的养料
     quests: { active: [], done: [], failed: [], refused: {} },
-    chronicle: [], lifeAch: [], // lifeAch：本世新刻成就（轮回结算用；千秋录本体随魂跨世）
+    chronicle: [], lifeAch: [], // lifeAch：本世新刻成就（轮回结算用；千秋录本体每世清零，从新人生重新刻起）
     stats: { trains: 0, meditates: 0, begs: 0, chops: 0, gambles: 0, maxMoney: money },
   };
   S.wx = genWx(S.linggen); // 先天五行亲和：总和恒 100
@@ -79,7 +84,7 @@ function newLife() {
   computeMods();
   META.poolTheme = POOL_THEMES[Math.floor(Math.random() * POOL_THEMES.length)].name; // 卡池预览：每世（每月）一个倾向主题
   saveMeta();
-  S.hp = first ? Math.round(hpMax() * 0.6) : hpMax(); // 首世开局高烧三天，只剩六成气血（对齐设定集 12/20）
+  S.hp = first ? Math.round(hpMax() * 0.6) : Math.round(hpMax() * 0.5); // 首世开局高烧三天只剩六成（对齐设定集 12/20）；再世系统激活于死局之巅，带伤睁眼（15.4/15.6）
   S.sta = staMax(); S.mp = 0;
 }
 
@@ -134,14 +139,15 @@ function attr(k) {
   let v = b * (1 + pct / 100);
   if (k === "luck") { v = b + (S.mods.luckFlat || 0) + (S.tempLuckDays > 0 ? 1 : 0); v = Math.max(1, Math.min(10, v)); }
   const pb = profAttrBonus(k); // 职业每级属性加成（3.4）：品阶基数 × 境界系数
-  if (pb > 0) { const ceil = 10 + S.realm; v += Math.min(pb, Math.max(0, ceil - v)); } // 天花板条款：不得突破当前境界的单项属性天花板
+  if (pb > 0) { const ceil = attrCeiling(); v += Math.min(pb, Math.max(0, ceil - v)); } // 天花板条款：不得突破当前境界的单项属性天花板
   if (S.debuff === "weak" && k !== "luck") v *= 0.8;
   return Math.round(v * 10) / 10;
 }
-/* 职业属性加成合计：Σ(品阶基数[k] × 等级) × 境界系数（凡阶 ×1，灵阶 ×10 预留） */
+/* 职业属性加成合计：Σ(品阶基数[k] × 等级) × 境界系数（凡 ×1 ｜ 灵 ×10 ｜ 玄 ×100 ｜ 圣 ×1000，设定·品阶与加成） */
 function profAttrBonus(k) {
   if (!S.professions) return 0;
-  const coeff = S.realm >= 7 ? 10 : 1;
+  const rc = (TABLES.PROF.realmCoeff || { "0": 1, "7": 10, "13": 100, "19": 1000 });
+  const coeff = S.realm >= 19 ? rc["19"] : S.realm >= 13 ? rc["13"] : S.realm >= 7 ? rc["7"] : rc["0"];
   let sum = 0;
   for (const pid in S.professions) {
     const P = (typeof PROFESSIONS !== "undefined") && PROFESSIONS[pid];
@@ -156,7 +162,8 @@ function mpMax() { const v = S.realm >= 6 ? attr("int") * 10 : S.realm >= 5 ? at
 function combatPower() {
   const a = attr("str") + attr("agi") + attr("int") * 0.8 + attr("con") * 0.6;
   let p = a * (1 + S.realm * TABLES.REALMS.realmDmgPerRealm) * (1 + (S.mods.dmgP || 0) / 100);
-  if (S.hunger > 70) p *= 0.9;
+  if (S.hunger > 70) p *= 0.9; // 饥饿 -10%（设定·状态浮动）
+  if (S.hunger > 85) p *= 0.78; // 极度饥饿再扣（累计约 -30%）：眼冒金星，手脚发软
   p *= 1 - injuryTier().pen / 100; // 设定：伤病四级压常态战力
   return Math.round(p * 10) / 10;
 }
@@ -172,6 +179,38 @@ function injuryTier() {
 }
 /* 暗伤（第十二章 · 永久损伤）：重伤之后未妥善处理，身体会记账——对应属性永久下降（此世） */
 const DARK_WOUND_NAMES = { str: "力量", agi: "敏捷", int: "智力", con: "体质" };
+/* 攻击力（= 战力）：不运功法时，每记普通攻击皆造成等同攻击力之伤害（其他伤害公式不变） */
+function attackPower() { return Math.max(1, combatPower()); }
+/* ---------- 受伤部位 & 疾病（人物页细节） ---------- */
+const WOUND_PARTS = ["头面", "左肩", "右臂", "胸腹", "后背", "左腿", "右腿"];
+const WOUND_TIER_IDX = { "无恙": 0, "轻伤": 1, "中伤": 2, "重伤": 3, "濒死": 4 };
+/* 伤势升档时在身上登记一处新伤（不与前伤同部）；痊愈（回到无恙）自动销记 */
+function registerWound() {
+  const idx = WOUND_TIER_IDX[injuryTier().name] || 0;
+  if (idx <= 0) { S.wound = null; S.woundDayTier = 0; return; }
+  if (!S.wound || idx > (S.woundDayTier || 0)) {
+    const pool = WOUND_PARTS.filter(p => !S.wound || p !== S.wound.part);
+    S.wound = { part: pool[Math.floor(Math.random() * pool.length)], day: S.day };
+  }
+  S.woundDayTier = idx;
+}
+function woundText() {
+  if (!S.wound) return "周身无伤";
+  return `${S.wound.part} · ${injuryTier().name}（第 ${S.wound.day} 日至今）`;
+}
+function setIll(name, days, desc) {
+  if (S.ill && S.ill.name === name) S.ill.days = Math.max(S.ill.days, days);
+  else S.ill = { name, days, desc };
+  sys(`【疾病 · ${name}】${desc}（约 ${days} 日可愈）`);
+}
+function illText() { return S.ill ? `${S.ill.name}（余 ${S.ill.days} 日）` : "无疾"; }
+function gearText() {
+  const g = [];
+  if (S.gear && S.gear.weapon) g.push(`⚔ ${S.gear.weapon.name}（攻伐 +${S.gear.weapon.dmgP}%）`);
+  if (S.inv.mianao) g.push("老棉袄（御寒）");
+  if (S.flags.fangcunUsed) g.push("方寸戒（储物法器）");
+  return g.length ? g.join("、") : "身无长物";
+}
 function maybeDarkWound() {
   const dw = TABLES.INJURY.darkWound;
   const chance = Math.max(dw.cap[0], Math.min(dw.cap[1], dw.chanceBase - attr("con") * dw.conFactor)); // 体质高者皮开肉绽，体质低者当场透胸
@@ -189,11 +228,12 @@ function maybeDarkWound() {
 function powerBreakdown() {
   const base = attr("str") + attr("agi") + attr("int") * 0.8 + attr("con") * 0.6;
   const lines = [`五维加权基础：${base.toFixed(1)}（力 + 敏 + 智×0.8 + 体×0.6）`,
-    `境界加幅：×${(1 + S.realm * 0.45).toFixed(2)}（${REALM_NAMES[S.realm]}）`,
+    `境界加幅：×${(1 + S.realm * TABLES.REALMS.realmDmgPerRealm).toFixed(2)}（${REALM_NAMES[S.realm]}）`,
     `词条攻伐：${(S.mods.dmgP || 0) >= 0 ? "+" : ""}${S.mods.dmgP || 0}%`];
-  const normal = base * (1 + S.realm * 0.45) * (1 + (S.mods.dmgP || 0) / 100);
+  const normal = base * (1 + S.realm * TABLES.REALMS.realmDmgPerRealm) * (1 + (S.mods.dmgP || 0) / 100);
   const inj = injuryTier();
-  if (S.hunger > 70) lines.push(`饥饿缠身：-10%（饱食不足三成）`);
+  if (S.hunger > 85) lines.push(`极度饥饿：约 -30%（与饥饿叠加，眼冒金星）`);
+  else if (S.hunger > 70) lines.push(`饥饿缠身：-10%（饱食不足三成）`);
   if (inj.pen) lines.push(`${inj.name}：-${inj.pen}%（伤病四级）`);
   if (S.debuff === "weak") lines.push(`元气大伤：五维 ×0.8（修养 ${S.debuffDays || 0} 日）`);
   lines.push(`——常态战力（满状态）：${(Math.round(normal * 10) / 10)}`);
@@ -206,11 +246,12 @@ function powerBreakdown() {
 function displayPower() { return Math.round(combatPower() * (hasSpecial("yaoyao") ? 1.3 : 1) * 10) / 10; }
 function daoText() { const d = S.daoXin; return d >= 80 ? "坚如磐石" : d >= 60 ? "古井无波" : d >= 40 ? "微澜不惊" : d >= 25 ? "心浮气躁" : "暗流涌动"; }
 function gainAttr(k, amt) {
-  const cap = 10;
+  const cap = attrCeiling(); // 磨炼上限随大阶抬升（凡阶之躯冲不过 10）
   const cur = S.base[k];
   if (cur >= cap) return 0;
-  const eff = amt * Math.pow(0.8, Math.floor(cur - 2)) * (1 + (S.mods.trainP || 0) / 100) * (hasTitle("renjiT") ? 1.1 : 1); // 称号「人极」：日常磨炼 +10%
+  const eff = amt * Math.pow(0.8, Math.floor(cur - 2)) * (1 + (S.mods.trainP || 0) / 100);
   S.base[k] = Math.min(cap, cur + Math.max(0.02, eff));
+  if (S.realm < 5 && S.base.str >= 10 && S.base.agi >= 10 && S.base.con >= 10) gainAch("renji"); // 凡俗之巅：不入聚气境，纯以凡躯将力/敏/体全部磨到 10
   return eff;
 }
 /* 修为须有功法托底：无功法时灵气穿体而过，修为不增（每日提示一次） */
@@ -242,7 +283,11 @@ function wxTrainMult(sk) {
 }
 /* 四小层：初期/中期/后期/圆满（设定：每境四分，小层突破全属性微涨） */
 const LAYER_NAMES = ["初期", "中期", "后期", "圆满"];
-function attrCeiling() { return TABLES.REALMS.attrCeilingBase + S.realm * TABLES.REALMS.attrCeilingPerRealm; } // 属性天花板随境界抬升
+function attrCeiling() { // 属性天花板（设定·属性标尺）：凡阶 10 / 灵阶 100 / 玄阶 1000 / 圣阶 10000；称号「人极」上限 +10%
+  const cs = TABLES.REALMS.attrCeilings || { "0": 10 };
+  const base = S.realm >= 19 ? cs["19"] : S.realm >= 13 ? cs["13"] : S.realm >= 7 ? cs["7"] : cs["0"];
+  return Math.round(base * (hasTitle("renjiT") ? 1.1 : 1));
+}
 function miniLayer() {
   if (S.realm < 1 || S.realm >= REALM_TOP) return -1;
   const p = S.cult / (REALM_NEED[S.realm + 1] || 1);
@@ -355,7 +400,7 @@ const MASTER_POOLS = {
   danshi: ["游方丹师鹤翁", "云游丹师半炉", "青囊散人苏守拙"],
   qishi: ["游方器师铁心兰", "铸器散人葛洪炉", "百炼散人风胡子"],
 };
-function masterOf(pid) { // 随用随取：首次调用时生成本世名号并录入缘分簿
+function masterOf(pid) { // 随用随取：首次调用时生成本世名号并录入缘分簿（静默——不在开局惊动机缘册）
   const P = profDef(pid);
   if (!P) return "";
   if (P.master) return P.master;
@@ -364,9 +409,17 @@ function masterOf(pid) { // 随用随取：首次调用时生成本世名号并�
     const pool = MASTER_POOLS[pid] || ["无名氏"];
     S.masters[pid] = pool[Math.floor(Math.random() * pool.length)];
     if (typeof S.npc[S.masters[pid]] !== "number") S.npc[S.masters[pid]] = 0;
-    sys(`【机缘册】你听闻一位${P.name}师傅的名号——「${S.masters[pid]}」。云游之人，萍水相逢即是缘。`);
   }
   return S.masters[pid];
+}
+/* 机缘册：仅在主角快完成相应前置时触发（前置登顶/瓶颈之期/入行机缘），每世每脉只播报一次。
+   开局不再听闻任何名号——缘分未到，名号不显。 */
+function revealMaster(pid, text) {
+  const m = masterOf(pid);
+  if (!m || S.flags["revealed_" + pid]) return m;
+  S.flags["revealed_" + pid] = 1;
+  sys(text || `【机缘册】你听闻一位${profDef(pid).name}师傅的名号——「${m}」。云游之人，萍水相逢即是缘。`);
+  return m;
 }
 /* 遇到生活职业者：已结识该 NPC，且缘分到了「好感」（≥20）；转轨职业另需原职业等级与更高缘分 */
 function profReqMet(P) {
@@ -571,72 +624,14 @@ function renderPanel() {
     (S.realm >= 5 ? bar("mp", S.mp, mpMax(), "法力") : `<div class="bar-label"><span>法力</span><b>未开气海</b></div><div class="bar mp"><i style="transform:scaleX(0)"></i></div>`) +
     bar("hun", 100 - S.hunger, 100, "饱食") +
     bar("cult", S.realm >= REALM_TOP ? 1 : S.cult, S.realm >= REALM_TOP ? 1 : (need || 1), "修为");
-  const A = [["str", "力量"], ["agi", "敏捷"], ["int", "智力"], ["con", "体质"], ["luck", "气运"]];
-  $("#attrs").innerHTML = A.map(([k, n]) =>
-    `<div class="attr${k === "luck" ? " luck" : ""}"><em>${n}</em><b>${attr(k)}</b></div>`).join("");
-  $("#rows").innerHTML =
-    `<div class="p-row pv-row" data-pv="1"><span>综合战力</span><b>${displayPower()}</b></div>
-     <div class="p-row dx-row" data-dx="1"><span>道心</span><b>${daoText()}${(S.xinmo || 0) >= 25 ? " ·【" + xinmoStage().name + "】" : ""}</b></div>
-     <div class="p-row ht-row" data-ht="1"><span>康健</span><b>${injuryTier().name}${injuryTier().pen ? "（战力 -" + injuryTier().pen + "%）" : ""}${S.debuff === "weak" ? " ·【元气大伤】" : ""}${(S.yaoshi || 0) >= 30 ? " ·【" + yaoshiState().name + "】" : ""}</b></div>
-     <div class="p-row"><span>铜钱</span><b>${S.money} 文</b></div>
-     <div class="p-row"><span>下品灵石</span><b>${S.stones} 枚</b></div>
-     <div class="p-row"><span>万象点</span><b class="gold">${S.points}</b></div>
-     <div class="p-row lg-row" data-lg="1"><span>灵根</span><b>${linggen().name}</b></div>
-     <div class="p-row tt-row" data-tt="1"><span>称号</span><b>${S.wornTitle && TITLES[S.wornTitle] ? "「" + TITLES[S.wornTitle].name + "」" : (META.titles && META.titles.length ? "未佩戴 · " + META.titles.length + " 枚" : "无")}</b></div>
-     ${(META.comments && META.comments.length) ? `<div class="p-row tt-row" data-cm="1"><span>前世评语</span><b>${META.comments[META.comments.length - 1].grade} · ${META.comments.length} 世留评</b></div>` : ""}
-     ${profRowsHTML()}
-     <div class="p-row"><span>状态</span><b>${S.debuff === "weak" ? "【元气大伤】" : S.hunger > 85 ? "【极度饥饿】" : S.hunger > 70 ? "【饥饿】" : "尚可"}</b></div>`;
-  const lgRow = $("#rows [data-lg]"); // 灵根详情：五行亲和与实务规则
-  if (lgRow) lgRow.onclick = () => {
-    const wx = wxOf();
-    const sum = wxSum();
-    showInfo(`灵根 · ${linggen().name}`, `<span style="color:var(--gold-dim)">${linggen().variant ? "变异灵根" : "先天五行资质"}</span>`,
-      esc(linggen().desc || "") + (linggen().bonus ? " " + esc(linggen().bonus) + "。" : ""),
-      `五行亲和（总和 ${sum}${sum > 100 ? "，后天已破百" : " / 100"}）：` + WX_ELS.map(e => `${WX_NAMES[e]} ${wx[e]}`).join(" · ") +
-      `<br>该行功法修炼速度 = 1 + 亲和×0.005；抗性 = 亲和×0.003（封顶 30%）；亲和不足 10 强行修炼该行减半<br>生克：金克木、木克土、土克水、水克火、火克金——克制方 +20%，被克方 -20%`);
-  };
-  const pvRow = $("#rows [data-pv]"); // 战力拆解：常态值 / 修正 / 成因
-  if (pvRow) pvRow.onclick = () => showInfo("战力拆解", `<span style="color:var(--gold-dim)">系统推演 · 完整拆解</span>`,
-    `当前 ${combatPower()} ｜ 对外显示 ${displayPower()}`, powerBreakdown().join("<br>"));
-  const ttRow = $("#rows [data-tt]"); // 称号：佩戴示人，效果永续
-  if (ttRow) ttRow.onclick = () => {
-    const owned = META.titles || [];
-    const acts = owned.map(tid => ({ label: (S.wornTitle === tid ? "卸下「" : "佩戴「") + TITLES[tid].name + "」", fn: () => {
-      S.wornTitle = S.wornTitle === tid ? null : tid;
-      $("#infoModal").classList.remove("open");
-      sys(S.wornTitle ? `你亮出名号——「${TITLES[S.wornTitle].name}」。江湖看人，先看名号。` : `你收起了名号。`);
-      renderPanel();
-    } }));
-    showInfo("称号", `<span style="color:var(--gold-dim)">随魂封存 · 效果永续</span>`,
-      owned.length ? owned.map(tid => `${S.wornTitle === tid ? "◈" : "◇"}「${TITLES[tid].name}」——${TITLES[tid].desc}（源自：${TITLES[tid].from}）`).join("<br>") : "尚无称号。千秋录里的一些成就，会赠你一个江湖名号。",
-      "称号效果无需佩戴、永续生效；佩戴只是把名号亮给江湖看。", acts);
-  };
-  const cmRow = $("#rows [data-cm]"); // 前世评语：钉在面板上的历世判词（轮回法则 15.2）
-  if (cmRow) cmRow.onclick = () => showInfo("历世评语", `<span style="color:var(--gold-dim)">系统阅卷 · 随魂封存</span>`,
-    META.comments.slice().reverse().map(c => `第${c.world}世 ·【${c.grade}】${c.text}`).join("<br><br>"),
-    "评级解释权归系统所有。它偶尔毒舌，但从不克扣。");
-  const htRow = $("#rows [data-ht]"); // 康健：伤病四级
-  if (htRow) htRow.onclick = () => showInfo("康健 · 伤病四级", `<span style="color:var(--gold-dim)">世界会记住你受过的伤</span>`,
-    `当前：${injuryTier().name}（气血 ${Math.round(S.hp)}/${hpMax()}）｜ 药蚀 ${Math.round(S.yaoshi || 0)}/100 · ${yaoshiState().name}${(() => { const d = Object.keys(S.darkWounds || {}).filter(k => S.darkWounds[k] > 0); return d.length ? ` ｜ <span style="color:var(--blood-hi)">暗伤：${d.map(k => `${DARK_WOUND_NAMES[k]} -${S.darkWounds[k]}`).join("、")}</span>` : ""; })()}`,
-    `轻伤 -10% ｜ 中伤 -30% ｜ 重伤 -50% ｜ 濒死 -80%。伤势按体质判定：同样的刀，体质高者皮开肉绽，体质低者当场透胸。<br>治疗途径：凡俗医药、丹药、运功疗伤、灵物奇缘。带伤硬撑是有利息的——旧伤未愈再添新伤，落下【暗伤】便难逆转（对应属性永久下降：腿部暗伤敏捷跌、脏腑暗伤体质跌）。解法：圣品疗伤丹、玄阶以上医道圣手、涅槃境重塑肉身、或「万年地心乳」。<br>——药蚀（面板隐藏数值，系统推演可见）：${yaoshiState().desc}。同种丹药递减（100% → 50% → 25% → 无效且药蚀翻倍）；每月自然代谢 -5（境界越高越快），排毒丹可解，以毒攻毒非长久之计。`);
-  const dxRow = $("#rows [data-dx]"); // 道心 × 心魔
-  if (dxRow) dxRow.onclick = () => showInfo("道心 × 心魔", `<span style="color:var(--gold-dim)">心魔用你的声音说话</span>`,
-    `道心 ${Math.round(S.daoXin)}/100 · ${daoText()} ｜ 心魔 ${Math.round(S.xinmo || 0)}/100 · ${xinmoStage().name}`,
-    `${xinmoStage().desc}。<br>心魔的养料：执念、愧疚、恐惧（濒死与前世死亡记忆）、欲望、心境与修为不匹配（词条让你战力一夜暴涨，道心一步没走）、天地异动。道心的涨跌：红尘历练、问心无愧则涨；违心背信、临阵脱逃则跌。<br>四阶段：杂念（修炼 -5%）→ 执念成形（梦中低语）→ 心魔劫（破境时具现，斩/渡/笑三种过法）→ 化魔（神智沦丧）。<br>化解：打坐静心、道心 60+ 自净、渡劫直面。`);
-  document.querySelectorAll("#rows .prof-row").forEach(row => row.onclick = () => { // 职业详情（第三章 3.3~3.6）
-    const pid = row.getAttribute("data-prof"), P = profDef(pid), q = S.professions[pid];
-    if (!P || !q) return;
-    const cap = profTierCap(P.tier), need = PROF_NEED[q.lv + 1];
-    const bonus = Object.keys(P.attrs || {}).map(k => `${{ str: "力量", agi: "敏捷", int: "智力", con: "体质" }[k]} +${(P.attrs[k] * q.lv * (S.realm >= 7 ? 10 : 1)).toFixed(1)}`).join("、") || "—";
-    showInfo(`${P.tierName} · ${P.name}（${q.lv} 级 ${PROF_LV_NAMES[q.lv]}）`, `<span style="color:var(--gold-dim)">${P.grey ? "灰色职业 · 不占副职名额，但占因果" : q.primary ? "主职业" : "副职业"}</span>`,
-      `${P.trait}<br>当前加成：${bonus}（品阶基数 × 等级 × 境界系数；天花板条款：不得突破当前境界单项天花板）<br>晋升进度：${q.lv >= cap ? "已至" + P.tierName + "之巅" : `经验 ${Math.floor(q.exp)} / ${need}（2/4/8/16/32 晋一级，须考核）`}`,
-      `经验来源（3.3）：从业时长（每 3 日 +1）｜ 技艺印证（「${P.skill}」每满 10 熟练 +1）｜ 行业事件（完成任务 +2，主线 +3）｜ 口碑。<br>${Object.keys(S.professions).length > 1 ? "多职业并存：全部活跃职业经验 -30%（精力有限，天道公允）。" : ""}${q.lv >= cap && P.next ? "<br>【转轨】凡品封顶——须行当升品转轨（" + (profDef(P.next) ? "「" + profDef(P.next).name + "」" : "更高品阶") + "），修为境界与行业深度双到位。" : ""}`);
-  });
+  /* 五维属性、战力/道心/康健等状态行已整合进「人物」页签（renderTab · curTab 0） */
   const lv = sysLv();
   $("#pity").innerHTML =
-    `<span>十抽保底 ${Math.floor(S.pity10)}/10（${lv >= 4 ? "紫" : "青"}↑）</span><span>百抽保底 ${Math.floor(S.pity100)}/100（${lv >= 6 ? "金" : "紫"}↑）</span>${lv >= 8 ? `<span>千抽 ${Math.floor(S.pity1000 || 0)}/${lv >= 10 ? 500 : 1000}（红）</span>` : ""}<span>累计 ${S.pulls} 抽 · 轮盘 Lv${lv}</span>`;
+    `<span>十抽保底 ${Math.floor(S.pity10)}/10（${lv >= 4 ? "紫" : "青"}↑）</span><span>五十抽保底 ${Math.floor(S.pity100)}/50（${lv >= 6 ? "金" : "紫"}↑）</span>${lv >= 8 ? `<span>百抽 ${Math.floor(S.pity1000 || 0)}/${lv >= 10 ? 50 : 100}（红）</span>` : ""}<span>累计 ${S.pulls} 抽 · 轮盘 Lv${lv}</span>`;
   $("#cal-date").innerHTML = `仙陨历 30000年 · 冬 · 第 <b>${S.day}</b> 日 · <b>${["晨", "午", "昏", "夜"][S.slot]}</b>`;
+  $("#cal-place").textContent = S.place || "";
   $("#cal-weather").textContent = S.weather + (S.flags.coldSnap ? " · 寒潮" : "") + (AI.getCfg() && AI.getCfg().key ? " · AI 天道" : " · 推演天道");
+  registerWound(); // 伤势升档登记受伤部位（人物页可见），痊愈自动销记
   renderTab();
 }
 let curTab = 0;
@@ -675,10 +670,166 @@ function showInfo(title, tierHTML, desc, meta, actions) {
   });
   $("#infoModal").classList.add("open");
 }
+/* ---------- 人物页：属性数值总汇（原侧栏五维/状态行整合于此） ----------
+   新增：攻击力（=战力，普攻伤害同此数）、受伤部位、疾病状态、装备道具、药蚀程度。 */
+function renderPersonTab(body) {
+  const idenNote = S.iden ? `${S.iden.name} · ${S.iden.grade}档` : "青石城 · 乞丐";
+  const layerTxt = miniLayer() >= 0 ? "·" + LAYER_NAMES[miniLayer()] : "";
+  const A = [["str", "力量"], ["agi", "敏捷"], ["int", "智力"], ["con", "体质"], ["luck", "气运"]];
+  body.innerHTML =
+    `<div class="person-head"><b>${esc(S.name)}</b><span class="pg">${S.gender === "女" ? "女" : "男"}</span><span style="font-size:12px;color:var(--paper-60)">${esc(idenNote)}</span></div>
+     <div class="person-sub">${esc(REALM_NAMES[S.realm])}${layerTxt} · 第 ${S.world} 世${S.place ? " · " + esc(S.place) : ""}</div>
+     <div class="attrgrid">` + A.map(([k, n]) =>
+      `<div class="attr${k === "luck" ? " luck" : ""}"><em>${n}</em><b>${attr(k)}</b></div>`).join("") + `</div>
+     <div class="person-sec">身 手</div>
+     <div class="p-row pv-row" data-pv="1"><span>攻击力</span><b>${attackPower()}</b></div>
+     <div class="p-row dx-row" data-dx="1"><span>道心</span><b>${daoText()}${(S.xinmo || 0) >= 25 ? " ·【" + xinmoStage().name + "】" : ""}</b></div>
+     <div class="p-row ht-row" data-ht="1"><span>康健</span><b>${injuryTier().name}${injuryTier().pen ? "（战力 -" + injuryTier().pen + "%）" : ""}${S.debuff === "weak" ? " ·【元气大伤】" : ""}</b></div>
+     <div class="p-row" data-wd="1"><span>受伤部位</span><b>${woundText()}</b></div>
+     <div class="p-row" data-il="1"><span>疾病</span><b>${illText()}</b></div>
+     <div class="p-row" data-gr="1"><span>装备</span><b>${gearText()}</b></div>
+     <div class="p-row" data-ys="1"><span>药蚀</span><b>${Math.round(S.yaoshi || 0)}/100 · ${yaoshiState().name}</b></div>
+     <div class="person-sec">身 家</div>
+     <div class="p-row"><span>铜钱</span><b>${S.money} 文</b></div>
+     <div class="p-row"><span>下品灵石</span><b>${S.stones} 枚</b></div>
+     <div class="p-row"><span>万象点</span><b class="gold">${S.points}</b></div>
+     <div class="p-row lg-row" data-lg="1"><span>灵根</span><b>${linggen().name}</b></div>
+     <div class="p-row tt-row" data-tt="1"><span>称号</span><b>${S.wornTitle && TITLES[S.wornTitle] ? "「" + TITLES[S.wornTitle].name + "」" : (META.titles && META.titles.length ? "未佩戴 · " + META.titles.length + " 枚" : "无")}</b></div>
+     ${(META.comments && META.comments.length) ? `<div class="p-row tt-row" data-cm="1"><span>前世评语</span><b>${META.comments[META.comments.length - 1].grade} · ${META.comments.length} 世留评</b></div>` : ""}
+     ${profRowsHTML()}
+     <div class="p-row"><span>状态</span><b>${S.debuff === "weak" ? "【元气大伤】" : S.hunger > 85 ? "【极度饥饿】" : S.hunger > 70 ? "【饥饿】" : "尚可"}</b></div>`;
+  const lgRow = body.querySelector("[data-lg]"); // 灵根详情：五行亲和与实务规则
+  if (lgRow) lgRow.onclick = () => {
+    const wx = wxOf();
+    const sum = wxSum();
+    showInfo(`灵根 · ${linggen().name}`, `<span style="color:var(--gold-dim)">${linggen().variant ? "变异灵根" : "先天五行资质"}</span>`,
+      esc(linggen().desc || "") + (linggen().bonus ? " " + esc(linggen().bonus) + "。" : ""),
+      `五行亲和（总和 ${sum}${sum > 100 ? "，后天已破百" : " / 100"}）：` + WX_ELS.map(e => `${WX_NAMES[e]} ${wx[e]}`).join(" · ") +
+      `<br>该行功法修炼速度 = 1 + 亲和×0.005；抗性 = 亲和×0.003（封顶 30%）；亲和不足 10 强行修炼该行减半<br>生克：金克木、木克土、土克水、水克火、火克金——克制方 +20%，被克方 -20%`);
+  };
+  const pvRow = body.querySelector("[data-pv]"); // 攻击力 = 战力：拆解与规则
+  if (pvRow) pvRow.onclick = () => showInfo("攻击力", `<span style="color:var(--gold-dim)">等同战力 · 普攻之数</span>`,
+    `当前 ${attackPower()} ｜ 对外威慑显示 ${displayPower()}<br>不运功法时，每记普通攻击皆造成等同攻击力之伤害（含五行生克、暴击/弱点的当场合乎判定之浮动）；运转功法、术法则另有伤害公式。`,
+    powerBreakdown().join("<br>"));
+  const ttRow = body.querySelector("[data-tt]"); // 称号：佩戴示人，效果永续
+  if (ttRow) ttRow.onclick = () => {
+    const owned = META.titles || [];
+    const acts = owned.map(tid => ({ label: (S.wornTitle === tid ? "卸下「" : "佩戴「") + TITLES[tid].name + "」", fn: () => {
+      S.wornTitle = S.wornTitle === tid ? null : tid;
+      $("#infoModal").classList.remove("open");
+      sys(S.wornTitle ? `你亮出名号——「${TITLES[S.wornTitle].name}」。江湖看人，先看名号。` : `你收起了名号。`);
+      renderPanel();
+    } }));
+    showInfo("称号", `<span style="color:var(--gold-dim)">随魂封存 · 效果永续</span>`,
+      owned.length ? owned.map(tid => `${S.wornTitle === tid ? "◈" : "◇"}「${TITLES[tid].name}」——${TITLES[tid].desc}（源自：${TITLES[tid].from}）`).join("<br>") : "尚无称号。千秋录里的一些成就，会赠你一个江湖名号。",
+      "称号效果无需佩戴、永续生效；佩戴只是把名号亮给江湖看。", acts);
+  };
+  const cmRow = body.querySelector("[data-cm]"); // 前世评语：钉在面板上的历世判词（轮回法则 15.2）
+  if (cmRow) cmRow.onclick = () => showInfo("历世评语", `<span style="color:var(--gold-dim)">系统阅卷 · 随魂封存</span>`,
+    META.comments.slice().reverse().map(c => `第${c.world}世 ·【${c.grade}】${c.text}`).join("<br><br>"),
+    "评级解释权归系统所有。它偶尔毒舌，但从不克扣。");
+  const htRow = body.querySelector("[data-ht]"); // 康健：伤病四级
+  if (htRow) htRow.onclick = () => showInfo("康健 · 伤病四级", `<span style="color:var(--gold-dim)">世界会记住你受过的伤</span>`,
+    `当前：${injuryTier().name}（气血 ${Math.round(S.hp)}/${hpMax()}）｜ 受伤部位：${woundText()}${(() => { const d = Object.keys(S.darkWounds || {}).filter(k => S.darkWounds[k] > 0); return d.length ? ` ｜ <span style="color:var(--blood-hi)">暗伤：${d.map(k => `${DARK_WOUND_NAMES[k]} -${S.darkWounds[k]}`).join("、")}</span>` : ""; })()}`,
+    `轻伤 -10% ｜ 中伤 -30% ｜ 重伤 -50% ｜ 濒死 -80%。伤势按体质判定：同样的刀，体质高者皮开肉绽，体质低者当场透胸。<br>伤势升档时，身上会留下具体的伤（人物页可见）；痊愈即销记。治疗途径：凡俗医药、丹药、运功疗伤、灵物奇缘。带伤硬撑是有利息的——旧伤未愈再添新伤，落下【暗伤】便难逆转。解法：圣品疗伤丹、玄阶以上医道圣手、涅槃境重塑肉身、或「万年地心乳」。`);
+  const wdRow = body.querySelector("[data-wd]"); // 受伤部位
+  if (wdRow) wdRow.onclick = () => showInfo("受伤部位", `<span style="color:var(--gold-dim)">身体会记账</span>`,
+    woundText(),
+    `每一次伤势升档，都会在头面、肩臂、胸腹、腿脚间落下一处具体的伤，记在人物页上；伤愈自动销记。暗伤（永久损伤）另账：对应属性下降，此世难愈。`);
+  const ilRow = body.querySelector("[data-il]"); // 疾病状态
+  if (ilRow) ilRow.onclick = () => showInfo("疾病状态", `<span style="color:var(--gold-dim)">寒暑不等人</span>`,
+    S.ill ? `${S.ill.name}（余 ${S.ill.days} 日）——${esc(S.ill.desc)}` : "无疾。气血充盈，百病不侵。",
+    "病从何来：雪夜受寒可落【风寒】（夜间气血回复减半，三两日自愈）；丹毒爆发可落【丹毒侵脉】。丹药医道可提前拔除，硬扛着也能熬过去——只是难受。");
+  const grRow = body.querySelector("[data-gr]"); // 装备道具
+  if (grRow) grRow.onclick = () => showInfo("装备", `<span style="color:var(--gold-dim)">随身之物</span>`,
+    gearText(),
+    "随身兵器出自炼器（攻伐加成已实时结算）；老棉袄御寒；方寸戒认主后行囊各 +10。器物随身，不入行囊格。");
+  const ysRow = body.querySelector("[data-ys]"); // 药蚀程度
+  if (ysRow) ysRow.onclick = () => showInfo("药蚀", `<span style="color:var(--gold-dim)">是药三分毒</span>`,
+    `当前 ${Math.round(S.yaoshi || 0)}/100 · ${yaoshiState().name}——${yaoshiState().desc}。`,
+    `同种丹药递减（100% → 50% → 25% → 无效且药蚀翻倍）；异种累积计入药蚀度。每月自然代谢 -5（境界越高越快），排毒丹可解——以毒攻毒非长久之计。药蚀 60+ 蚀体损体，90+ 丹毒爆发：属性暴跌、境界松动，可能暴毙。`);
+  const dxRow = body.querySelector("[data-dx]"); // 道心 × 心魔
+  if (dxRow) dxRow.onclick = () => showInfo("道心 × 心魔", `<span style="color:var(--gold-dim)">心魔用你的声音说话</span>`,
+    `道心 ${Math.round(S.daoXin)}/100 · ${daoText()} ｜ 心魔 ${Math.round(S.xinmo || 0)}/100 · ${xinmoStage().name}`,
+    `${xinmoStage().desc}。<br>心魔的养料：执念、愧疚、恐惧（濒死与前世死亡记忆）、欲望、心境与修为不匹配（词条让你战力一夜暴涨，道心一步没走）、天地异动。道心的涨跌：红尘历练、问心无愧则涨；违心背信、临阵脱逃则跌。<br>四阶段：杂念（修炼 -5%）→ 执念成形（梦中低语）→ 心魔劫（破境时具现，斩/渡/笑三种过法）→ 化魔（神智沦丧）。<br>化解：打坐静心、道心 60+ 自净、渡劫直面。`);
+  body.querySelectorAll(".prof-row").forEach(row => row.onclick = () => { // 职业详情（第三章 3.3~3.6）
+    const pid = row.getAttribute("data-prof"), P = profDef(pid), q = S.professions[pid];
+    if (!P || !q) return;
+    const cap = profTierCap(P.tier), need = PROF_NEED[q.lv + 1];
+    const bonus = Object.keys(P.attrs || {}).map(k => `${{ str: "力量", agi: "敏捷", int: "智力", con: "体质" }[k]} +${(P.attrs[k] * q.lv * (S.realm >= 7 ? 10 : 1)).toFixed(1)}`).join("、") || "—";
+    showInfo(`${P.tierName} · ${P.name}（${q.lv} 级 ${PROF_LV_NAMES[q.lv]}）`, `<span style="color:var(--gold-dim)">${P.grey ? "灰色职业 · 不占副职名额，但占因果" : q.primary ? "主职业" : "副职业"}</span>`,
+      `${P.trait}<br>当前加成：${bonus}（品阶基数 × 等级 × 境界系数；天花板条款：不得突破当前境界单项天花板）<br>晋升进度：${q.lv >= cap ? "已至" + P.tierName + "之巅" : `经验 ${Math.floor(q.exp)} / ${need}（2/4/8/16/32 晋一级，须考核）`}`,
+      `经验来源（3.3）：从业时长（每 3 日 +1）｜ 技艺印证（「${P.skill}」每满 10 熟练 +1）｜ 行业事件（完成任务 +2，主线 +3）｜ 口碑。<br>${Object.keys(S.professions).length > 1 ? "多职业并存：全部活跃职业经验 -30%（精力有限，天道公允）。" : ""}${q.lv >= cap && P.next ? "<br>【转轨】凡品封顶——须行当升品转轨（" + (profDef(P.next) ? "「" + profDef(P.next).name + "」" : "更高品阶") + "），修为境界与行业深度双到位。" : ""}`);
+  });
+}
+/* ---------- 造化页：万象轮盘 · 炼丹 · 炼器 三卡合一（滑动可见，点卡看详情） ---------- */
+let craftView = "cards"; // 内视图：cards 三卡轮播 ｜ dan 丹房 ｜ qi 器作
+function renderZaohua(body) {
+  if (craftView === "dan" || craftView === "qi") { renderCraftDetail(body, craftView); return; }
+  const danGot = hasProfession("danshi"), qiGot = hasProfession("qishi");
+  const danP = profDef("danshi"), qiP = profDef("qishi");
+  body.innerHTML = `<div class="craft-cards">
+    <div class="craft-card gold" data-cc="gacha"><span class="cc-ico">☯</span><b>万象轮盘</b><span>命格词条之源。凡至仙六档，保底随轮盘等级渐开；点数抽词条，词条改命格。</span><em>点击 转动轮盘 ›</em></div>
+    <div class="craft-card${danGot ? "" : " locked"}" data-cc="dan"><span class="cc-ico">丹</span><b>炼 丹</b><span>${danGot ? `${esc(danP.name)} ${profList().danshi.lv} 级——丹房已开，七分在人。` : "丹炉尘封。机缘册未启，名号不显——前置登顶、瓶颈之期，自会寻你。"}</span><em>${danGot ? "点击 入丹房 ›" : "🔒 解锁后开启"}</em></div>
+    <div class="craft-card${qiGot ? "" : " locked"}" data-cc="qi"><span class="cc-ico">器</span><b>炼 器</b><span>${qiGot ? `${esc(qiP.name)} ${profList().qishi.lv} 级——器作已开，百炼成兵。` : "器作尘封。机缘册未启，名号不显——前置登顶、瓶颈之期，自会寻你。"}</span><em>${qiGot ? "点击 入器作 ›" : "🔒 解锁后开启"}</em></div>
+  </div>
+  <div class="craft-dots"><i class="on"></i><i></i><i></i></div>
+  <div class="pityline"><span>左右滑动，览盘、炉、锤三卡；点卡查看详情。</span></div>`;
+  body.querySelectorAll("[data-cc]").forEach(el => el.onclick = () => {
+    const k = el.dataset.cc;
+    if (k === "gacha") { openGacha(); return; }
+    craftView = k; renderTab(); // 未解锁时亦进详情页：上锁说明与解锁之道都在里头
+  });
+  const strip = body.querySelector(".craft-cards");
+  if (strip) strip.addEventListener("scroll", () => { // 滑动圆点跟随
+    const w = strip.querySelector(".craft-card");
+    const step = w ? w.offsetWidth + 10 : strip.scrollWidth / 3;
+    const idx = Math.max(0, Math.min(2, Math.round(strip.scrollLeft / step)));
+    body.querySelectorAll(".craft-dots i").forEach((d, i) => d.classList.toggle("on", i === idx));
+  });
+}
+/* ---------- 丹房 / 器作详情（原炼丹/炼器页签，上锁：解锁对应副职业后开启） ---------- */
+function renderCraftDetail(body, kind) {
+  const pid = kind === "dan" ? "danshi" : "qishi";
+  const P = profDef(pid);
+  const toolName = kind === "dan" ? "青铜丹炉" : "精铁炼锤";
+  const word = kind === "dan" ? "炼丹" : "炼器";
+  const back = `<span class="craft-back" data-craft-back>‹ 返回三卡</span>`;
+  if (!hasProfession(pid)) {
+    body.innerHTML = back + (P.dynamic
+      ? `<div class="empty">🔒 ${word}炉尘封。<br>解锁${P.tierName}职业「${esc(P.name)}」，需云游师傅一脉——不系于固定门派：当前置职业熟练度登顶、瓶颈之期到来时，机缘册自会翻开他的名号（须手动承接进阶支线，熟练度满绝不自动进阶）。</div>`
+      : `<div class="empty">🔒 ${word}炉尘封。<br>得${esc(P.master)}认可、拜师解锁${P.tierName}职业「${esc(P.name)}」后开启——机缘在缘分簿里，也在你的主线里。</div>`);
+    body.querySelector("[data-craft-back]").onclick = () => { craftView = "cards"; renderTab(); };
+    return;
+  }
+  S.mats = S.mats || {};
+  const lv = profList()[pid].lv || 1;
+  const rows = RECIPES[kind].map(rec => {
+    const haveMain = S.mats[rec.main] || 0;
+    const auxNeed = Object.keys(rec.aux).map(a => { const nm = auxName(a); return `${nm} ${Math.min(S.mats[nm] || 0, rec.aux[a])}/${rec.aux[a]}`; }).join(" · ");
+    const ready = craftCan(rec);
+    const chance = Math.round(craftChance(kind, rec));
+    return `<div class="shop-row" data-craft="${rec.id}">
+      <div class="shop-head"><b>${esc(rec.name)}</b><span class="shop-kind">${esc(rec.pin)}</span><span class="shop-price">成功率 ${chance}%</span></div>
+      <div class="shop-desc">${esc(rec.desc)}</div>
+      <div class="shop-desc">主材：${esc(rec.main)} ${haveMain}/1（任务 · 交易 · 取材三途，坊市无售）｜ 辅材：${auxNeed}</div>
+      <button class="gbtn small" ${ready ? "" : "disabled"}>${word}</button></div>`;
+  }).join("");
+  body.innerHTML = back + `<div class="p-title"><b>${kind === "dan" ? "丹 房" : "器 作"}</b><span>${esc(P.name)} ${lv} 级 ｜ ${craftToolHeld(kind) ? `「${toolName}」在手——一分在器 ✓` : `无「${toolName}」——一分在器落空`} ｜ 品质：七分在人 · 两分在料 · 一分在器 · 一丝气运</span></div>` + rows
+    + `<div class="pityline" style="margin-top:8px"><span>成功率与品质皆依设定：七分在人（境界+熟练度）、两分在料、一分在器、一丝气运；六品质瑕疵/下品/中品/上品/极品/绝品，效力五~六成至二十成。失手则材料尽损，经验照得。</span></div>`;
+  body.querySelector("[data-craft-back]").onclick = () => { craftView = "cards"; renderTab(); };
+  body.querySelectorAll("[data-craft]").forEach(el => el.querySelector("button").onclick = () => {
+    const rec = RECIPES[kind].find(r => r.id === el.dataset.craft);
+    if (rec) doCraft(kind, rec);
+  });
+}
 function renderTab() {
   const body = $("#panelTabBody");
   document.querySelectorAll(".tabrow button").forEach((b, i) => b.classList.toggle("on", i === curTab));
   if (curTab === 0) {
+    /* ---------- 人物（属性数值总汇：五维/攻击力/道心/康健/受伤部位/疾病/装备/药蚀/身家） ---------- */
+    renderPersonTab(body);
+  } else if (curTab === 1) {
     const ids = S.cardOrder;
     body.innerHTML = ids.length ? `<div class="chips">` + ids.map(id => {
       const c = findCard(id); const t = cardTier(id);
@@ -702,7 +853,7 @@ function renderTab() {
         `持有 ${S.cards[id]} 个 · 同类 ×3 自动合成更高阶<br>效果已实时结算于面板，点词条可随时回看。` + (cost == null ? "<br>仙品词条欲剥离——系统沉默了很久，只回了三个字：不建议。" : ""),
         acts);
     });
-  } else if (curTab === 1) {
+  } else if (curTab === 2) {
     const inv = [];
     if (S.inv.heimu) inv.push(["heimu", `黑馍 ×${S.inv.heimu}`]);
     if (S.inv.wood) inv.push(["wood", `柴薪 ×${S.inv.wood}`]);
@@ -749,7 +900,7 @@ function renderTab() {
         if (window.__inCombat) { toast("生死相搏，无暇他顾。"); return true; }
         return false;
       };
-      const closeAnd = fn => () => { if (busyGuard()) return; $("#infoModal").classList.remove("open"); fn(); computeMods(); renderPanel(); advanceSlot(); };
+      const closeAnd = fn => () => { if (busyGuard()) return; $("#infoModal").classList.remove("open"); fn(); computeMods(); renderPanel(); }; // 开局修改：行囊之物随手可用——不再惊动天道推演（不推进时辰，不触发 AI 剧情）
       if (id === "heimu" && S.inv.heimu > 0) acts.push({ label: "吃掉（饱食 +22）", fn: closeAnd(() => {
         S.inv.heimu--;
         eatFood(22, "你啃完一块黑馍，又冷又硬，但胃里有了底。");
@@ -819,7 +970,7 @@ function renderTab() {
         "行囊之物，随魂封存——下一世尽数清空，只余千秋录。",
         acts);
     });
-  } else if (curTab === 3) {
+  } else if (curTab === 4) {
     /* ---------- 任务栏（天道卷宗） ---------- */
     const q = S.quests || { active: [], done: [], failed: [] };
     const renderOne = id => {
@@ -843,7 +994,7 @@ function renderTab() {
       showInfo(`「${d.name}」`, `<span style="color:var(--gold-dim)">${d.type === "main" ? "主线任务" : "支线任务"}</span>`,
         esc(d.desc), "目标随你的行动自动推进，完成即发放奖励。");
     });
-  } else if (curTab === 2) {
+  } else if (curTab === 3) {
     /* ---------- 商铺 · 云州杂货 ---------- */
     let html = `<div class="p-title"><b>云 州 杂 货</b><span>铜钱 ${S.money} 文 · 灵石 ${S.stones} 枚</span></div>`;
     const unlocked = SHOP_UNLOCK.filter(it => { try { return it.cond(); } catch (e) { return false; } });
@@ -852,12 +1003,10 @@ function renderTab() {
       const price = hasTitle("caishen") ? Math.ceil(it.price * 0.9) : it.price; // 称号「财神眷顾」：交易议价 +10%
       const pay = it.stones ? `${it.stones} 枚灵石${price ? " + " + price + " 文" : ""}` : `${price} 文`;
       const afford = it.stones ? S.stones >= it.stones && S.money >= price : S.money >= price;
-      const stoneAlt = isNew && !it.stones ? Math.ceil(price / 200) : 0; // 修士物价：奇珍可全灵石折价（1 枚 ≈ 200 文）
       return `<div class="shop-row${isNew ? " new" : ""}" data-buy="${it.id}">
         <div class="shop-head"><b>${esc(it.name)}</b><span class="shop-kind">${esc(it.kind)}${isNew ? " · 新" : ""}</span><span class="shop-price">${pay}</span></div>
         <div class="shop-desc">${esc(it.desc)}</div>
-        <button class="gbtn small" ${afford ? "" : "disabled"}>买下</button>
-        ${stoneAlt ? `<button class="gbtn small ghost" data-stone="${stoneAlt}" ${S.stones >= stoneAlt ? "" : "disabled"}>灵石 ×${stoneAlt}</button>` : ""}</div>`;
+        <button class="gbtn small" ${afford ? "" : "disabled"}>买下</button></div>`;
     };
     html += SHOP_BASE.map(it => row(it, false)).join("");
     html += `<div class="p-title" style="margin-top:14px"><b>辅 材</b><span>坊市通贩 · 入材料账</span></div>`
@@ -867,7 +1016,7 @@ function renderTab() {
           <button class="gbtn small" ${afford ? "" : "disabled"}>买下</button></div>`; }).join("")
       + `<div class="pityline" style="margin-top:8px"><span>辅材随处可买；主材（赤血芝、玄铁之流）坊市无售——只走任务、交易、取材三途。</span></div>`;
     if (unlocked.length) html += `<div class="p-title" style="margin-top:14px"><b>奇 珍</b><span>闻你之名，店家从匣底取出的</span></div>` + unlocked.map(it => row(it, true)).join("")
-      + `<div class="pityline" style="margin-top:8px"><span>修士物价与凡俗隔着重山——奇珍可用灵石折价支付（1 枚 ≈ 200 文）。</span></div>`;
+      + `<div class="pityline" style="margin-top:8px"><span>修士物价与凡俗隔着重山——灵石是硬通货，一枚便值十万文，凡货灵石两不相找。</span></div>`;
     if (lockedN) html += `<div class="pityline" style="margin-top:10px"><span>尚有 ${lockedN} 件压箱底的东西——你的修为、缘分与身家，还差些火候。</span></div>`;
     body.innerHTML = html;
     body.querySelectorAll("[data-buy]").forEach(el => el.querySelector("button").onclick = () => {
@@ -886,19 +1035,6 @@ function renderTab() {
       S.stats.maxMoney = Math.max(S.stats.maxMoney || 0, S.money);
       computeMods(); renderPanel();
     });
-    body.querySelectorAll("[data-stone]").forEach(btn => btn.onclick = () => {
-      const rowEl = btn.closest("[data-buy]");
-      const it = SHOP_BASE.concat(SHOP_UNLOCK).find(x => x.id === rowEl.dataset.buy);
-      const n = +btn.dataset.stone;
-      if (!it || S.stones < n) { toast("灵石不足。"); return; }
-      S.stones -= n;
-      const had = (S.inv[it.id] || 0) > 0;
-      S.inv[it.id] = (S.inv[it.id] || 0) + 1;
-      if (!had && (it.id === "yinqi" || it.id === "quanpu")) techniqueUnlockFx(it.id);
-      sys(`【购得】${it.name}（-${n} 灵石，折价）`);
-      chronicle(`以灵石折价购得「${it.name}」`, "evt");
-      computeMods(); renderPanel();
-    });
     body.querySelectorAll("[data-aux]").forEach(el => el.querySelector("button").onclick = () => {
       const a = CRAFT_AUX.find(x => x.id === el.dataset.aux);
       if (!a || S.money < a.price) { toast("铜钱不够。"); return; }
@@ -908,7 +1044,7 @@ function renderTab() {
       sys(`【购得】${a.name} ×1（-${a.price} 文，入材料账）`);
       renderPanel();
     });
-  } else if (curTab === 4) {
+  } else if (curTab === 5) {
     /* ---------- 时间线（编年史） ---------- */
     let html = "";
     const lives = META.lives || [];
@@ -927,7 +1063,7 @@ function renderTab() {
       return `${head}<div class="tl-row k-${e.kind}"><span class="tl-ico">${icon}</span><span class="tl-slot">${["晨", "午", "昏", "夜"][e.slot] || ""}</span><span class="tl-text">${esc(e.text)}</span></div>`;
     }).join("") + `</div>`;
     body.innerHTML = html;
-  } else if (curTab === 5) {
+  } else if (curTab === 6) {
     /* ---------- 千秋录（设定十三章：引擎机械成就 + AI 生成成就） ---------- */
     const dyn = META.dynAch || [];
     const total = META.ach.length + dyn.length;
@@ -936,7 +1072,7 @@ function renderTab() {
       return `<span class="chip" data-ach="${id}" style="color:${TIERS[a.tier].css};border-color:${TIERS[a.tier].css}55">${a.name}</span>`;
     }).join("");
     chips += dyn.map((d, i) => `<span class="chip" data-dynach="${i}" style="color:${TIERS[d.tier].css};border-color:${TIERS[d.tier].css}55">✦${esc(d.name)}</span>`).join("");
-    body.innerHTML = total ? `<div class="chips">` + chips + `</div><div class="pityline" style="margin-top:10px"><span>千秋录 · 随魂不灭 · 已刻 ${total} 项（机械 ${META.ach.length} · 世情 ${dyn.length}）｜ 每满 ${TABLES.ACH.pageSize} 项翻页赠「天命一抽」</span></div>`
+    body.innerHTML = total ? `<div class="chips">` + chips + `</div><div class="pityline" style="margin-top:10px"><span>千秋录 · 此生所刻 · 已刻 ${total} 项（机械 ${META.ach.length} · 世情 ${dyn.length}）｜ 每满 ${TABLES.ACH.pageSize} 项翻页赠「天命一抽」｜ 再世重开，重新刻起</span></div>`
       : `<div class="empty">千秋录尚无一笔。去做成一件值得被记住的事。</div>`;
     body.querySelectorAll("[data-ach]").forEach(el => el.onclick = () => {
       const a = ACHIEVEMENTS[el.dataset.ach];
@@ -946,38 +1082,9 @@ function renderTab() {
       const d = dyn[+el.dataset.dynach];
       showInfo(`「${esc(d.name)}」`, `<span style="color:${TIERS[d.tier].css}">${TABLES.ACH.tierNames[d.tier]}成就 · 历世所刻</span>`, esc(d.desc || "此事值得被记住。") + "。", `刻于第 ${d.world} 世 · 第 ${d.day} 日`);
     });
-  } else if (curTab === 7 || curTab === 8) {
-    /* ---------- 炼丹 / 炼器（上锁：解锁对应副职业后开启；22:41 补丁） ---------- */
-    const kind = curTab === 7 ? "dan" : "qi";
-    const pid = kind === "dan" ? "danshi" : "qishi";
-    const P = profDef(pid);
-    const toolName = kind === "dan" ? "青铜丹炉" : "精铁炼锤";
-    const word = kind === "dan" ? "炼丹" : "炼器";
-    if (!hasProfession(pid)) {
-      body.innerHTML = P.dynamic
-        ? `<div class="empty">🔒 ${word}炉尘封。<br>解锁${P.tierName}职业「${esc(P.name)}」，需云游师傅一脉——不系于固定门派：当前置职业熟练度登顶、瓶颈之期到来时，机缘自会寻你（须手动承接进阶支线，熟练度满绝不自动进阶）。</div>`
-        : `<div class="empty">🔒 ${word}炉尘封。<br>得${esc(P.master)}认可、拜师解锁${P.tierName}职业「${esc(P.name)}」后开启——机缘在缘分簿里，也在你的主线里。</div>`;
-      return;
-    }
-    S.mats = S.mats || {};
-    const lv = profList()[pid].lv || 1;
-    const rows = RECIPES[kind].map(rec => {
-      const haveMain = S.mats[rec.main] || 0;
-      const auxNeed = Object.keys(rec.aux).map(a => { const nm = auxName(a); return `${nm} ${Math.min(S.mats[nm] || 0, rec.aux[a])}/${rec.aux[a]}`; }).join(" · ");
-      const ready = craftCan(rec);
-      const chance = Math.round(craftChance(kind, rec));
-      return `<div class="shop-row" data-craft="${rec.id}">
-        <div class="shop-head"><b>${esc(rec.name)}</b><span class="shop-kind">${esc(rec.pin)}</span><span class="shop-price">成功率 ${chance}%</span></div>
-        <div class="shop-desc">${esc(rec.desc)}</div>
-        <div class="shop-desc">主材：${esc(rec.main)} ${haveMain}/1（任务 · 交易 · 取材三途，坊市无售）｜ 辅材：${auxNeed}</div>
-        <button class="gbtn small" ${ready ? "" : "disabled"}>${word}</button></div>`;
-    }).join("");
-    body.innerHTML = `<div class="p-title"><b>${kind === "dan" ? "丹 房" : "器 作"}</b><span>${esc(P.name)} ${lv} 级 ｜ ${craftToolHeld(kind) ? `「${toolName}」在手——一分在器 ✓` : `无「${toolName}」——一分在器落空`} ｜ 品质：七分在人 · 两分在料 · 一分在器 · 一丝气运</span></div>` + rows
-      + `<div class="pityline" style="margin-top:8px"><span>成功率与品质皆依设定：七分在人（境界+熟练度）、两分在料、一分在器、一丝气运；六品质瑕疵/下品/中品/上品/极品/绝品，效力五~六成至二十成。失手则材料尽损，经验照得。</span></div>`;
-    body.querySelectorAll("[data-craft]").forEach(el => el.querySelector("button").onclick = () => {
-      const rec = RECIPES[kind].find(r => r.id === el.dataset.craft);
-      if (rec) doCraft(kind, rec);
-    });
+  } else if (curTab === 8) {
+    /* ---------- 造化：万象轮盘 · 炼丹 · 炼器（三卡合一，滑动可见，点卡看详情） ---------- */
+    renderZaohua(body);
   } else if (curTab === 9) {
     /* ---------- 技能栏（01:19 补丁）：功法与技艺尽聚于此，点击看详情 ---------- */
     const TECH_LIST = [
@@ -1157,14 +1264,31 @@ function npcPersonality(name) {
   return NPC_CHAR_POOL[h % NPC_CHAR_POOL.length];
 }
 function npcTier(v) { return v >= 80 ? 4 : v >= 40 ? 3 : v >= 20 ? 2 : v > -20 ? 1 : v > -40 ? 0 : v > -70 ? -1 : v > -90 ? -2 : -3; }
+/* NPC 性别：名号定性别（同一人此世恒定）。明示女名入女册，其余按字号哈希掷定（四六开）。 */
+const FEMALE_NAMES = ["铁心兰", "祁红", "杏儿", "晚晚", "阿禾", "阿黎", "雪夜寡妇", "卖炭婆"];
+function npcGender(name) {
+  if (FEMALE_NAMES.some(x => name.indexOf(x) >= 0)) return "女";
+  let h = 0; for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return h % 10 < 4 ? "女" : "男";
+}
 function addNpc(name, v, opts) {
   opts = opts || {};
+  // 【缘分日常 · 每日一次】日常行为（寒暄、帮工、馈赠一类）带来的善缘，同一 NPC 每日只结算一次；
+  // 特殊剧情（任务酬谢、瓶颈现身、缘分突破等）以 opts.special 传入，不受此限
+  if (v > 0 && opts.daily && !opts.special) {
+    S.bondDaily = S.bondDaily || {};
+    if (S.bondDaily[name] === S.day) return 0; // 今日这份缘已记过账了
+    S.bondDaily[name] = S.day;
+  }
+  const firstMeet = !(name in S.npc);
   const pers = npcPersonality(name);
   let mult = 1 + (S.mods.socialP || 0) / 100;
   if (v > 0 && pers === "重情") mult *= 1.5;      // 重情者对善意 ×1.5 记
   if (v > 0 && pers === "记仇") mult *= 0.7;      // 记仇者对善意打折
   if (v < 0 && pers === "记仇") mult *= 1.5;      // 记仇者对伤害加倍
-  if (v > 0 && hasSpecial("meihuo")) mult *= 1.4; // 天生魅魔：善缘获取 ×1.4
+  if (v > 0 && hasSpecial("meihuo")) {
+    if (npcGender(name) !== S.gender) mult *= 1.4; // 天生魅魔：只对异性 NPC 生效（同性面前魅力平常）
+  }
   if (opts.public) mult *= 1.5;                   // 当众事加倍（见证者传播略）
   if (!(name in S.npc) && S.flags.yibao) S.npc[name] = 10; // 称号「义薄云天」：陌生人初始好感 +10
   const before = S.npc[name] || 0;
@@ -1179,6 +1303,7 @@ function addNpc(name, v, opts) {
     }
   }
   v = Math.round(v * mult * 10) / 10;
+  if (v > 0 && firstMeet && hasSpecial("meihuo") && npcGender(name) !== S.gender) v += 40; // 魅魔·异性初遇：初始好感 +40（初见之刻，目光便挪不开了）
   S.npc[name] = Math.max(-100, Math.min(100, Math.round((before + v) * 10) / 10));
   const after = S.npc[name];
   S.npcMin = S.npcMin || {};
@@ -1285,9 +1410,9 @@ function pullOnce(forceMin) {
   const speed = 1 + (S.mods.pityR || 0) / 100;
   const lv = sysLv();
   const tenFloor = lv >= 4 ? 3 : 2, hunFloor = lv >= 6 ? 4 : 3; // 保底随系统一同长大
-  const p1000need = lv >= 10 ? 500 : 1000;
-  if (lv >= 8 && (S.pity1000 || 0) + speed >= p1000need) minT = 5;
-  else if (S.pity100 + speed >= 100) minT = hunFloor;
+  const pRedNeed = lv >= 10 ? 50 : 100; // 百抽大保底必出红品；满级缩短为五十抽
+  if (lv >= 8 && (S.pity1000 || 0) + speed >= pRedNeed) minT = 5;
+  else if (S.pity100 + speed >= 50) minT = hunFloor; // 五十抽保底
   else if (S.pity10 + speed >= 10) minT = tenFloor;
   if (forceMin != null) minT = Math.max(minT || 0, forceMin);
   const t = rollTier(minT);
@@ -1352,16 +1477,16 @@ function openGacha() {
   if (next) info += ` ｜ 下级 Lv${next.lv}：${next.pulls} 抽${next.realm ? " ＋ " + (REALM_NAMES[next.realm] || "更高境界") : ""}`;
   info += `<br>概率：${TIERS.map((t, i) => `${t.name} ${probs[i]}%`).join(" · ")}`;
   info += lv >= 4 ? ` ｜ 十抽必出紫↑` : ` ｜ 十抽必出青↑`;
-  info += lv >= 6 ? ` ｜ 百抽必出金↑` : ` ｜ 百抽必出紫↑`;
+  info += lv >= 6 ? ` ｜ 五十抽必出金↑` : ` ｜ 五十抽必出紫↑`;
   if (lv >= 8) info += ` ｜ ${lv >= 10 ? "五百" : "千"}抽必出红`;
   if (lv >= 2) info += `<br>本月卡池倾向：「${META.poolTheme || "？"}」——青品以上大概率偏向`;
   $("#sysInfo").innerHTML = info;
   const ex = $("#stoneExch");
-  if (lv >= 3) { // 以石易点：1 灵石 = 1 点，另收 10% 手续费，每世限兑 100 点
+  if (lv >= 3) { // 以石易点：1 灵石 = 1 点，另收 10% 手续费，每月限兑 100 点（设定·万象点一节）
     ex.style.display = "";
     const left = Math.max(0, 100 - (S.stoneExch || 0));
     $("#btnStoneExch").disabled = S.stones < 11 || left < 10;
-    $("#btnStoneExch").innerHTML = `以石易点<small style="opacity:.6">（11 灵石 → 10 万象点 · 本期余 ${left} 点）</small>`;
+    $("#btnStoneExch").innerHTML = `以石易点<small style="opacity:.6">（11 灵石 → 10 万象点 · 本月余 ${left} 点）</small>`;
   } else ex.style.display = "none";
   updateGachaBtns();
 }
@@ -1411,6 +1536,10 @@ function advanceSlot() {
 }
 function night() {
   let lines = [];
+  if (S.ill) { // 疾病逐日痊愈
+    S.ill.days--;
+    if (S.ill.days <= 0) { lines.push(`【病愈】${S.ill.name}已去，周身轻快。`); S.ill = null; }
+  }
   if (S.tempLuckDays > 0) S.tempLuckDays--;
   if (!hasSpecial("bigu")) S.hunger = Math.min(100, S.hunger + 4 * (S.mods.hungerR || 1));
   const cold = S.weather === "大雪" || S.weather === "风雪" || S.flags.coldSnap;
@@ -1420,20 +1549,21 @@ function night() {
       const dmg = Math.max(1, Math.round((2 + Math.floor(Math.random() * 2)) * (hasTitle("xiaoqiang") ? 0.9 : 1))); // 称号「小强」：环境伤害 -10%
       S.hp -= dmg; S.daoXin -= 0.5;
       lines.push(`<span style="color:var(--blood-hi)">寒气钻进骨头缝，你蜷缩着熬过一夜。气血 -${dmg}。</span>`);
+      if (Math.random() < 0.3 && (!S.ill || S.ill.name !== "风寒")) setIll("风寒", 3, "寒气入体，夜间气血回复减半"); // 受寒成疾
     } else lines.push(`你把破毯裹紧了些，硬是扛过了这夜的寒。`);
   }
   if (hasSpecial("bigu")) { /* 辟谷 */ }
-  else if (S.hunger >= 100) { S.hp -= 4; lines.push(`<span style="color:var(--blood-hi)">胃里像有把钝刀在搅。气血 -4。</span>`); }
+  else if (S.hunger >= 100) { S.hp -= 4; S.base.con = Math.max(1, Math.round((S.base.con - 0.05) * 100) / 100); computeMods(); lines.push(`<span style="color:var(--blood-hi)">胃里像有把钝刀在搅。气血 -4，长期饥饿啃食根本——体质 -0.05。</span>`); }
   else if (S.hunger > 85) { S.hp -= 2; lines.push(`【极度饥饿】啃噬着你。气血 -2。`); }
-  if (S.hunger < 70 && S.hp > 0) S.hp = Math.min(hpMax(), S.hp + attr("con") * 0.8 * (1 + (S.mods.hpRegenP || 0) / 100));
+  if (S.hunger < 70 && S.hp > 0) S.hp = Math.min(hpMax(), S.hp + attr("con") * 0.8 * (1 + (S.mods.hpRegenP || 0) / 100) * (S.ill && S.ill.name === "风寒" ? 0.5 : 1)); // 风寒：夜间气血回复减半
   S.sta = staMax() * (S.mods.staRegen >= 2 ? 1 : 0.85);
   if (S.realm >= 5 && S.mp < mpMax()) S.mp = Math.min(mpMax(), S.mp + mpMax() * 0.3 * (S.linggen === "za" ? 1.5 : 1)); // 杂灵根：回蓝 ×1.5
   if (S.debuff === "weak") { S.debuffDays = (S.debuffDays || 0) - 1; if (S.debuffDays <= 0) { S.debuff = null; lines.push(`元气终于回转，手脚重新有了力气。`); } }
   if (S.flags.ateHot) { S.foodStreak++; S.flags.ateHot = false; if (S.foodStreak >= 100) gainAch("hotRice"); } // 设定集：连续百日热食
   else S.foodStreak = 0;
   if (S.daoXin >= 90) gainAch("wukui"); // 问心无愧：道心 90
-  if (S.money + S.stones * 200 >= 3000) gainAch("fujia"); // 富甲一方：身家三千文
-  if (hasSpecial("meishen")) { S.flags.meishenDays = (S.flags.meishenDays || 0) + 1; if (S.flags.meishenDays >= 15) gainAch("dabusi"); } // 打不死的（趣味）
+  if (S.money + S.stones * TABLES.MONEY.wenPerStone >= 30000) gainAch("fujia"); // 富甲一方：身家三万文（灵石按汇率折算，1 枚 = 十万文）
+  if (hasSpecial("meishen")) { S.flags.meishenDays = (S.flags.meishenDays || 0) + 1; if (S.flags.meishenDays >= 360) gainAch("dabusi"); } // 打不死的：霉神附体满一年
   if (hasSpecial("huaibi") && S.stones >= 15 && Math.random() < 0.08) { // 身怀重宝必被觊觎
     const stolen = Math.max(1, Math.floor(S.stones * 0.1)); S.stones -= stolen;
     lines.push(`<span style="color:var(--blood-hi)">【怀璧其罪】夜里有人摸进了破庙——灵石少了 ${stolen} 枚。财不外露，古人不欺你。</span>`);
@@ -1449,6 +1579,7 @@ function night() {
     for (const k of ["str", "agi", "int", "con"]) S.base[k] = Math.max(1, Math.round(S.base[k] * 0.9 * 10) / 10);
     S.yaoshi = 60; S.hp -= hpMax() * 0.4; computeMods();
     lines.push(`<span style="color:var(--blood-hi)">【丹毒爆发】淤积的药毒在你睡梦里炸开——经脉如焚，属性暴跌，境界松动！</span>`);
+    setIll("丹毒侵脉", 3, "丹毒走窜经脉，浑身如炙");
     if (S.hp <= 0) { lines.forEach(l => log(l, "dim")); die("丹毒爆发，经脉俱焚。是药三分毒，你用命验证了后半句。", "丹毒"); return; }
   }
   // 心魔（设定集）：道心 60+ 自净；执念成形则梦中低语（穿越者两世记忆，双倍素材）
@@ -1461,8 +1592,12 @@ function night() {
   }
   S.day++;
   S.slot = 0;
+  if ((S.day - 1) % 30 === 0 && S.day > 1 && (S.stoneExch || 0) > 0) { // 每月（30 日）初一：以石易点兑额恢复（设定：每月限兑 100 点）
+    S.stoneExch = 0;
+    lines.push(`【初一】新一月伊始——以石易点的兑额恢复了（每月限兑 100 点）。`);
+  }
   profDailyTick(); // 职业经验：从业时长 + 技艺印证（第三章 3.3）
-  if (S.day % 30 === 0) { // 岁月发酵（第四章·4）：±40 以下的缘分每年向 0 衰减 10%；深仇与生死之交只会发酵
+  if (S.day % 30 === 0) { // 岁月发酵（第四章·4）：±40 以下的缘分每月向 0 衰减 10%；深仇与生死之交只会发酵
     let faded = 0;
     for (const n in (S.npc || {})) {
       const v = S.npc[n];
@@ -1472,12 +1607,13 @@ function night() {
     }
     if (faded) log(`【岁月】久不往来，${faded} 段恩怨淡了下去。深仇与生死之交，从不随时间褪色。`, "dim");
   }
-  S.weather = ["大雪", "阴晦", "风雪", "晴冷", "冻雨"][Math.floor(Math.random() * 5)];
+  const spring = S.day >= 31; // 冬三十日而春（第一卷止于开春；自由漫游入春）
+  S.weather = spring ? ["晴", "阴", "细雨", "微风", "扬沙"][Math.floor(Math.random() * 5)] : ["大雪", "阴晦", "风雪", "晴冷", "冻雨"][Math.floor(Math.random() * 5)];
   if (S.day === 9 || S.day === 28) S.flags.coldSnap = true;
   if (S.day === 11 || S.day === 30) S.flags.coldSnap = false;
   S.flags.fireTonight = false;
   S.daySeen = [];
-  log(`—— 冬 · 第 ${S.day} 日 · ${S.weather} ——`, "daybreak");
+  log(`—— ${spring ? "春" : "冬"} · 第 ${S.day} 日 · ${S.weather} ——`, "daybreak");
   lines.forEach(l => log(l, "dim"));
   if (S.hp <= 0) { die("冻饿而死。破庙的角落里，你安静地蜷缩成了一尊冰雕。", "冻毙"); return; }
   if (S.day >= 31 && !S.flags.freeRoam) { ending(); return; }
@@ -1620,7 +1756,7 @@ function applyCore(fx) {
   function applyNum(k, v) {
     if (k === "money") S.money = Math.max(0, S.money + v);
     if (k === "stones") S.stones = Math.max(0, S.stones + v);
-    if (k === "hp") S.hp += v;
+    if (k === "hp") S.hp = Math.min(hpMax(), S.hp + v); // 气血回复不得溢出上限
     if (k === "sta") S.sta = Math.max(0, Math.min(staMax(), S.sta + v));
     if (k === "mp") S.mp = Math.max(0, Math.min(mpMax(), S.mp + v));
     if (k === "hunger") { if (!hasSpecial("bigu")) S.hunger = Math.max(0, S.hunger - v); }
@@ -1636,7 +1772,7 @@ function applyCore(fx) {
   if (fx.clearWood) { S.inv.wood = 0; }
   if (fx.skill) { const m = /^(.+):(-?\d+)$/.exec(fx.skill); if (m) { const cap = TECH_CAPS[m[1]] || 100; S.skills[m[1]] = Math.min(cap, (S.skills[m[1]] || 0) + (+m[2])); checkSkillMilestone(m[1]); const s = `技艺「${m[1]}」 ${+m[2] > 0 ? "+" : ""}${m[2]}`; out.push(s); (+m[2] > 0 ? G : L).push(s); } }
   if (fx.wx) { const m = /^(jin|mu|shui|huo|tu):(-?\d+)$/.exec(fx.wx); if (m) { const wx = wxOf(); wx[m[1]] = Math.min(100, Math.max(0, wx[m[1]] + (+m[2]))); const s = `${WX_NAMES[m[1]]}行亲和 ${+m[2] > 0 ? "+" : ""}${m[2]}`; out.push(s); (+m[2] > 0 ? G : L).push(s); } } // 后天亲和，可破先天总和
-  if (fx.npc) for (const n in fx.npc) { addNpc(n, fx.npc[n]); const s = `${n} 缘分 ${fx.npc[n] > 0 ? "+" : ""}${fx.npc[n]}`; out.push(s); (fx.npc[n] > 0 ? G : L).push(s); }
+  if (fx.npc) for (const n in fx.npc) { addNpc(n, fx.npc[n], { daily: fx.npc[n] > 0 }); const s = `${n} 缘分 ${fx.npc[n] > 0 ? "+" : ""}${fx.npc[n]}`; out.push(s); (fx.npc[n] > 0 ? G : L).push(s); } // 剧情选项中的善缘属「日常行为」：同一 NPC 每日只入账一次（任务酬谢等特殊剧情走 special 通道）
   if (fx.pet) { S.flags["pet_" + fx.pet] = 1; gain(`「${fx.pet}」缔结灵宠之缘（认魂不认人，缘分至生死之交可跨世等候）`); }
   if (fx.drop) { S.mats = S.mats || {}; S.mats[fx.drop] = (S.mats[fx.drop] || 0) + 1; gain(`获得材料「${fx.drop}」（一身是宝，硬通货——可在收购/炼丹/炼器剧情中折算）`); }
   if (fx.slay) { // 猎杀有灵众生：道心受损、死仇钉死、认魂断绝
@@ -1798,7 +1934,7 @@ function runSpecial(sp, fx) {
     log(`你在矮林里忙了一个${["晨", "午", "昏", "夜"][S.slot]}，柴薪 +${w}。臂膀酸胀——【力量】在缓慢增长。`, "dim");
     advanceSlot();
   } else if (sp === "rest") {
-    S.hp = Math.min(hpMax(), S.hp + 3 * (1 + (S.mods.hpRegenP || 100) / 100 * 0));
+    S.hp = Math.min(hpMax(), S.hp + 3);
     S.hp = Math.min(hpMax(), S.hp + attr("con") * 0.3 * (1 + (S.mods.hpRegenP || 0) / 100));
     S.sta = Math.min(staMax(), S.sta + 4);
     log(`你寻了个避风的角落阖眼。醒来时手脚回了暖。`, "dim");
@@ -1828,7 +1964,7 @@ function runSpecial(sp, fx) {
   } else if (sp === "gamble") {
     S.stats.gambles++;
     S.money -= 10;
-    if (Math.random() < 0.3 + attr("luck") * 0.05) { const g = 25 + Math.floor(Math.random() * 10); S.money += g; log(`骰子落定——你赢了 ${g} 文！庄家脸黑得像锅底。`, "good"); }
+    if (Math.random() < 0.25 + attr("luck") * 0.03) { const g = 15 + Math.floor(Math.random() * 10); S.money += g; log(`骰子落定——你赢了 ${g} 文！庄家脸黑得像锅底。`, "good"); } // 赌坊十赌九输：气运高者才博个微利
     else if (hasSpecial("dayuan")) log(`输光了。但走出巷口时，你捡到一张完整的饼——【大冤种】的补偿机缘到了。`, "dim"), S.hunger = Math.max(0, S.hunger - 15);
     else log(`骰子落定。你输得干脆。`, "hurt");
     S.flags.gambled = 1; advanceSlot();
@@ -1909,7 +2045,9 @@ async function runDanger(d) {
   } else if (d === "trace") {
     S.flags.coincidence = (S.flags.coincidence || 0) + 1;
     if (S.flags.coincidence >= 3) gainAch("hidden");
-    log(`你循迹查到城隍庙后墙，只找到一枚不该出现在此处的上古铜钱——纹路，和你怀里某样东西隐隐共鸣。`, "dim");
+    log((S.inv.jiansui > 0)
+      ? `你循迹查到城隍庙后墙，只找到一枚不该出现在此处的上古铜钱——纹路，和你怀里那枚玄铁剑穗隐隐共鸣。`
+      : `你循迹查到城隍庙后墙，只找到一枚不该出现在此处的上古铜钱——纹路古拙，不似本朝之物。`, "dim");
     gainCult(3); advanceSlot();
   } else if (d === "deep") {
     if (Math.random() < 0.35) {
@@ -1973,7 +2111,10 @@ function combat(enemy, onEnd) {
   const wxHint = WX_KE[myEl] === eEl ? `你的${WX_NAMES[myEl]}行正克它——天时在你`
     : (WX_KE[eEl] === myEl && S.linggen !== "za") ? `它的${WX_NAMES[eEl]}行克你的${WX_NAMES[myEl]}行——今日不宜硬拼`
     : S.linggen === "za" ? `你五行俱全，无人能克` : `五行互不相克`;
-  log(`<div class="foe-info"><b>${enemy.name}</b>${enemy.desc || ""}<br>战力约 ${enemy.power} ｜ ${WX_NAMES[eEl]}行 ｜ 对比你：${cmp}<br><span class="dim">五维评估：力≈${est[0]} 敏≈${est[1]} 智≈${est[2]} 体≈${est[3]}（推演所得，或有偏差）</span><br><span class="dim">${wxHint} ｜ 你的战力：${displayPower()}</span></div>`);
+  const seen = ratio <= 1.2; // 可见规则（第十二章）：目标常态战力 ≤ 你的 1.2 倍才显示数字；超过则深不可测，系统建议：跑
+  log(`<div class="foe-info"><b>${enemy.name}</b>${enemy.desc || ""}<br>${seen
+    ? `战力约 ${enemy.power} ｜ ${WX_NAMES[eEl]}行 ｜ 对比你：${cmp}<br><span class="dim">五维评估：力≈${est[0]} 敏≈${est[1]} 智≈${est[2]} 体≈${est[3]}（推演所得，或有偏差）</span><br><span class="dim">${wxHint} ｜ 你的战力：${displayPower()}</span>`
+    : `<span style="color:var(--blood-hi)">【？？？】深不可测——系统评估拒绝给出数字，只回了两个字：快跑。</span><br><span class="dim">你的战力：${displayPower()} ｜ 对手远在你感知之外</span>`}</div>`);
   const opts = [
     { label: "战！", hint: "狭路相逢。", fn: () => resolveCombat(enemy, "fight", done) },
     { label: "逃", hint: `敏捷 ${attr("agi")}，跑赢就算赢。`, fn: () => resolveCombat(enemy, "flee", done) },
@@ -1987,7 +2128,7 @@ function resolveCombat(enemy, mode, onEnd) {
   const startHp = S.hp;
   if (mode === "flee") {
     const chk = attr("agi") * 8 + attr("luck") * 4 + Math.random() * 40 + (S.mods.escapeP || 0);
-    if (chk > enemy.power * 4) { log(`你转身钻进窄巷，七拐八绕——甩掉了。`, "good"); addXinmo(2, "临阵脱逃，道心微裂"); onEnd("fled"); return; }
+    if (chk > enemy.power * 4) { log(`你转身钻进窄巷，七拐八绕——甩掉了。`, "good"); S.daoXin = Math.max(0, S.daoXin - 1); addXinmo(2, "临阵脱逃，道心微裂"); onEnd("fled"); return; }
     log(`没跑掉，后背挨了一记狠的。`, "hurt"); S.hp -= hpMax() * 0.15;
   }
   if (mode === "beg") {
@@ -1999,10 +2140,11 @@ function resolveCombat(enemy, mode, onEnd) {
       log(`求饶换来的是变本加厉。`, "hurt"); S.hp -= hpMax() * 0.1;
     }
   }
+  let trickWin = false;
   if (mode === "trick") {
     const chk = attr("int") * 10 + attr("luck") * 3 + Math.random() * 50;
-    if (chk > enemy.power * 5) { log(`你佯装跌倒，引它扑空，反手一击正中要害。`, "good"); onEnd("win"); return; }
-    log(`智取失败，对方比看起来精。`, "dim");
+    if (chk > enemy.power * 5) { log(`你佯装跌倒，引它扑空，反手一击正中要害。`, "good"); trickWin = true; } // 智取完胜：落入下方统一胜利结算（击杀数/首血/越阶/战利品一样不少）
+    else log(`智取失败，对方比看起来精。`, "dim");
   }
   // 五行生克：克制方 +20%，被克方 -20%；该行抗性 = 亲和×0.003（封顶 30%）；杂灵根五行俱全，没有任何一系能克制你
   // 敌方五维评估：与 combat() 同式推演（同名敌人评估恒定）
@@ -2031,11 +2173,14 @@ function resolveCombat(enemy, mode, onEnd) {
   const eLuck = Math.max(1, Math.round(enemy.power * 0.12)); // 气运不入战力（设定）：单独推演，改概率不改数值
   const eHpMax = Math.max(5, Math.round(eCon * TABLES.COMBAT.hpPerCon * (1 + enemyTier * TABLES.COMBAT.tierHpScale))); // 与玩家同式：体质×10×境界放缩
   const myStr = attr("str"), myAgi = attr("agi"), myInt = attr("int"), myLuck = attr("luck");
+  const atkP = attackPower(); // 攻击力（=战力）：不运功法时，每记普攻皆此数之伤
   const technique = (S.inv.yinqi > 0) && (S.inv.quanpu > 0) ? "引气锻骨合击" : (S.inv.yinqi > 0) ? "引气诀" : (S.inv.quanpu > 0) ? "锻骨拳" : null;
   const skillMult = TABLES.COMBAT.skillMultBase + S.realm * TABLES.COMBAT.skillMultPerRealm; // 技能伤害：功法加成，浮动不大
   const fl = TABLES.JUDGE.dmgFloat;
-  let round = 0, myHp = S.hp, eHp = eHpMax;
-  const lines = [`【气血】${enemy.name}：${eHpMax}/${eHpMax} ｜ 你：${Math.round(myHp)}/${hpMax()} ｜ 你的基础攻击=${myStr}（一力=一攻）${technique ? ` ｜ 可运「${technique}」` : ""}`];
+  const seen = enemy.power / Math.max(1, myP) <= 1.2; // 可见规则：超 1.2 倍则气血只显状态（设定：深不可测）
+  const eHpState = () => { const r = eHp / eHpMax; return r >= 0.999 ? "毫发无损" : r > 0.7 ? "受了些伤" : r > 0.4 ? "伤势不轻" : r > 0.1 ? "摇摇欲坠" : "只剩一口气"; };
+  let round = 0, myHp = S.hp, eHp = trickWin ? 0 : eHpMax; // 智取完胜：敌血直接归零，跳过回合战
+  const lines = [`【气血】${enemy.name}：${seen ? `${eHpMax}/${eHpMax}` : "？？？（" + eHpState() + "）"} ｜ 你：${Math.round(myHp)}/${hpMax()} ｜ 你的攻击力=${atkP}（等同战力；不运功法，每记普攻皆此数）${technique ? ` ｜ 可运「${technique}」（运功另有伤害公式）` : ""}`];
   if (WX_KE[myEl] === eEl) lines.push(`【五行生克】你的${WX_NAMES[myEl]}行克它的${WX_NAMES[eEl]}行——你伤害 +20%，它 -20%。`);
   else if (WX_KE[eEl] === myEl && !za) lines.push(`【五行生克】它的${WX_NAMES[eEl]}行克你的${WX_NAMES[myEl]}行——你伤害 -20%，小心。`);
   else if (za) lines.push(`【杂灵根】五行俱全，没有任何一系能克制你。`);
@@ -2056,13 +2201,15 @@ function resolveCombat(enemy, mode, onEnd) {
     round++;
     const parts = [];
     const j1 = judge({ agi: myAgi, int: myInt, luck: myLuck }, { agi: eAgi, int: eInt, luck: eLuck }); // 你出手
-    const cast = technique && Math.random() < 0.35;
+    const isSpell = technique && technique.indexOf("引气") >= 0; // 引气诀系属功法（耗法 5）；锻骨拳是武技，不耗蓝
+    const cast = technique && Math.random() < 0.35 && (!isSpell || S.mp >= 5); // 法力不足则退为普攻
+    if (cast && isSpell) S.mp = Math.max(0, S.mp - 5);
     if (j1.kind === "dodge") parts.push(`你的${cast ? "一式「" + technique + "」" : "攻势"}被它闪开`);
     else {
-      let dmg = myStr * (fl[0] + Math.random() * (fl[1] - fl[0])) * myDmg * j1.mult * (cast ? skillMult : 1);
+      let dmg = (cast ? myStr * skillMult : atkP) * (fl[0] + Math.random() * (fl[1] - fl[0])) * myDmg * j1.mult; // 普攻＝攻击力；运功另有公式（myStr×功法倍率）
       dmg = Math.max(1, Math.round(dmg));
       eHp -= dmg;
-      parts.push(`${cast ? `你运转「${technique}」，` : ""}造成 ${dmg} 点伤害${j1.kind === "crit" ? "（暴击×2）" : j1.kind === "weak" ? "（命中弱点×1.5）" : j1.kind === "crit+weak" ? "（暴击+弱点×3）" : ""}，${enemy.name} 余 ${Math.max(0, Math.round(eHp))}/${eHpMax}`);
+      parts.push(`${cast ? `你运转「${technique}」，${isSpell ? "法力 -5，" : ""}` : ""}造成 ${dmg} 点伤害${j1.kind === "crit" ? "（暴击×2）" : j1.kind === "weak" ? "（命中弱点×1.5）" : j1.kind === "crit+weak" ? "（暴击+弱点×3）" : ""}，${enemy.name} ${seen ? `余 ${Math.max(0, Math.round(eHp))}/${eHpMax}` : `【${eHpState()}】`}`);
     }
     if (eHp > 0) {
       const j2 = judge({ agi: eAgi, int: eInt, luck: eLuck }, { agi: myAgi, int: myInt, luck: myLuck }); // 它出手
@@ -2076,7 +2223,7 @@ function resolveCombat(enemy, mode, onEnd) {
     }
     lines.push(`第${round}合：${parts.join("；")}。`);
     if (round >= TABLES.COMBAT.quickRound && myHp > 0 && eHp > 0) { // 超过5回合：系统运算简化，快速结算（按双方每合期望伤害推完剩余回合）
-      const myPer = Math.max(1, myStr * myDmg * TABLES.COMBAT.quickMyPerFactor); // 期望：含闪避折损
+      const myPer = Math.max(1, (atkP * 0.65 + myStr * skillMult * 0.35) * myDmg * TABLES.COMBAT.quickMyPerFactor); // 期望：普攻占 65%（攻击力），运功占 35%（myStr×功法倍率），含闪避折损
       const foePer = Math.max(1, eStr * foeDmg * TABLES.COMBAT.quickFoePerFactor * (1 - (S.mods.defP || 0) / 100));
       const need = Math.ceil(eHp / myPer);
       const foeRounds = Math.ceil(myHp / foePer);
@@ -2153,6 +2300,7 @@ function lethalCheck(killer, onEnd) {
 function askBreakthrough() {
   const B = TABLES.BREAK; // 破境判定（判定表演算）
   let rate = B.base + attr("luck") * B.luckW + S.realmBreaks * -B.retryPenalty;
+  if (hasTitle("renjiT")) rate += 10; // 称号「人极」：破境成功率永久 +10%
   if (hasSpecial("ding")) rate += B.mods.ding;
   if (hasSpecial("yinguo")) rate += B.mods.yinguo; // 因果赊账：债未清，天道卡你的门槛
   if (S.flags.coldSnap) rate += B.mods.coldSnap;
@@ -2168,16 +2316,24 @@ function resolveBreakthrough(rate) {
     S.realm++; S.cult = 0; S.realmBreaks = 0;
     if (S.lastBreakDay && S.day - S.lastBreakDay <= TABLES.BREAK.yushiWindowDays) gainAch("yushi"); // 与天争时：十日之内连破两境
     S.lastBreakDay = S.day;
-    for (const k of ["str", "agi", "int", "con"]) S.base[k] = Math.min(attrCeiling(), Math.round(S.base[k] * TABLES.REALMS.breakAttrMult * 10) / 10); // 大境突破，全属性 +5%（天花板 10+境界）
+    const crossB = (TABLES.REALMS.crossTierBonus || {})[String(S.realm)]; // 跨大阶（入灵7/入玄13/入圣19）：全属性固定跃升（设定·破境规则）
+    if (crossB) {
+      for (const k of ["str", "agi", "int", "con"]) S.base[k] = Math.min(attrCeiling(), Math.round((S.base[k] + crossB) * 10) / 10);
+      sys(`【破境反哺】大阶跨越，五维脱胎换骨——全属性 +${crossB}。`);
+    } else {
+      for (const k of ["str", "agi", "int", "con"]) S.base[k] = Math.min(attrCeiling(), Math.round(S.base[k] * TABLES.REALMS.breakAttrMult * 10) / 10); // 大境内突破，全属性约 +5%（不得破当前大阶天花板）
+      sys(`【破境反哺】大境突破，五维随境跃升（+${Math.round((TABLES.REALMS.breakAttrMult - 1) * 100)}%）。`);
+    }
     chronicle(`破境成功，踏入【${REALM_NAMES[S.realm]}】`, "break");
-    sys(`【破境反哺】大境突破，五维随境跃升（+${Math.round((TABLES.REALMS.breakAttrMult - 1) * 100)}%）。`);
     checkSysLvUp();
     sys(`【破境成功】气血轰鸣，枷锁寸寸崩解——你踏入【${REALM_NAMES[S.realm]}】（${TABLES.REALMS.tierNames[S.realm]}）！`);
     if (S.realm >= 1) gainAch("tuotai");
     if (S.realm === 5) { gainAch("juqi"); S.mp = mpMax(); sys(`【气海初开，法力解锁。凡人眼中，你已是「仙师」之流。】`); }
     if (S.realm === 6) { S.mp = mpMax(); sys(`【丹田气海开辟】法力正式奔涌——你已脱去凡胎，立身凡阶之巅【开元境】。`); }
     if (S.realm === 7) sys(`【脱凡入灵】灵泉自涌，法力如溪——自此跻身${TABLES.REALMS.tierNames[7]}，凡俗官府的卷宗里，你的名字已不算凡人了。`);
-    if (S.realm === REALM_TOP) sys(`【传说之巅】天人境——此界万年无人踏足的层次。天道的目光，落在了你身上。`);
+    if (S.realm === 13) sys(`【化神登玄】神魂凝实，神识外放——${TABLES.REALMS.tierNames[13]}修士，一城之雄也要对你执礼。`);
+    if (S.realm === 19) sys(`【涅槃入圣】旧躯尽焚，道体重塑——${TABLES.REALMS.tierNames[19]}大能，当世明面上的巅峰行列，有了你一个位置。`);
+    if (S.realm === REALM_TOP) sys(`【传说之巅】登仙境——此界三万载无人踏足的层次。天道的目光，落在了你身上。`);
     S.hp = hpMax(); S.sta = staMax();
   } else {
     S.realmBreaks++;
@@ -2317,7 +2473,7 @@ function die(reason, cause) {
       title: "此生结算", grade, color: rule.color, score: st.total,
       quote: comment,
       stats: [["修行高度", st.dims[0]], ["任务绩效", st.dims[1]], ["千秋录", st.dims[2]], ["因果质量", st.dims[3]], ["道心活法", st.dims[4]], ["寿数", st.dims[5]], ["加权总分", st.total]],
-      note: `词条回收中……保底计数清零。千秋录、称号与评语随魂封存，下一世解封。<br>下一世：${rb.identity.name}（${rb.identity.grade}档）· 初始万象点 ${rb.points}${rb.attrMalus ? " · 属性折损 ×" + rb.attrMalus : ""}${rb.echo ? " · 伴生残影「" + echoCard.name + "」（半效）" : ""}`,
+      note: `词条回收中……保底计数清零。称号与评语随魂封存；千秋录成就一笔勾销——新一世，重新刻起。<br>下一世：${rb.identity.name}（${rb.identity.grade}档）· 初始万象点 ${rb.points}${rb.attrMalus ? " · 属性折损 ×" + rb.attrMalus : ""}${rb.echo ? " · 伴生残影「" + echoCard.name + "」（半效）" : ""}`,
       btns: [{ label: "再入轮回", fn: () => { closeEnd(); newLife(); startLife(); } }],
     });
     renderPanel();
@@ -2340,7 +2496,7 @@ function pickIdentity(poolGrade, dice) { // 身份骰：传世/无愧掷两次�
   const rank = { "吉": 3, "平": 2, "劣": 1, "狱": 0 };
   let pool = IDENTITIES.filter(i => i.grade === poolGrade);
   if (poolGrade === "吉" && Math.random() < 0.3) pool = pool.concat(IDENTITIES.filter(i => i.grade === "平"));
-  if (poolGrade === "劣" && Math.random() < 0.2) pool = pool.concat(IDENTITIES.filter(i => i.grade === "狱"));
+  if (poolGrade === "劣" && Math.random() < 0.05) pool = pool.concat(IDENTITIES.filter(i => i.grade === "狱")); // 狱档极低概率砸中（设定 15.5：败笔锁死，或极低概率）
   if (!pool.length) pool = IDENTITIES.filter(i => i.grade === "平");
   const draw = () => pool[Math.floor(Math.random() * pool.length)];
   if (dice === "adv") { const a = draw(), b = draw(); return rank[a.grade] >= rank[b.grade] ? a : b; }
@@ -2368,7 +2524,7 @@ function ending() {
     note: "可继续在此世漫游（自由模式），或再入轮回开启下一世——身份随机，因果继承。",
     btns: [
       { label: "继续此世（自由漫游）", fn: () => { closeEnd(); S.over = false; S.flags.freeRoam = true; log("—— 自由漫游：冬天已过，青石城依旧。——", "daybreak"); gmTurn(); } },
-      { label: "再入轮回", fn: () => { META.rebirth = { points: 100 + (win ? 50 : 0), attrBonus: win ? 2 : 0, identity: pickIdentity(win ? "吉" : "平") }; META.world++; saveMeta(); closeEnd(); newLife(); startLife(); } },
+      { label: "再入轮回", fn: () => { META.rebirth = { points: 100 + (win ? 50 : 0), attrBonus: win ? 2 : 0, identity: pickIdentity(win ? "吉" : "平") }; META.world++; META.ach = []; META.dynAch = []; saveMeta(); closeEnd(); newLife(); startLife(); } }, // 开局修改：重开新一世，千秋录成就（机械＋AI）一笔勾销，从新的人生重新刻起
     ],
   });
   renderPanel();
@@ -2394,9 +2550,9 @@ function closeEnd() { $("#endModal").classList.remove("open"); }
 /* ================= 存档 / 读档 ================= */
 const SAVE_KEYS = { auto: "cangxuan_save_auto", 1: "cangxuan_save_1", 2: "cangxuan_save_2", 3: "cangxuan_save_3" };
 /* 存档结构版本：改动 S/META 字段结构时 +1，并在 migrateSave 里补对应迁移步骤 */
-const SAVE_VER = 6;
+const SAVE_VER = 8;
 const SLOT_WORDS = ["晨", "午", "昏", "夜"];
-function saveSummary(s) { return `第${s.world}世 · ${s.name} · 冬第${s.day}日${SLOT_WORDS[s.slot] || ""} · ${REALM_NAMES[s.realm]}`; }
+function saveSummary(s) { return `第${s.world}世 · ${s.name} · ${s.day >= 31 ? "春" : "冬"}第${s.day}日${SLOT_WORDS[s.slot] || ""} · ${REALM_NAMES[s.realm]}`; }
 function canSave() { return !!(S && !S.over && !gmBusy && !window.__inCombat); }
 function writeSave(key, quiet) {
   if (!canSave()) { if (!quiet) toast("此刻天道未稳（战斗或结算中），稍候再存。"); return false; }
@@ -2420,6 +2576,19 @@ function migrateSave(d) {
   if (v < 4) { d.S.darkWounds = d.S.darkWounds || {}; v = 4; } // v3 → v4：新增暗伤账（第十二章·永久损伤）
   if (v < 5) { d.S.gear = d.S.gear || {}; d.S.mats = d.S.mats || {}; v = 5; } // v4 → v5：新增随身兵器与材料账（炼丹炼器）
   if (v < 6) { d.S.masters = d.S.masters || {}; v = 6; } // v5 → v6：新增云游师傅名册（丹师/器火一脉随机 NPC）
+  if (v < 7) { // v6 → v7：修为体系归正为四阶二十四境（凡/灵/玄/圣各六境）。旧粗三档「玄境/圣境/天人境」映射到新阶梯；修为需求曲线全变，当境进度清零
+    const realmMap = { 8: 13, 9: 19, 10: 18 }; // 旧玄境→化神境（玄阶初）｜旧圣境→涅槃境（圣阶初）｜旧天人境→天人境（玄阶之巅，设定正解之位）
+    if (d.S.realm >= 8) d.S.realm = realmMap[d.S.realm] || 7;
+    d.S.cult = 0;
+    v = 7;
+  }
+  if (v < 8) { // v7 → v8：新增性别/地点/缘分日常账/受伤/疾病字段
+    d.S.gender = d.S.gender || "男";
+    d.S.place = d.S.place || ((d.S.iden && d.S.iden.place) || (d.S.first ? null : "东荒 · 云州 · 青石城"));
+    d.S.bondDaily = d.S.bondDaily || {};
+    d.S.wound = d.S.wound || null; d.S.ill = d.S.ill || null;
+    v = 8;
+  }
   d.v = SAVE_VER;
   return d;
 }
@@ -2505,10 +2674,19 @@ function renderSaveModal() {
 /* 首世命名（第十章：身份随机由天道掷定，姓名由玩家定，须合此界风物） */
 function askName(then) {
   const modal = $("#nameModal"), input = $("#nameInput"), tip = $("#nameTip");
+  let gender = META.gender || "男"; // 默认沿用随魂封存的性别选择
+  document.querySelectorAll("#genderRow .gender-btn").forEach(b => {
+    b.classList.toggle("on", b.dataset.g === gender);
+    b.onclick = () => {
+      gender = b.dataset.g;
+      document.querySelectorAll("#genderRow .gender-btn").forEach(x => x.classList.toggle("on", x === b));
+    };
+  });
   const apply = (raw) => {
     const name = (raw || "").trim();
     if (name && !/^[\u4e00-\u9fa5·]{1,8}$/.test(name)) { tip.textContent = "须为汉字或间隔号，一至八字"; tip.style.color = "var(--hurt)"; return; }
     S.name = name || "阿七";
+    S.gender = gender; META.gender = gender; saveMeta(); // 性别随魂：此后诸世不变，重开方可再选
     modal.classList.remove("open");
     renderPanel();
     if (typeof then === "function") then();
@@ -2566,14 +2744,16 @@ function startLife() {
     askName(() => {
     const op = OPENINGS[Math.floor(Math.random() * OPENINGS.length)]; // 惨境背景随机；际遇由 AI 生成
     S.flags.opening = op.id;
+    S.place = op.place; // 随机开局落定，地点随之同步（顶栏常显）
     log(`<div class="scene-head"><div class="place">${op.place}</div>
       <h1>${op.title}</h1><div class="sub">仙陨历三万年 · 冬 · 大雪 —— 灵气潮汐三百年一涨一落，你穿越之时，正值涨潮之初。</div></div>`);
     [
       { t: "sys", s: "【万象轮盘已激活。】" },
-      { t: "sys", s: "【正在以宿主灵魂最熟悉的方式重构交互界面……完成。】" },
       { t: "sys", s: "【开局赠礼：万象点 ×100（仅此一次，用完即止）。】" },
       { t: "sys", s: "【检测到宿主命格：天绝之命（原注定死于当夜）。】" },
       { t: "sys", s: "【检测到未知因果介入……命格已改写。】" },
+      { t: "sys", s: "【宿魂来源：界外。此界因果：无。】" },
+      { t: "sys", s: "【正在以宿主灵魂最熟悉的方式重构交互界面……完成。】" },
       ...op.lines.map(l => ({ t: "dim", s: typeof l === "function" ? l(S.name) : l })),
       { t: "sys", s: `【凡品任务已发布：${OPENING_QUEST[op.id] || "活过眼前这一关"}。奖励：万象点 ×20。】` },
       { t: "sys", s: "【多余的话，没有。跑好你自己的。】" },
@@ -2601,12 +2781,19 @@ function startLife() {
     ]);
     });
   } else {
-    log(`<div class="scene-head"><div class="place">第 ${S.world} 世 · 时间线继承</div>
+    log(`<div class="scene-head"><div class="place">${esc(S.place || ("第 " + S.world + " 世 · 时间线继承"))}</div>
       <h1>再 世</h1><div class="sub">世界不为你回档。上一世你死去至今，已过了十余年。</div></div>`);
-    log(`【序章 · 本地人生涯】十几年间，你以「${S.name}」的身份长大：${S.iden.desc}（${S.iden.note}）——不知系统，不知轮回，全情投入这一世的命。`, "dim");
+    const idenDesc = S.iden.desc.indexOf("新娘/新郎") >= 0 ? S.iden.desc.replace("新娘/新郎", S.gender === "女" ? "新娘" : "新郎") : S.iden.desc;
+    log(`【序章 · 本地人生涯】十几年间，你以「${S.name}」的身份长大：${idenDesc}（${S.iden.note}）——不知系统，不知轮回，全情投入这一世的命。`, "dim");
     log(`直到今夜，命定的死局收紧，「不想死」烧到最烈的那一瞬间——`);
     sys(`【万象轮盘检测到宿主求生意志峰值。封印解除。欢迎回来。】`);
-    sys(`【前世记忆决堤。千秋录、称号、评语一次性涌入——融合冲击判定：通过。这一世，你是第 ${S.world} 次睁眼。】`);
+    const shockRate = Math.max(15, Math.min(95, Math.round(55 + S.daoXin * 0.4 + attr("int") * 2 - (S.world - 1) * 6))); // 融合冲击判定（15.4）：道心 × 智力 × 世数修正——世数越多，冲击越大
+    if (Math.random() * 100 < shockRate) {
+      sys(`【前世记忆决堤。称号、评语一次性涌入——千秋录已随上一世合上，等你重新刻下。融合冲击判定（${shockRate}%）：通过。这一世，你是第 ${S.world} 次睁眼。】`);
+    } else {
+      S.debuff = "weak"; S.debuffDays = 3; addXinmo(5, "记忆洪峰撕扯识海，心魔饱餐了一顿");
+      sys(`【前世记忆决堤——融合冲击判定（${shockRate}%）：失败。】【意识混沌】人格撕裂，噩梦缠身，你抱头蜷了整整三日，才重新分清「我是谁」。（元气大伤 3 日 · 修炼停滞 · 心魔 +5）`);
+    }
     sys(`【今生资质：${linggen().name}】${linggen().desc}${linggen().bonus ? "（" + linggen().bonus + "）" : ""}`);
     S.gmRecent = ["rebirth"];
     renderPanel();
@@ -2649,11 +2836,19 @@ function askReset() {
     ]);
 }
 function resetToFirstLife() {
+  const oldDyn = (META && META.dynCards) || {}; // 记下历世 AI 生成词条，连内存里的奖池一并清空
   try {
     for (const k of Object.values(SAVE_KEYS)) localStorage.removeItem(k); // 所有存档槽
     localStorage.removeItem(META_KEY);
   } catch (e) {}
   META = { world: 1, deaths: 0, ach: [], rebirth: null, sysLv: 1, totalPulls: 0 };
+  // 内存痕迹一并抹去：AI 词条出盘、动态称号除名——重开即彻底重开，成就（机械与 AI）无一残留
+  try {
+    for (const id in oldDyn) {
+      for (const tier of CARD_POOL) { const i = tier.findIndex(c => c.id === id); if (i >= 0) tier.splice(i, 1); }
+      delete TITLES["dyn_" + oldDyn[id].name];
+    }
+  } catch (e) {}
   saveMeta();
   gmBusy = false; window.__inCombat = false;
   closeEnd();
@@ -2665,8 +2860,7 @@ function resetToFirstLife() {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.querySelectorAll(".tabrow button").forEach((b, i) => b.onclick = () => { curTab = i; renderTab(); });
-  $("#btnGacha").onclick = openGacha;
+  document.querySelectorAll(".tabrow button").forEach((b, i) => b.onclick = () => { curTab = i; craftView = "cards"; renderTab(); });
   $("#gachaClose").onclick = () => $("#gacha").classList.remove("open");
   $("#btnPull1").onclick = () => doPulls(1);
   $("#btnPull10").onclick = () => doPulls(10);

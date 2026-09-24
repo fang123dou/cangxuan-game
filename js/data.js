@@ -80,7 +80,7 @@ const CARD_POOL = [
   /* ---- 玄品（紫） ---- */
   [
     { id:"fengxiong",name:"逢凶化吉",  eff:"质变：必死之局总有一线生机（致命伤害概率生还）", mod:{}, special:"cheatdeath" },
-    { id:"meihuo",  name:"天生魅魔",   eff:"异性初始好感 +40，魅力判定大幅加成；情怨结仇 ×2——魅力是债", mod:{socialP:35}, special:"meihuo" },
+    { id:"meihuo",  name:"天生魅魔",   eff:"对异性 NPC 生效：初遇好感 +40、善缘获取 ×1.4、魅力判定大幅加成；对同性仅平常；情怨结仇 ×2——魅力是债", mod:{socialP:35}, special:"meihuo" },
     { id:"zhenxiang",name:"真香定律",  eff:"规则：立誓「宁死不做」的事做了收益 ×2；每月至少当众真香一次", mod:{trainP:8, moneyP:8}, special:"zhenxiang" },
     { id:"laosou",  name:"老叟戏顽童", eff:"碾压低战力目标消耗减半；虐菜多了遇强者先手 -5%", mod:{dmgP:12}, special:"laosou" },
     { id:"leiyi",   name:"一缕雷意",   eff:"雷亲和 +10：完整变异灵根的火星，体质才是炉子", mod:{allP:4} },
@@ -123,28 +123,28 @@ const COMBO_PAIRS = [["juanwang", "moyu", "zhangchi"], ["huachang", "ganfan", "z
 /* ============ 随机身份（再世 · 设定集 15.5 开局表，四档：吉/平/劣/狱） ============ */
 const IDENTITIES = [
   /* ---- 吉档 ---- */
-  { grade:"吉", name:"小家族庶子",   desc:"有饭吃有书读，嫡母的猜忌比寒冬更长。", mods:{int:1}, money:400, note:"「灯下苦学」智力成长 +10%" },
-  { grade:"吉", name:"宗门记名弟子", desc:"月例三块灵石，外门倾轧月比淘汰。", mods:{con:1}, money:120, note:"「早课不辍」修炼效率 +5%" },
-  { grade:"吉", name:"药王谷药童",   desc:"识药辨草的童子，月有薄俸。", mods:{int:1,con:0}, money:300, note:"「药圃岁月」丹道熟练度 +10%" },
-  { grade:"吉", name:"商队少东",     desc:"拨算盘的手比握剑稳，沙盗的眼睛盯着货。", mods:{int:1,luck:0}, money:800, note:"「算盘精」议价 +5%" },
-  { grade:"吉", name:"将门遗孤",     desc:"军营里长大的骨头，仇家环伺。", mods:{con:1,str:1}, money:200, note:"「军营长大的骨头」体质成长 +10%" },
+  { grade:"吉", name:"小家族庶子",   desc:"有饭吃有书读，嫡母的猜忌比寒冬更长。", mods:{int:1}, money:400, note:"「灯下苦学」智力成长 +10%", place:"东荒 · 云州 · 青石城 · 内城宅院" },
+  { grade:"吉", name:"宗门记名弟子", desc:"月例三块灵石，外门倾轧月比淘汰。", mods:{con:1}, money:120, note:"「早课不辍」修炼效率 +5%", place:"东荒 · 云州 · 青岩山脚" },
+  { grade:"吉", name:"药王谷药童",   desc:"识药辨草的童子，月有薄俸。", mods:{int:1,con:0}, money:300, note:"「药圃岁月」丹道熟练度 +10%", place:"中州 · 药王谷 · 外门药圃" },
+  { grade:"吉", name:"商队少东",     desc:"拨算盘的手比握剑稳，沙盗的眼睛盯着货。", mods:{int:1,luck:0}, money:800, note:"「算盘精」议价 +5%", place:"东荒 · 云州 · 福源商会货栈" },
+  { grade:"吉", name:"将门遗孤",     desc:"军营里长大的骨头，仇家环伺。", mods:{con:1,str:1}, money:200, note:"「军营长大的骨头」体质成长 +10%", place:"东荒 · 云州 · 城郊军营" },
   /* ---- 平档 ---- */
-  { grade:"平", name:"市井孩童",     desc:"跑街串巷，帮派的保护费比年关难过。", mods:{agi:1}, money:60, note:"「跑街」敏捷成长 +5%" },
-  { grade:"平", name:"猎户遗孤",     desc:"山里的鼻子，冬荒夺田的族亲。", mods:{agi:1,con:0}, money:80, note:"「山里的鼻子」野外生存 +10%" },
-  { grade:"平", name:"私塾伴读",     desc:"旁听生，主仆名分随时被逐。", mods:{int:1}, money:40, note:"「旁听生」悟性 +5%" },
-  { grade:"平", name:"渔民之子",     desc:"海税、风暴、渔霸，一样比浪凶。", mods:{con:1}, money:50, note:"「浪里白条」水中战力 +20%" },
-  { grade:"平", name:"铁匠学徒",     desc:"酗酒的师父，催命的军械订单。", mods:{str:1}, money:70, note:"「千锤百炼」炼器熟练度 +5%" },
+  { grade:"平", name:"市井孩童",     desc:"跑街串巷，帮派的保护费比年关难过。", mods:{agi:1}, money:60, note:"「跑街」敏捷成长 +5%", place:"东荒 · 云州 · 青石城 · 市井" },
+  { grade:"平", name:"猎户遗孤",     desc:"山里的鼻子，冬荒夺田的族亲。", mods:{agi:1,con:0}, money:80, note:"「山里的鼻子」野外生存 +10%", place:"东荒 · 云州 · 青石城郊 · 猎户村" },
+  { grade:"平", name:"私塾伴读",     desc:"旁听生，主仆名分随时被逐。", mods:{int:1}, money:40, note:"「旁听生」悟性 +5%", place:"东荒 · 云州 · 青石城 · 私塾" },
+  { grade:"平", name:"渔民之子",     desc:"海税、风暴、渔霸，一样比浪凶。", mods:{con:1}, money:50, note:"「浪里白条」水中战力 +20%", place:"东荒 · 云州 · 临河渔村" },
+  { grade:"平", name:"铁匠学徒",     desc:"酗酒的师父，催命的军械订单。", mods:{str:1}, money:70, note:"「千锤百炼」炼器熟练度 +5%", place:"东荒 · 云州 · 青石城 · 铁匠铺" },
   /* ---- 劣档 ---- */
-  { grade:"劣", name:"奴籍",         desc:"契书在身，赎身天价。", mods:{agi:1}, money:0, note:"「忍字诀」隐匿忍耐 +15%" },
-  { grade:"劣", name:"疫村遗孤",     desc:"人人避你如瘟神；你的血对某种毒免疫。", mods:{con:-1,luck:0}, money:10, note:"「病骨」毒抗 +10%、体质成长 -10%" },
-  { grade:"劣", name:"弃婴·寺中长大", desc:"寺贫，武僧的拳头比经文硬。", mods:{int:1}, money:0, note:"「佛性」心魔抗性 +10%、道心成长 +10%" },
-  { grade:"劣", name:"矿奴",         desc:"地底肺，黑暗中的感知异于常人。", mods:{con:1,int:0}, money:0, note:"「地底肺」黑暗中感知 +15%" },
-  { grade:"劣", name:"死囚之子",     desc:"烙印贱籍，见惯生死。", mods:{luck:-1,con:1}, money:0, note:"「见惯生死」恐惧判定 +15%" },
+  { grade:"劣", name:"奴籍",         desc:"契书在身，赎身天价。", mods:{agi:1}, money:0, note:"「忍字诀」隐匿忍耐 +15%", place:"东荒 · 云州 · 青石城 · 某府柴房" },
+  { grade:"劣", name:"疫村遗孤",     desc:"人人避你如瘟神；你的血对某种毒免疫。", mods:{con:-1,luck:0}, money:10, note:"「病骨」毒抗 +10%、体质成长 -10%", place:"东荒 · 云州 · 郊外废村" },
+  { grade:"劣", name:"弃婴·寺中长大", desc:"寺贫，武僧的拳头比经文硬。", mods:{int:1}, money:0, note:"「佛性」心魔抗性 +10%、道心成长 +10%", place:"东荒 · 云州 · 城外山寺" },
+  { grade:"劣", name:"矿奴",         desc:"地底肺，黑暗中的感知异于常人。", mods:{con:1,int:0}, money:0, note:"「地底肺」黑暗中感知 +15%", place:"东荒 · 云州 · 黑矿窑" },
+  { grade:"劣", name:"死囚之子",     desc:"烙印贱籍，见惯生死。", mods:{luck:-1,con:1}, money:0, note:"「见惯生死」恐惧判定 +15%", place:"东荒 · 云州 · 青石城 · 城墙根" },
   /* ---- 狱档 ---- */
-  { grade:"狱", name:"死囚",         desc:"开局在牢里，秋后问斩，只剩百日。", mods:{con:1}, money:0, note:"「向死而生·伪」濒死战力 +15%（仅此一条，非词条）" },
-  { grade:"狱", name:"祭品",         desc:"山村十年一祭，你是今年的「山神新娘」。", mods:{luck:-1}, money:0, note:"「祭品的镇定」疼痛忍耐 +20%" },
-  { grade:"狱", name:"炉鼎苗子",     desc:"被合欢宗外使挑中，已在押送路上。", mods:{agi:1}, money:0, note:"「锁情印」情感波动 -50%" },
-  { grade:"狱", name:"渊口守夜人",   desc:"北地界壁裂缝戍卒，上一任疯了。", mods:{con:1}, money:0, note:"「听过渊声」灵感 +20%、理智 -10%" },
+  { grade:"狱", name:"死囚",         desc:"开局在牢里，秋后问斩，只剩百日。", mods:{con:1}, money:0, note:"「向死而生·伪」濒死战力 +15%（仅此一条，非词条）", place:"东荒 · 云州 · 青石城 · 死囚牢" },
+  { grade:"狱", name:"祭品",         desc:"山村十年一祭，你是今年的「山神新娘/新郎」。", mods:{luck:-1}, money:0, note:"「祭品的镇定」疼痛忍耐 +20%", place:"东荒 · 云州 · 荒祠祭坛" },
+  { grade:"狱", name:"炉鼎苗子",     desc:"被合欢宗外使挑中，已在押送路上。", mods:{agi:1}, money:0, note:"「锁情印」情感波动 -50%", place:"东荒 · 云州 · 押送官道" },
+  { grade:"狱", name:"渊口守夜人",   desc:"北地界壁裂缝戍卒，上一任疯了。", mods:{con:1}, money:0, note:"「听过渊声」灵感 +20%、理智 -10%", place:"北地 · 渊口戍堡" },
 ];
 
 /* ============ 成就（千秋录） ============ */
@@ -164,25 +164,24 @@ const ACHIEVEMENTS = {
   qingyan:  { name:"仙门弟子",   tier:2, desc:"拜入青岩门", reward:"自由属性 ×3" },
   death1:   { name:"向死而生",   tier:1, desc:"第一次死亡——死亡是昂贵的，也是公平的", reward:"轮回开启" },
   hidden:   { name:"察觉者",     tier:4, desc:"注意到三次不该存在的「巧合」", reward:"棋盘上多了一双看你的眼睛", secret:true },
-  renji:    { name:"凡俗之巅",   tier:3, desc:"不入聚气，纯以凡躯将一项属性磨到 10", reward:"称号「人极」", secret:true },
-  quest1:   { name:"初入卷宗",   tier:0, desc:"完成第一个任务（主线或支线）", reward:"万象点 ×5" },
-  shengsi:  { name:"生死之交",   tier:2, desc:"拥有第一位缘分值 +80 以上的人", reward:"称号「义薄云天」：陌生人初始好感 +10" },
-  huagan:   { name:"化干戈",     tier:3, desc:"将一段 -90 以下的死仇化解为正缘", reward:"气运 +1" },
-  yuejie:   { name:"越阶而战",   tier:2, desc:"跨越一个小境界取胜（以弱胜强）", reward:"称号「以下克上」：对高于己者伤害 +5%" },
-  juejing:  { name:"绝境反杀",   tier:3, desc:"濒死状态下反杀强敌", reward:"称号「向死而生」：濒死时攻伐 +30%" },
-  mingbu:   { name:"命不该绝",   tier:2, desc:"濒死生还", reward:"体质 +1" },
+  shengsi:  { name:"生死之交",   tier:1, desc:"拥有第一位缘分值 +80 以上的人", reward:"称号「义薄云天」：陌生人初始好感 +10" },
+  huagan:   { name:"化干戈",     tier:2, desc:"将一段 -90 以下的死仇化解为正缘", reward:"气运 +1" },
+  yuejie:   { name:"越阶而战",   tier:1, desc:"跨越一个小境界取胜（以弱胜强）", reward:"称号「以下克上」：对高于己者伤害 +5%" },
+  juejing:  { name:"绝境反杀",   tier:2, desc:"濒死状态下反杀强敌", reward:"称号「向死而生」：濒死时攻伐 +30%" },
+  mingbu:   { name:"命不该绝",   tier:1, desc:"濒死生还", reward:"体质 +1" },
   yushi:    { name:"与天争时",   tier:3, desc:"十日之内连破两境，打破当世该境界最快纪录", reward:"称号「赶路人」：修炼速度 +5%" },
-  wukui:    { name:"问心无愧",   tier:4, desc:"道心达到 90", reward:"称号「磐石道心」：心魔抗性 +30%" },
-  fujia:    { name:"富甲一方",   tier:3, desc:"身家进入一城财富前列（三千文身家）", reward:"称号「财神眷顾」：交易议价 +10%" },
-  dabusi:   { name:"打不死的",   tier:2, desc:"身负「霉神附体」满十五日而毫发无损", reward:"称号「小强」：环境伤害 -10%" },
+  wukui:    { name:"问心无愧",   tier:3, desc:"道心达到 90", reward:"称号「磐石道心」：心魔抗性 +30%" },
+  fujia:    { name:"富甲一方",   tier:2, desc:"身家进入一城财富前列（三万文身家）", reward:"称号「财神眷顾」：交易议价 +10%" },
+  dabusi:   { name:"打不死的",   tier:1, desc:"身负「霉神附体」满一年而毫发无损", reward:"称号「小强」：环境伤害 -10%" },
   danyun:   { name:"丹动一城",   tier:3, desc:"炼出绝品——九纹圆满，出世引动异象", reward:"气运 +1" },
+  renji:    { name:"凡俗之巅",   tier:3, desc:"不入聚气境，纯以凡躯将力/敏/体全部磨到 10", reward:"破境成功率永久 +10%，未来属性上限 +10%，称号「人极」", secret:true },
 };
 
 /* ============ 称号（随魂封存，效果永续；面板可佩戴其一示人） ============ */
 const TITLES = {
   yibao:    { name: "义薄云天", from: "生死之交", desc: "陌生人初始好感 +10" },
   lunpan:   { name: "轮盘常客", from: "轮盘常客", desc: "轮盘保底计数速度 +5%", mod: { pityR: 5 } },
-  renjiT:   { name: "人极",     from: "凡俗之巅", desc: "凡躯极点：日常磨炼收益 +10%" },
+  renjiT:   { name: "人极",     from: "凡俗之巅", desc: "凡躯极点：破境成功率 +10%，属性上限 +10%" },
   yike:     { name: "以下克上", from: "越阶而战", desc: "对强于己者伤害 +5%" },
   xisheng:  { name: "向死而生", from: "绝境反杀", desc: "濒死时攻伐 +30%" },
   ganlu:    { name: "赶路人",   from: "与天争时", desc: "修炼速度 +5%", mod: { trainP: 5 } },
@@ -223,7 +222,7 @@ const SHOP_UNLOCK = [
     cond: () => S && S.realm >= 2 && S.day >= 15 },
 ];
 /* 药蚀（设定集）：凡品 3~5 ｜ 灵品 8~12 ｜ 玄品 15~25 ｜ 圣品 30+；排毒丹本身含微量药蚀 */
-const DRUG_SHI = { medicine: 4, gongfuTea: 4, juqiDan: 10, zhuJidan: 20, paiduDan: 2, huiLingDan: 10, xisuiDan: 20 };
+const DRUG_SHI = { medicine: 4, gongfuTea: 4, juqiDan: 4, zhuJidan: 10, paiduDan: 2, huiLingDan: 10, xisuiDan: 20 }; // 药蚀按品档：聚气丹凡品 3~5、筑基丹灵品 8~12（判定表演算 DRUG.shiByPin）
 
 /* ============ 任务系统见 js/quests.js（天道卷宗） ============ */
 /* ============ 文案 ============ */
@@ -241,7 +240,7 @@ const LINGGENS = {
   shuang: { name: "双灵根", mult: 1.3, desc: "两系分百。百里挑一，内门苗子。" },
   tian:   { name: "天灵根", mult: 1.7, desc: "单行亲和近乎圆满。万中无一，真传之资。" },
   lei:    { name: "雷灵根", mult: 1.4, variant: true, el: "jin", desc: "变异：穿透——无视三成抗性，攻伐 +15%。", mods: { dmgP: 15 } },
-  jian:   { name: "剑灵根", mult: 1.4, variant: true, el: "jin", desc: "变异：锋锐——攻伐威力 +20%，万物可为剑。", mods: { dmgP: 20 } },
+  jian:   { name: "剑灵根", mult: 1.4, variant: true, el: "jin", desc: "变异：锋锐——攻伐威力 +40%，万物可为剑。", mods: { dmgP: 40 } },
   bing:   { name: "冰灵根", mult: 1.4, variant: true, el: "shui", desc: "变异：寒意蚀体，攻伐 +10%。", mods: { dmgP: 10 } },
   feng:   { name: "风灵根", mult: 1.4, variant: true, el: "mu", desc: "变异：极速——身法 +30%，来去无形。", mods: { escapeP: 30 } },
   du:     { name: "毒灵根", mult: 1.4, variant: true, el: "mu", desc: "变异：百毒不侵，气血恢复 +20%。", mods: { hpRegenP: 20 } },
@@ -251,27 +250,27 @@ const LINGGEN_VARIANTS = ["lei", "jian", "bing", "feng", "du", "ying"];
 /* 资质天梯：首世阿七固定杂灵根（设定原文）；再世按稀有度重 roll */
 function rollLinggen(first) {
   if (first) return "za";
-  const r = Math.random() * 100;
-  if (r < 55) return "za";
-  if (r < 79) return "san";
-  if (r < 90) return "shuang";
-  if (r < 97) return "tian";
+  const r = Math.random() * 100; // 资质天梯：杂灵根十之七八（70%）、三灵根常见（20%）、双灵根百里挑一（7%）、天灵根万中无一（2%）、变异灵根（1%）
+  if (r < 70) return "za";
+  if (r < 90) return "san";
+  if (r < 97) return "shuang";
+  if (r < 99) return "tian";
   return LINGGEN_VARIANTS[Math.floor(Math.random() * LINGGEN_VARIANTS.length)];
 }
 
 /* ============ 系统等级（设定集第三章） ============
    升级门槛 = 累计抽卡（跨世累计）+ 宿主修为；升级不清空任何保底与词条。 */
 const SYS_LV = [
-  { lv: 1,  pulls: 0,   realm: 0, note: "基础抽卡、任务、面板" },
-  { lv: 2,  pulls: 10,  realm: 0, note: "卡池预览：每月公布卡池倾向" },
-  { lv: 3,  pulls: 30,  realm: 0, note: "概率提升；解锁「以石易点」" },
-  { lv: 4,  pulls: 60,  realm: 0, note: "十抽保底升级：必出紫品以上" },
-  { lv: 5,  pulls: 100, realm: 6, note: "概率提升（需脱去凡胎：开元境）" },
-  { lv: 6,  pulls: 150, realm: 0, note: "百抽保底升级：必出金品以上" },
-  { lv: 7,  pulls: 220, realm: 7, note: "概率提升（需踏入玄阶——此界难至）" },
-  { lv: 8,  pulls: 300, realm: 0, note: "千抽保底：必出红品" },
-  { lv: 9,  pulls: 400, realm: 7, note: "概率提升（此界难至）" },
-  { lv: 10, pulls: 520, realm: 0, note: "满级：千抽大保底缩短为五百抽" },
+  { lv: 1,  pulls: 0,   realm: 0,  note: "基础抽卡、任务、面板" },
+  { lv: 2,  pulls: 10,  realm: 0,  note: "卡池预览：每月公布卡池倾向" },
+  { lv: 3,  pulls: 30,  realm: 0,  note: "概率提升；解锁「以石易点」" },
+  { lv: 4,  pulls: 60,  realm: 0,  note: "十抽保底升级：必出紫品以上" },
+  { lv: 5,  pulls: 100, realm: 7,  note: "概率提升（需踏入灵阶：灵泉境）" },
+  { lv: 6,  pulls: 150, realm: 0,  note: "五十抽保底升级：必出金品以上" },
+  { lv: 7,  pulls: 220, realm: 13, note: "概率提升（需踏入玄阶：化神境——此界难至）" },
+  { lv: 8,  pulls: 300, realm: 0,  note: "百抽保底：必出红品" },
+  { lv: 9,  pulls: 400, realm: 19, note: "概率提升（需踏入圣阶：涅槃境——此界难至）" },
+  { lv: 10, pulls: 520, realm: 0,  note: "满级：百抽大保底缩短为五十抽（另需完成一次圣品以上任务——尚未开放）" },
 ];
 /* 概率表（灰/白/青/紫/金/红）——偶数级沿用前一奇数级 */
 const SYS_PROB = {
@@ -305,7 +304,7 @@ const TECH_EL = { 锻骨拳谱: "jin", 引气诀: "shui" };
 /* 敌方五行（按名取，默认土行） */
 const ENEMY_EL = {
   "林中的冬狼": "shui", "野狗": "tu", "饿疯的野狗": "tu",
-  "劫道山贼": "jin", "青岩外门教习": "jin", "陆沉": "jin", "听雨楼刺客": "shui",
+  "劫道山贼": "jin", "青岩外门教习": "jin", "陆沉": "jin", "多宝阁刺客": "shui",
 };
 /* 先天亲和分配：杂灵根五行各 20；三灵根 40/30/30；双灵根 60/40；天灵根单行 90；
    变异灵根 = 三系分百 + 独立变异轨道（战斗属性见 LINGGENS[].el） */

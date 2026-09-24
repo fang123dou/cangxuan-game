@@ -14,7 +14,7 @@
 
 <header id="topbar">
   <div class="brand"><span class="seal">苍</span><b>苍玄界</b></div>
-  <div id="calendar"><span id="cal-date"></span><span class="weather" id="cal-weather"></span></div>
+  <div id="calendar"><span id="cal-date"></span><span class="place" id="cal-place"></span><span class="weather" id="cal-weather"></span></div>
   <a class="toplink" href="codex.html">世界设定集</a>
   <button id="btnSave" title="存档 / 读档">卷 轴</button>
   <button id="btnSettings" title="AI 天道设置">天 道</button>
@@ -34,19 +34,11 @@
     </div>
     <div class="p-block" id="bars"></div>
     <div class="p-block">
-      <div class="p-title"><b>五 维</b><span>一阶一重天</span></div>
-      <div class="attrgrid" id="attrs"></div>
-    </div>
-    <div class="p-block">
-      <div id="rows"></div>
-      <button id="btnGacha">转动万象轮盘</button>
-      <div class="pityline" id="pity"></div>
-    </div>
-    <div class="p-block">
       <div class="tabrow">
-        <button class="on">词条</button><button>行囊</button><button>商铺</button><button>任务</button><button>时间线</button><button>千秋录</button><button>缘分簿</button><button>炼丹</button><button>炼器</button><button>技能</button>
+        <button class="on">人物</button><button>词条</button><button>行囊</button><button>商铺</button><button>任务</button><button>时间线</button><button>千秋录</button><button>缘分簿</button><button>造化</button><button>技能</button>
       </div>
       <div id="panelTabBody"></div>
+      <div class="pityline" id="pity" style="margin-top:12px"></div>
     </div>
   </aside>
 </div>
@@ -54,7 +46,7 @@
 <div class="modal" id="gacha">
   <div class="gacha-box">
     <div class="gacha-title">万 象 轮 盘</div>
-    <div class="gacha-sub" id="sysInfo">凡 68% · 良 25% · 青 5% · 紫 1.5% · 金 0.49% · 红 0.01% ｜ 十抽保底青品 · 百抽保底紫品</div>
+    <div class="gacha-sub" id="sysInfo">凡 68% · 良 25% · 青 5% · 紫 1.5% · 金 0.49% · 红 0.01% ｜ 十抽保底青品 · 五十抽保底紫品</div>
     <div class="wheel" id="wheel">
       <div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div>
       <div class="core">命</div>
@@ -83,6 +75,7 @@
     <h2>命 名</h2>
     <p class="set-intro">这一世，你叫什么？名字须合此界风物（汉字或间隔号，一至八字）。留空则沿用庙中诨名「阿七」。</p>
     <div class="set-row"><label>姓名</label><input id="nameInput" maxlength="8" placeholder="阿七" spellcheck="false"/><span class="set-tip" id="nameTip">的身份由天道掷定，名由你起</span></div>
+    <div class="set-row"><label>性别</label><div class="gender-row" id="genderRow"><button class="gender-btn on" data-g="男">男</button><button class="gender-btn" data-g="女">女</button></div><span class="set-tip">部分命格词条依性别生效</span></div>
     <div class="gacha-btns">
       <button class="gbtn" id="nameConfirm">定名，入局</button>
     </div>

@@ -14,9 +14,23 @@ const TABLES = {
       "聚气境",
       "开元境",
       "灵泉境",
-      "玄境",
-      "圣境",
-      "天人境"
+      "气海境",
+      "丹轮境",
+      "玄府境",
+      "紫府境",
+      "神游境",
+      "化神境",
+      "渡厄境",
+      "洞虚境",
+      "法相境",
+      "合体境",
+      "天人境",
+      "涅槃境",
+      "圣域境",
+      "轮回境",
+      "天尊境",
+      "帝境",
+      "登仙境"
     ],
     "need": [
       0,
@@ -27,11 +41,25 @@ const TABLES = {
       280,
       360,
       1980,
-      11880,
-      65340,
-      359370
+      2970,
+      4455,
+      6682,
+      10023,
+      15034,
+      90204,
+      135306,
+      202959,
+      304438,
+      456657,
+      684986,
+      3767423,
+      5651134,
+      8476701,
+      12715052,
+      19072578,
+      28608867
     ],
-    "top": 10,
+    "top": 24,
     "tierNames": [
       "凡",
       "凡阶",
@@ -41,12 +69,35 @@ const TABLES = {
       "凡阶",
       "凡阶",
       "灵阶",
+      "灵阶",
+      "灵阶",
+      "灵阶",
+      "灵阶",
+      "灵阶",
+      "玄阶",
+      "玄阶",
+      "玄阶",
+      "玄阶",
+      "玄阶",
       "玄阶",
       "圣阶",
-      "天人"
+      "圣阶",
+      "圣阶",
+      "圣阶",
+      "圣阶",
+      "圣阶"
     ],
-    "attrCeilingBase": 10,
-    "attrCeilingPerRealm": 1,
+    "attrCeilings": {
+      "0": 10,
+      "7": 100,
+      "13": 1000,
+      "19": 10000
+    },
+    "crossTierBonus": {
+      "7": 5,
+      "13": 50,
+      "19": 500
+    },
     "layers": 4,
     "layerThresholds": [
       0.25,
@@ -251,8 +302,7 @@ const TABLES = {
     "wenPerLiang": 1000,
     "liangPerGold": 10,
     "wenPerStone": 100000,
-    "stoneTierMult": 100,
-    "stoneAltWen": 200
+    "stoneTierMult": 100
   },
   "ACH": {
     "tierNames": [
@@ -309,7 +359,7 @@ const TABLES = {
     "firstMult": 1.5,
     "everMult": 2.0,
     "pageSize": 10,
-    "pagePullMinTier": 1
+    "pagePullMinTier": 2
   },
   "PROF": {
     "tierCaps": {
@@ -324,6 +374,12 @@ const TABLES = {
     },
     "sideExp": 2,
     "mainExp": 3,
-    "multiProfPenalty": 0.7
+    "multiProfPenalty": 0.7,
+    "realmCoeff": {
+      "0": 1,
+      "7": 10,
+      "13": 100,
+      "19": 1000
+    }
   }
 };

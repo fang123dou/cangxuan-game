@@ -181,7 +181,7 @@ const GM = (() => {
       id: "blind_man", cond: c => c.luckHigh && !c.flag("metBlind"), w: c => c.luckHigh ? 2 : 0,
       build() {
         return {
-          scene: `城隍庙前，一个瞎眼老者忽然「看」向你：「小娃娃，你身上的味道不对——不是这世的人，也不是这界的人。」`,
+          scene: `城隍庙前，一个瞎眼老者忽然「看」向你：「小娃娃，你的命格不对——死气里透着活气，像极了已死之人在走路。」`,
           choices: [
             { label: "请他指点（5 文）", hint: "江湖骗子还是世外高人，天知道。", disabled: S.money < 5, fx: { check: "luck*10+d40>55", money: -5,
               success: { cult: 15, npc: { 瞎眼老者: 30 }, flag: "metBlind", coincidence: 1 },
@@ -222,7 +222,7 @@ const GM = (() => {
       build() {
         if (hasSpecial("hajimi")) return {
           scene: `寒潮里一条瘦狗拦路，红着眼涎水结冰——可它凑近你嗅了嗅，忽然摇起尾巴，趴在你脚边不动了。【哈基米】词条在发烫。`,
-          choices: [{ label: "收了这个跟班", hint: "缘分簿上多了一条命的羁绊。", fx: { flag: "dog", dao: 2 } }],
+          choices: [{ label: "收了这个跟班", hint: "缘分簿上多了一条命的羁绊。", fx: { flag: "dog", dao: 2, pet: "瘦狗", npc: { 瘦狗: 30 } } }],
         };
         return {
           scene: `一条饿疯的野狗拦在巷口，红着眼，涎水在下巴冻成冰凌。它盯上了你怀里的干粮。`,
@@ -357,7 +357,7 @@ const GM = (() => {
       },
     },
     {
-      id: "rest_fire", cond: c => c.slotNight || true, w: () => 1,
+      id: "rest_fire", cond: c => c.slotNight, w: () => 1,
       build() {
         return {
           scene: `回到破庙，七张枯瘦的脸围着将熄的火堆。${S.inv.wood >= 2 ? "墙角堆着你砍的柴。" : "柴堆见了底，火舌一缩一缩。"}庙外风雪声一阵紧似一阵。`,
