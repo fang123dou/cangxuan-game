@@ -1,0 +1,132 @@
+<!DOCTYPE html><html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>苍玄界 · 文字修仙</title>
+<meta name="description" content="《苍玄界》文字修仙网页游戏——雪夜破庙、万象轮盘、四阶二十四境、死亡轮回。"/>
+<meta name="theme-color" content="#1c1c1c"/>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=&#39;http://www.w3.org/2000/svg&#39; viewBox=&#39;0 0 32 32&#39;%3E%3Crect width=&#39;32&#39; height=&#39;32&#39; rx=&#39;6&#39; fill=&#39;%231c1c1c&#39;/%3E%3Ctext x=&#39;16&#39; y=&#39;23&#39; font-size=&#39;18&#39; text-anchor=&#39;middle&#39; fill=&#39;%23c6ad7f&#39; font-family=&#39;serif&#39;%3E苍%3C/text%3E%3C/svg%3E"/>
+<link rel="preconnect" href="https://fonts.loli.net"/>
+<link rel="preconnect" href="https://gstatic.loli.net" crossorigin=""/>
+<link href="https://fonts.loli.net/css2?family=Noto+Serif+SC:wght@400;600;700;900&amp;family=Noto+Sans+SC:wght@300;400;500&amp;display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="css/game.css"/>
+<script src="https://www.kimi.com/sdk-seed.js" defer="" data-kimi-disable-watermark="false" data-kimi-analytics="true" data-kimi-website-id="1a0d0f94-8af2-8add-8000-00001afcc891" data-kimi-website-env="published"></script></head>
+<body>
+
+<header id="topbar">
+  <div class="brand"><span class="seal">苍</span><b>苍玄界</b></div>
+  <div id="calendar"><span id="cal-date"></span><span class="weather" id="cal-weather"></span></div>
+  <a class="toplink" href="codex.html">世界设定集</a>
+  <button id="btnSave" title="存档 / 读档">卷 轴</button>
+  <button id="btnSettings" title="AI 天道设置">天 道</button>
+</header>
+
+<div id="app">
+  <main id="stage">
+    <div id="log"></div>
+    <div id="choices"></div>
+  </main>
+
+  <aside id="panel">
+    <div class="p-block">
+      <div id="whoName"></div>
+      <div id="whoRealm"></div>
+    </div>
+    <div class="p-block" id="bars"></div>
+    <div class="p-block">
+      <div class="p-title"><b>五 维</b><span>一阶一重天</span></div>
+      <div class="attrgrid" id="attrs"></div>
+    </div>
+    <div class="p-block">
+      <div id="rows"></div>
+      <button id="btnGacha">转动万象轮盘</button>
+      <div class="pityline" id="pity"></div>
+    </div>
+    <div class="p-block">
+      <div class="tabrow">
+        <button class="on">词条</button><button>行囊</button><button>商铺</button><button>任务</button><button>时间线</button><button>千秋录</button><button>缘分簿</button>
+      </div>
+      <div id="panelTabBody"></div>
+    </div>
+  </aside>
+</div>
+
+<div class="modal" id="gacha">
+  <div class="gacha-box">
+    <div class="gacha-title">万 象 轮 盘</div>
+    <div class="gacha-sub" id="sysInfo">凡 68% · 良 25% · 青 5% · 紫 1.5% · 金 0.49% · 红 0.01% ｜ 十抽保底青品 · 百抽保底紫品</div>
+    <div class="wheel" id="wheel">
+      <div class="ring"></div><div class="ring r2"></div><div class="ring r3"></div>
+      <div class="core">命</div>
+    </div>
+    <div class="pulls" id="pulls"></div>
+    <div class="gacha-btns">
+      <button class="gbtn" id="btnPull1">单 抽</button>
+      <button class="gbtn" id="btnPull10">十 连</button>
+    </div>
+    <div class="gacha-btns" id="stoneExch" style="display:none">
+      <button class="gbtn ghost" id="btnStoneExch">以石易点</button>
+    </div>
+    <button class="gbtn ghost gacha-close" id="gachaClose">收起轮盘</button>
+  </div>
+</div>
+
+<div class="modal" id="infoModal">
+  <div class="end-box info-box">
+    <div id="infoBody"></div>
+    <button class="gbtn ghost gacha-close" onclick="document.getElementById(&#39;infoModal&#39;).classList.remove(&#39;open&#39;)">收起</button>
+  </div>
+</div>
+
+<div class="modal" id="endModal">
+  <div class="end-box">
+    <div id="endBody"></div>
+    <div class="gacha-btns" id="endBtns"></div>
+  </div>
+</div>
+
+<div class="modal" id="settings">
+  <div class="end-box settings-box">
+    <h2>天 道 设 置</h2>
+    <p class="set-intro">剧情生成引擎有三层，自上而下依次尝试：<b>① 你自己的 Kimi API Key</b>（填入即生效，剧情由 Kimi 实时生成，Key 只存在你的浏览器里）；<b>② 同源服务端代理</b>（若部署时提供）；<b>③ 内置推演引擎</b>（默认，由引擎实时演算，无 Key 时也是「活的」）。数值结算始终由引擎完成，AI 只负责叙事。</p>
+    <div class="set-row"><label>API Base</label><input id="aiBase" value="https://api.moonshot.cn/v1" spellcheck="false"/><span class="set-tip">以 /v1 结尾</span></div>
+    <div class="set-row"><label>API Key</label><input id="aiKey" type="password" placeholder="sk-…（可选，仅存入本机浏览器）" spellcheck="false"/></div>
+    <div class="set-row"><label>Model</label><input id="aiModel" value="kimi-k2-0711-preview" spellcheck="false"/><span class="set-tip">需 Key 有权限</span></div>
+    <p class="set-status" id="aiStatus"></p>
+    <pre class="set-debug" id="aiDebug"></pre>
+    <div class="model-list" id="modelList"></div>
+    <div class="gacha-btns">
+      <button class="gbtn ghost" id="btnTianDao">窥视天道视野</button><span class="set-tip" style="align-self:center">模型每回合看到的世界观与游戏状态，全文在此</span>
+    </div>
+    <pre class="set-debug" id="tdView" style="display:none"></pre>
+    <div class="gacha-btns">
+      <button class="gbtn ghost" id="aiListModels">查询我的模型</button>
+      <button class="gbtn ghost" id="aiTest">测试连接</button>
+      <button class="gbtn" id="aiSave">保存</button>
+    </div>
+    <button class="gbtn ghost gacha-close" id="settingsClose">关闭</button>
+  </div>
+</div>
+
+<div class="modal" id="saveModal">
+  <div class="end-box settings-box">
+    <h2>卷 轴 存 档</h2>
+    <p class="set-intro">命运书签：手动档三枚，另有一枚「自动」档在每天清晨悄悄落笔。读档后故事从该时刻继续推演。存档仅存于本机浏览器，清缓存会丢失。</p>
+    <div id="saveSlots"></div>
+    <div class="save-import">
+      <button class="gbtn ghost" id="btnImportSave">导入存档文件</button>
+      <input type="file" id="importSaveFile" accept=".json,application/json" hidden>
+    </div>
+    <button class="gbtn ghost gacha-close" id="saveClose">关闭</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="js/data.js"></script>
+<script src="js/gm.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/quests.js"></script>
+<script src="js/game.js"></script>
+
+
+</body></html>

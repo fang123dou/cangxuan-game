@@ -1,0 +1,2709 @@
+<!DOCTYPE html><html lang="zh-CN"><head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>苍玄界 · 世界设定集 v5</title>
+<meta name="description" content="《苍玄界》世界设定集（合并版 v5）——穿越修仙 · 抽卡系统流 · 四阶二十四境 · 轮回法则"/>
+<meta name="theme-color" content="#1c1c1c"/>
+<script>document.documentElement.classList.add('js')</script>
+<link rel="preconnect" href="https://fonts.loli.net"/>
+<link rel="preconnect" href="https://gstatic.loli.net" crossorigin=""/>
+<link href="https://fonts.loli.net/css2?family=Noto+Serif+SC:wght@400;600;700;900&amp;family=Noto+Sans+SC:wght@300;400;500&amp;display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#1c1c1c; --ink-2:#232323; --ink-3:#2b2b2b;
+  --paper:#ece7da;
+  --paper-85:rgba(236,231,218,.85); --paper-70:rgba(236,231,218,.7);
+  --paper-55:rgba(236,231,218,.55); --paper-35:rgba(236,231,218,.35);
+  --muted:#8e8e8e;
+  --gold:#c6ad7f; --gold-hi:#e2cb97;
+  --gold-dim:rgba(198,173,127,.55); --gold-faint:rgba(198,173,127,.13);
+  --line:rgba(236,231,218,.09);
+  --serif:"Noto Serif SC","Songti SC","STSong","SimSun",serif;
+  --sans:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+  --nav-w:266px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:28px}
+body{
+  background:var(--ink); color:var(--paper-85);
+  font-family:var(--serif); font-size:16.5px; line-height:2;
+  -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+}
+body::after{ /* grain */
+  content:""; position:fixed; inset:0; z-index:200; pointer-events:none; opacity:.05;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+}
+::selection{background:rgba(198,173,127,.32); color:var(--paper)}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:#3a3a3a;border-radius:5px;border:2px solid var(--ink)}
+::-webkit-scrollbar-track{background:transparent}
+
+#progress{position:fixed;top:0;left:0;height:2px;width:0;z-index:120;
+  background:linear-gradient(90deg,var(--gold-dim),var(--gold-hi));transition:width .12s linear}
+
+/* ================= HERO ================= */
+.hero{position:relative;min-height:100vh;min-height:100svh;display:flex;align-items:center;justify-content:center;
+  overflow:hidden;border-bottom:1px solid var(--line)}
+.hero::before{content:"";position:absolute;inset:18px;border:1px solid rgba(236,231,218,.13);pointer-events:none;z-index:3}
+#snow{position:absolute;inset:0;width:100%;height:100%;z-index:1}
+.hero-glow{position:absolute;inset:0;z-index:0;
+  background:
+    radial-gradient(58% 42% at 50% 28%, rgba(198,173,127,.075), transparent 70%),
+    radial-gradient(85% 60% at 50% 112%, rgba(43,53,66,.32), transparent 62%)}
+.seal{position:absolute;top:34px;right:38px;z-index:4;width:48px;height:48px;border-radius:5px;
+  background:linear-gradient(160deg,#a84036,#8c2f24);
+  color:#f4ead8;font-family:var(--serif);font-weight:700;font-size:15px;line-height:1.15;
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  writing-mode:vertical-rl;letter-spacing:3px;padding:4px;
+  box-shadow:inset 0 0 0 1px rgba(244,234,216,.35), 0 4px 18px rgba(0,0,0,.45);
+  transform:rotate(-2.5deg)}
+.hero-inner{position:relative;z-index:2;text-align:center;padding:80px 24px;max-width:900px}
+.hero-kicker{font-family:var(--sans);font-size:13px;letter-spacing:.62em;color:var(--gold);
+  text-indent:.62em;margin-bottom:34px}
+.hero h1{font-size:clamp(64px,13vw,152px);font-weight:900;letter-spacing:.16em;text-indent:.16em;
+  color:var(--paper);line-height:1.1;text-shadow:0 0 60px rgba(198,173,127,.18)}
+.hero-rule{display:flex;align-items:center;justify-content:center;gap:14px;margin:38px 0 26px}
+.hero-rule span{display:block;width:72px;height:1px;background:var(--gold-dim)}
+.hero-rule i{display:block;width:8px;height:8px;border:1px solid var(--gold);transform:rotate(45deg)}
+.hero-meta{font-family:var(--sans);font-size:13.5px;letter-spacing:.3em;text-indent:.3em;color:var(--muted)}
+.hero-sub{margin-top:52px;font-size:15.5px;line-height:2.3;color:var(--paper-55);letter-spacing:.06em}
+.hero-sys{margin-top:22px;font-size:18px;letter-spacing:.1em;color:var(--gold-hi);
+  text-shadow:0 0 18px rgba(226,203,151,.35);animation:sysGlow 3.6s ease-in-out infinite}
+@keyframes sysGlow{0%,100%{opacity:.75}50%{opacity:1}}
+.tiers{display:flex;justify-content:center;gap:26px;margin-top:64px;list-style:none;flex-wrap:wrap}
+.tiers li{display:flex;align-items:center;gap:9px;font-family:var(--sans);font-size:12px;
+  letter-spacing:.2em;color:var(--muted)}
+.tiers b{width:9px;height:9px;border-radius:50%;display:block}
+.scroll-cue{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);z-index:4;
+  display:flex;flex-direction:column;align-items:center;gap:12px;
+  font-family:var(--sans);font-size:11px;letter-spacing:.45em;text-indent:.45em;color:var(--muted)}
+.cue-line{width:1px;height:46px;background:linear-gradient(var(--gold),transparent);
+  animation:cue 2.4s ease-in-out infinite;transform-origin:top}
+@keyframes cue{0%{transform:scaleY(0)}45%{transform:scaleY(1)}100%{transform:scaleY(0);transform-origin:bottom}}
+
+/* ================= SIDE NAV ================= */
+#sidenav{position:fixed;top:0;left:0;bottom:0;width:var(--nav-w);z-index:90;
+  border-right:1px solid var(--line);background:rgba(26,26,26,.92);backdrop-filter:blur(6px);
+  padding:34px 20px 26px 26px;display:flex;flex-direction:column;overflow-y:auto}
+.nav-brand{display:flex;align-items:center;gap:13px;padding:0 8px}
+.nav-seal{width:32px;height:32px;border-radius:4px;flex:none;
+  background:linear-gradient(160deg,#a84036,#8c2f24);color:#f4ead8;
+  font-family:var(--serif);font-weight:700;font-size:15px;display:flex;align-items:center;justify-content:center;
+  box-shadow:inset 0 0 0 1px rgba(244,234,216,.3)}
+.nav-brand b{display:block;font-size:17px;font-weight:700;letter-spacing:.22em;color:var(--paper)}
+.nav-brand i{display:block;font-style:normal;font-family:var(--sans);font-size:10px;
+  letter-spacing:.18em;color:var(--muted);margin-top:3px}
+.nav-list{list-style:none;margin-top:36px;flex:1}
+.nav-list a{display:flex;align-items:baseline;gap:13px;padding:8.5px 10px;border-radius:5px;
+  border-left:2px solid transparent;transition:background .25s,color .25s,transform .25s}
+.nav-list em{font-style:normal;font-family:var(--serif);font-size:12.5px;color:var(--gold-dim);
+  width:2.2em;flex:none;text-align:center}
+.nav-list span{font-family:var(--sans);font-size:13px;letter-spacing:.03em;color:var(--paper-55);
+  transition:color .25s;flex:1;min-width:0}
+.nav-list a:hover{background:rgba(236,231,218,.045);transform:translateX(3px)}
+.nav-list a:hover span{color:var(--paper-85)}
+.nav-list a.active{background:linear-gradient(90deg,var(--gold-faint),transparent);
+  border-left-color:var(--gold)}
+.nav-list a.active em{color:var(--gold-hi)}
+.nav-list a.active span{color:var(--gold-hi)}
+.nav-foot{border-top:1px solid var(--line);margin-top:20px;padding:18px 8px 0;
+  font-family:var(--sans);font-size:10.5px;letter-spacing:.14em;line-height:2;color:rgba(142,142,142,.75)}
+#scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:80;opacity:0;pointer-events:none;transition:opacity .3s}
+#menuBtn{display:none;position:fixed;top:16px;left:16px;z-index:110;width:44px;height:44px;border-radius:50%;
+  border:1px solid var(--line);background:rgba(28,28,28,.85);backdrop-filter:blur(8px);cursor:pointer;
+  flex-direction:column;align-items:center;justify-content:center;gap:5px}
+#menuBtn b{display:block;width:16px;height:1px;background:var(--gold);transition:transform .3s,opacity .3s}
+
+/* ================= CONTENT ================= */
+main{margin-left:var(--nav-w)}
+.wrap{max-width:740px;margin:0 auto;padding:0 52px}
+.chapter{padding:108px 0 30px}
+.js .chapter{opacity:0;transform:translateY(26px);
+  transition:opacity .9s ease,transform .9s cubic-bezier(.2,.7,.2,1)}
+.js .chapter.in{opacity:1;transform:none}
+.chapter + .chapter{border-top:1px solid var(--line)}
+.prologue{padding-top:96px}
+.ch-head{position:relative;margin-bottom:54px}
+.ch-ghost{position:absolute;top:-58px;right:-6px;z-index:-1;pointer-events:none;user-select:none;
+  font-size:150px;font-weight:900;line-height:1;color:transparent;
+  -webkit-text-stroke:1px rgba(198,173,127,.14)}
+.ch-label{display:block;font-family:var(--sans);font-weight:400;font-size:12.5px;
+  letter-spacing:.58em;color:var(--gold);margin-bottom:20px}
+.ch-title{display:block;font-size:clamp(27px,3.6vw,38px);font-weight:700;letter-spacing:.1em;
+  color:var(--paper);line-height:1.4}
+.prologue .ch-title{letter-spacing:.3em}
+
+h3{font-size:20.5px;font-weight:600;letter-spacing:.07em;color:var(--paper);
+  margin:66px 0 20px;display:flex;align-items:center;gap:12px;line-height:1.6}
+h3::before{content:"";flex:none;width:8px;height:8px;border:1px solid var(--gold);
+  transform:rotate(45deg);box-shadow:0 0 10px rgba(198,173,127,.3)}
+h4{font-family:var(--sans);font-size:13px;font-weight:500;letter-spacing:.24em;
+  color:var(--gold-dim);margin:44px 0 14px}
+
+p{margin:0 0 18px;text-align:justify;text-justify:inter-ideograph;letter-spacing:.015em}
+strong{color:var(--paper);font-weight:600}
+.sys{color:var(--gold-hi);letter-spacing:.02em;text-shadow:0 0 13px rgba(226,203,151,.22)}
+
+ul,ol{margin:0 0 22px;padding-left:1.2em}
+ul{list-style:none}
+ul>li{position:relative;padding-left:1.15em;margin-bottom:9px}
+ul>li::before{content:"";position:absolute;left:0;top:.95em;width:9px;height:1px;background:var(--gold-dim)}
+ul ul,ul ol,ol ul,ol ol{margin:9px 0 4px}
+ol{padding-left:1.55em}
+ol>li{margin-bottom:9px;padding-left:.3em}
+ol>li::marker{color:var(--gold);font-family:var(--serif)}
+li>p{margin-bottom:8px}
+
+blockquote{margin:26px 0 30px;padding:20px 24px;border-left:2px solid var(--gold);
+  background:linear-gradient(90deg,var(--gold-faint),transparent 85%);border-radius:0 6px 6px 0;
+  color:var(--paper-70);font-size:15.5px}
+blockquote p{margin-bottom:10px}
+blockquote p:last-child{margin-bottom:0}
+
+.table-scroll{overflow-x:auto;margin:28px 0 36px;border:1px solid var(--line);border-radius:8px;
+  background:rgba(255,255,255,.016)}
+.table-scroll table{width:100%;min-width:580px;border-collapse:collapse}
+.table-scroll th{font-family:var(--sans);font-weight:500;font-size:12.5px;letter-spacing:.14em;
+  color:var(--gold);text-align:left;padding:13px 16px;border-bottom:1px solid rgba(198,173,127,.28);
+  white-space:nowrap;background:rgba(198,173,127,.05)}
+.table-scroll td{font-family:var(--sans);font-size:13.5px;line-height:1.85;color:var(--paper-70);
+  padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:top}
+.table-scroll tr:last-child td{border-bottom:none}
+.table-scroll tbody tr{transition:background .2s}
+.table-scroll tbody tr:hover td{background:rgba(198,173,127,.045)}
+.table-scroll td .sys,.table-scroll td strong{font-weight:500}
+
+hr{border:none;margin:44px 0;display:flex;align-items:center;justify-content:center;gap:14px}
+hr::before,hr::after{content:"";width:64px;height:1px;background:var(--line)}
+hr{ }
+hr::before{content:""}
+hr::after{content:""}
+
+/* ================= FOOTER ================= */
+footer{margin-left:var(--nav-w);border-top:1px solid var(--line);padding:84px 24px 96px;text-align:center}
+.foot-quote{font-size:17px;letter-spacing:.14em;color:var(--paper-70);margin-bottom:26px}
+.foot-meta{font-family:var(--sans);font-size:11px;letter-spacing:.3em;color:var(--muted);line-height:2.2}
+.foot-rule{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:30px}
+.foot-rule span{width:56px;height:1px;background:var(--gold-dim)}
+.foot-rule i{width:7px;height:7px;border:1px solid var(--gold);transform:rotate(45deg)}
+
+#toTop{position:fixed;right:26px;bottom:26px;z-index:110;width:46px;height:46px;border-radius:50%;
+  border:1px solid var(--gold-dim);background:rgba(28,28,28,.82);backdrop-filter:blur(8px);
+  color:var(--gold);font-family:var(--serif);font-size:19px;cursor:pointer;
+  opacity:0;pointer-events:none;transform:translateY(8px);transition:opacity .35s,transform .35s}
+#toTop.show{opacity:1;pointer-events:auto;transform:none}
+#toTop:hover{background:var(--gold-faint)}
+
+/* ================= RESPONSIVE ================= */
+@media (max-width:1024px){
+  .wrap{padding:0 34px}
+}
+@media (max-width:860px){
+  :root{--nav-w:0px}
+  main,footer{margin-left:0}
+  #sidenav{width:280px;transform:translateX(-102%);transition:transform .35s cubic-bezier(.2,.7,.2,1);
+    padding-top:78px}
+  body.nav-open #sidenav{transform:none}
+  body.nav-open #scrim{opacity:1;pointer-events:auto}
+  #menuBtn{display:flex}
+  body.nav-open #menuBtn b:nth-child(1){transform:translateY(6px) rotate(45deg)}
+  body.nav-open #menuBtn b:nth-child(2){opacity:0}
+  body.nav-open #menuBtn b:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+  .chapter{padding-top:84px}
+  .wrap{padding:0 26px}
+  .ch-ghost{font-size:104px;top:-36px}
+  .seal{width:42px;height:42px;font-size:13px;top:26px;right:28px}
+  .hero-sub{font-size:14.5px}
+}
+@media (prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  .js .chapter{opacity:1;transform:none;transition:none}
+  .cue-line,.hero-sys{animation:none}
+}
+</style>
+<script src="https://www.kimi.com/sdk-seed.js" defer="" data-kimi-disable-watermark="false" data-kimi-analytics="true" data-kimi-website-id="1a0d0f94-8af2-8add-8000-00001afcc891" data-kimi-website-env="published"></script></head>
+<body>
+<div id="progress"></div>
+
+<header class="hero" id="top">
+  <div class="hero-glow"></div>
+  <canvas id="snow"></canvas>
+  <div class="seal">苍玄</div>
+  <div class="hero-inner">
+    <p class="hero-kicker">世界设定集 · 合并版 V5</p>
+    <h1>苍玄界</h1>
+    <div class="hero-rule"><span></span><i></i><span></span></div>
+    <p class="hero-meta">穿越修仙 · 抽卡系统流 · 四阶二十四境 · 轮回法则</p>
+    <p class="hero-sub">你睁开眼时，正躺在青石城南的破庙里，高烧三天，怀里揣着半个冻硬的黑馍。<br/>然后，一行只有你能看见的金色小字，在识海中缓缓浮现——</p>
+    <p class="hero-sys">【万象轮盘已激活。】</p>
+    <ul class="tiers">
+      <li><b style="background:#8f8f8f;box-shadow:0 0 8px #8f8f8f66"></b>凡品</li>
+      <li><b style="background:#ddd7c7;box-shadow:0 0 8px #ddd7c766"></b>良品</li>
+      <li><b style="background:#6fa8a0;box-shadow:0 0 8px #6fa8a066"></b>灵品</li>
+      <li><b style="background:#9170bd;box-shadow:0 0 8px #9170bd66"></b>玄品</li>
+      <li><b style="background:#d4af6e;box-shadow:0 0 8px #d4af6e66"></b>圣品</li>
+      <li><b style="background:#b0453c;box-shadow:0 0 8px #b0453c66"></b>仙品</li>
+    </ul>
+  </div>
+  <a class="scroll-cue" href="#prologue">入卷<span class="cue-line"></span></a>
+</header>
+
+<nav id="sidenav">
+  <div class="nav-brand"><span class="nav-seal">苍</span><div><b>苍玄界</b><i>世界设定集 · V5</i></div></div>
+  <ol class="nav-list">
+<li><a href="#prologue"><em>序</em><span>卷首 · 大世将启</span></a></li>
+<li><a href="#ch-1"><em>一</em><span>世界观总览</span></a></li>
+<li><a href="#ch-2"><em>二</em><span>修炼体系：四阶二十四境</span></a></li>
+<li><a href="#ch-3"><em>三</em><span>抽卡系统</span></a></li>
+<li><a href="#ch-4"><em>四</em><span>因果人间</span></a></li>
+<li><a href="#ch-5"><em>五</em><span>地理：五域四海</span></a></li>
+<li><a href="#ch-6"><em>六</em><span>势力格局</span></a></li>
+<li><a href="#ch-7"><em>七</em><span>货币与资源</span></a></li>
+<li><a href="#ch-8"><em>八</em><span>妖兽与异族</span></a></li>
+<li><a href="#ch-9"><em>九</em><span>万物有灵</span></a></li>
+<li><a href="#ch-10"><em>十</em><span>开局剧本</span></a></li>
+<li><a href="#ch-11"><em>十一</em><span>天道与系统</span></a></li>
+<li><a href="#ch-12"><em>十二</em><span>战斗、危机与伤病</span></a></li>
+<li><a href="#ch-13"><em>十三</em><span>成就系统</span></a></li>
+<li><a href="#ch-14"><em>十四</em><span>游玩规则</span></a></li>
+<li><a href="#ch-15"><em>十五</em><span>轮回法则</span></a></li>
+  </ol>
+  <div class="nav-foot"><a href="index.html" style="color:#c6ad7f">▸ 进入游戏 · 雪夜破庙</a><br/>仙陨历 · 三万年<br/>登仙路断 · 大世将启<br/>功法 · 百艺 · 职业 —— 成长三柱</div>
+</nav>
+<div id="scrim"></div>
+<button id="menuBtn" aria-label="目录"><b></b><b></b><b></b></button>
+
+<main><section class="chapter prologue" id="prologue"><div class="wrap"><h2 class="ch-head"><span aria-hidden="true" class="ch-ghost">序</span><span class="ch-label">卷 首</span><span class="ch-title">大世将启</span></h2><p>穿越修仙 · 抽卡系统流 · 四阶二十四境（含「轮回法则」：天机独闻 / 死亡结算 / 身份随机 / 时间线继承 / 记忆封印）</p><blockquote>
+<p>v5 版：合并 v4 设定集与补丁 v4.1 / v4.2（旧档作废），功法自动进阶、生活技能、职业系统、融合降冗已并入对应章节。成长三柱：<strong>功法管你能做什么，生活技能管你做得好不好，职业管世界认不认你这个人。</strong></p>
+</blockquote></div></section><section class="chapter" id="ch-1"><div class="wrap"><h2 class="ch-head" id="一世界观总览"><span aria-hidden="true" class="ch-ghost">一</span><span class="ch-label">第 一 章</span><span class="ch-title">世界观总览</span></h2><p><strong>苍玄界</strong>：天圆地方的浩瀚大界。上古仙路畅通，大能可白日飞升；三万年前「仙陨之战」后，登仙路断绝、界壁残破、灵气渐稀，世上再无仙人。</p><p><strong>灵气潮汐</strong>：灵气约三百年一涨一落。涨潮期天才地宝频出、突破事半功倍；退潮期灵气枯竭，大能闭死关不出。你穿越之时正值涨潮之初——大世将启，群雄并起，是乞丐登天的最好时代。</p><p><strong>纪年</strong>：以仙陨之战为元年，称「仙陨历」，如今约三万年——一本正在倒计时的日历。</p><h3 id="灵气衰退--极少数人知道的末世">灵气衰退 · 极少数人知道的末世</h3><p>世界在慢慢死去，而知情的只有最顶端的极少数人：</p><ul>
+<li><p>十大上宗藏经阁锁着仅圣域老祖可翻阅的秘卷：上古仙人行于大地、帝境辈出、登仙者络绎不绝；如今圣域便可称尊一世。</p></li>
+<li><p>上古洞天接连崩毁、灵脉成片枯萎、传送古阵失效、丹药药性渐退——散修只当天灾，老祖们清楚：天地在枯竭。</p></li>
+<li><p>「道」也在变淡：大道感悟逐年艰难，天人境以上突破者逐代递减——是天不给路了。</p></li>
+<li><p>顶尖势力心照不宣地捂着这个秘密：一旦传开，乱世会先于末世到来。</p></li>
+<li><p>衰退真因见「世界隐秘 · 吞世者」。</p></li>
+</ul><h3 id="断灵大劫--加速的死亡">断灵大劫 · 加速的死亡</h3><p>衰退并非匀速。每隔两三千年，天地骤然「断灵」一次，史称<strong>断灵大劫</strong>：</p><ul>
+<li><p>灵气骤降、灵脉成片枯死、天灾频发、妖兽发狂、走火入魔者十倍于平日；</p></li>
+<li><p>每次大劫前后，必有顶尖势力莫名开战、盖世强者接连陨落、古老秘境以血祭强行开启；</p></li>
+<li><p>世人皆以为乱世招天罚，没人敢想另一种可能——<strong>天罚，是人招来的。</strong></p></li>
+</ul><p>有史可载的最近三次：<strong>五千年前「青冥大劫」</strong>（东荒三分之一宗门除名）、<strong>两千六百年前「九幽之乱」</strong>（魔道六宗崛起于废墟之上）、<strong>一千二百年前「赤霄大劫」</strong>（中州两大圣地两败俱伤，天尊陨落三位，至今元气未复）。</p><p>下一次大劫，按周期推算，不远了。</p><h3 id="世界隐秘--吞世者幕后天机角色不可知由-gm-暗中执行">世界隐秘 · 吞世者（幕后天机，角色不可知，由 GM 暗中执行）</h3><p>灵气衰退的真相，远不止「仙陨后遗症」。世间存在一个<strong>从不现身的存在</strong>——无人知其名、形、来历，甚至无人知晓它是否存在。</p><ul>
+<li><p>每逢大劫前总有「巧合」：离间密信、错嫁的仇恨、不该出世的宝物、忽然寻衅的老祖……最强者的战争，从来都是被安排的。</p></li>
+<li><p>每逢天下大乱、顶尖强者自顾不暇，它便前往<strong>天地尽头</strong>（北海归墟，界壁最深处）以秘法<strong>抽取天地本源</strong>——世界是它的丹炉，众生是炉中不自知的药渣。</p></li>
+<li><p>它以吞噬一界的方式强走已断的登仙路：每次断灵大劫都是一次「进食」，三万年至少十次。</p></li>
+<li><p>名动天下的某些大人物，可能早已是它的马仔——或者自知，且甘之如饴。</p></li>
+<li><p>第一世你只是破庙中的蝼蚁，碰不到它。但阴谋转动时，偶有碎屑落到脚边：过于巧合的冲突、行迹古怪的贵人、不该出现的上古信物……</p></li>
+<li><p>若你真触到它的一角，任务列表或会出现尘封的品级——<strong>仙品任务</strong>。</p></li>
+<li><p>与它斗了三万年的那个「对手」同样不干净，详见「天道与系统」一章。</p></li>
+</ul></div></section><section class="chapter" id="ch-2"><div class="wrap"><h2 class="ch-head" id="二修炼体系四阶二十四境"><span aria-hidden="true" class="ch-ghost">二</span><span class="ch-label">第 二 章</span><span class="ch-title">修炼体系：四阶二十四境</span></h2><p>天下功法万千，境界划分自古统一：分<strong>四阶</strong>，每阶<strong>六境</strong>，共二十四境；每境再分初期、中期、后期、圆满四小层。</p><h3 id="第一阶--凡阶蜕凡六境-寿元百岁至一百五十">第一阶 · 凡阶（蜕凡六境）—— 寿元百岁至一百五十</h3><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>境</th>
+<th>名称</th>
+<th>特征</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>一</td>
+<td>淬体境</td>
+<td>打熬气血，强筋健体，力逾常人</td>
+</tr>
+<tr class="even">
+<td>二</td>
+<td>炼皮境</td>
+<td>皮膜如革，刀枪难入</td>
+</tr>
+<tr class="odd">
+<td>三</td>
+<td>锻骨境</td>
+<td>骨骼如铁，开碑裂石</td>
+</tr>
+<tr class="even">
+<td>四</td>
+<td>通脉境</td>
+<td>打通十二正经，内力生生不息</td>
+</tr>
+<tr class="odd">
+<td>五</td>
+<td>聚气境</td>
+<td>引灵气入体，初窥仙门</td>
+</tr>
+<tr class="even">
+<td>六</td>
+<td>开元境</td>
+<td>开辟丹田气海，脱去凡胎</td>
+</tr>
+</tbody>
+</table></div><p>凡阶修士在凡人眼中已是「江湖绝顶高手」，在宗门眼中只是外门弟子。绝大多数散修一生困于此阶。</p><h3 id="第二阶--灵阶通灵六境-寿元二百至三百">第二阶 · 灵阶（通灵六境）—— 寿元二百至三百</h3><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>境</th>
+<th>名称</th>
+<th>特征</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>七</td>
+<td>灵泉境</td>
+<td>气海化泉，灵气液化，可辟谷</td>
+</tr>
+<tr class="even">
+<td>八</td>
+<td>气海境</td>
+<td>灵泉成海，御器飞行</td>
+</tr>
+<tr class="odd">
+<td>九</td>
+<td>丹轮境</td>
+<td>海上凝丹轮，寒暑不侵</td>
+</tr>
+<tr class="even">
+<td>十</td>
+<td>玄府境</td>
+<td>开辟识海玄府，神识外放</td>
+</tr>
+<tr class="odd">
+<td>十一</td>
+<td>紫府境</td>
+<td>玄府纳紫气，神魂离体夜游</td>
+</tr>
+<tr class="even">
+<td>十二</td>
+<td>神游境</td>
+<td>神游千里，一念杀人，宗门长老之资</td>
+</tr>
+</tbody>
+</table></div><h3 id="第三阶--玄阶通玄六境-寿元五百至一千">第三阶 · 玄阶（通玄六境）—— 寿元五百至一千</h3><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>境</th>
+<th>名称</th>
+<th>特征</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>十三</td>
+<td>化神境</td>
+<td>神魂化形，夺舍重生亦有可能</td>
+</tr>
+<tr class="even">
+<td>十四</td>
+<td>渡厄境</td>
+<td>历三灾九难，雷劫加身</td>
+</tr>
+<tr class="odd">
+<td>十五</td>
+<td>洞虚境</td>
+<td>窥探虚空，缩地成寸</td>
+</tr>
+<tr class="even">
+<td>十六</td>
+<td>法相境</td>
+<td>凝天地法相，千丈真身</td>
+</tr>
+<tr class="odd">
+<td>十七</td>
+<td>合体境</td>
+<td>法相与肉身合一，移山填海</td>
+</tr>
+<tr class="even">
+<td>十八</td>
+<td>天人境</td>
+<td>天人合一，可创小神通，一方老祖</td>
+</tr>
+</tbody>
+</table></div><h3 id="第四阶--圣阶神圣六境-寿元数千至与天地齐">第四阶 · 圣阶（神圣六境）—— 寿元数千至与天地齐</h3><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>境</th>
+<th>名称</th>
+<th>特征</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>十九</td>
+<td>涅槃境</td>
+<td>浴火涅槃，脱胎换骨，寿元大涨</td>
+</tr>
+<tr class="even">
+<td>二十</td>
+<td>圣域境</td>
+<td>展开圣域，域中吾即天道</td>
+</tr>
+<tr class="odd">
+<td>二十一</td>
+<td>轮回境</td>
+<td>触摸轮回，可窥前世今生</td>
+</tr>
+<tr class="even">
+<td>二十二</td>
+<td>天尊境</td>
+<td>言出法随，号令一域</td>
+</tr>
+<tr class="odd">
+<td>二十三</td>
+<td>帝境</td>
+<td>大帝之尊，镇压一世气运</td>
+</tr>
+<tr class="even">
+<td>二十四</td>
+<td>登仙境</td>
+<td>仙路尽头，破碎虚空，飞升而去——如今已成传说</td>
+</tr>
+</tbody>
+</table></div><p><strong>当世格局</strong>：登仙路断三万载，帝境不出，天尊隐世。明面上的至强者，不过是圣域境的老怪物们。</p><h3 id="破境规则--积累契机与代价">破境规则 · 积累、契机与代价</h3><ul>
+<li><p><strong>小层</strong>（初期→中期→后期→圆满）靠积累，水到渠成；</p></li>
+<li><p><strong>大境界</strong>（尤其跨阶）突破需三样齐备：<strong>积累圆满、破境契机、不被打扰的时间</strong>。契机可以是破境丹药、洞天福地、高人灌顶、生死一线的爆发，或一次顿悟；</p></li>
+<li><p><strong>突破失败的代价</strong>：轻则元气大伤（全属性暂时 -20%，静养旬月），重则道基受损（该境修为上限永久锁死一截，除非寻得圣品以上疗伤圣药）——所以散修豁命攒破境丹，宗门弟子破境有长辈护法；</p></li>
+<li><p><strong>灵气潮汐</strong>直接影响破境：涨潮事半功倍，退潮事倍功半；</p></li>
+<li><p>系统<strong>不提供一键破境</strong>，只如实显示积累进度与当前破境成功率（智力推演最优时机，气运在刀尖上搏一线生机）。</p></li>
+</ul><h3 id="属性标尺--一阶一重天">属性标尺 · 一阶一重天</h3><p>五维属性随大阶呈<strong>数量级跃迁</strong>——凡人的 5 点与圣者的 5000 点，是同一把尺子上的两种生物：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>大阶</th>
+<th>单项属性区间</th>
+<th>参照</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>凡阶</td>
+<td>1 ~ 10</td>
+<td>健康凡人均值 5，10 为凡俗极限</td>
+</tr>
+<tr class="even">
+<td>灵阶</td>
+<td>10 ~ 100</td>
+<td>御器飞行，一人敌百</td>
+</tr>
+<tr class="odd">
+<td>玄阶</td>
+<td>100 ~ 1000</td>
+<td>移山填海，一域老祖</td>
+</tr>
+<tr class="even">
+<td>圣阶</td>
+<td>1000 ~ 10000</td>
+<td>抬手之间天崩地裂</td>
+</tr>
+<tr class="odd">
+<td>登仙</td>
+<td>10000 以上</td>
+<td>传说</td>
+</tr>
+</tbody>
+</table></div><p>各境明细（以单项主属性为例）：</p><ul>
+<li><p>凡阶：淬体 2~4、炼皮 3~5、锻骨 4~6、通脉 5~7、聚气 6~9、开元 8~10；</p></li>
+<li><p>灵阶：灵泉 10~20、气海 15~30、丹轮 25~45、玄府 40~60、紫府 55~80、神游 75~100；</p></li>
+<li><p>玄阶：化神 100~200、渡厄 180~350、洞虚 300~500、法相 450~650、合体 600~800、天人 750~1000；</p></li>
+<li><p>圣阶：涅槃 1000~2000、圣域 1800~3500、轮回 3000~5000、天尊 4500~7000、帝境 6500~10000、登仙 10000+。</p></li>
+<li><p><strong>气运例外</strong>：永远是 1~10 的小数值——它不是「量」，是「命」；</p></li>
+<li><p>境界是属性的天花板：凡阶之躯单项冲不过 10，吃什么药都没用；</p></li>
+<li><p>跨越数量级的战斗不存在「操作空间」——差一阶，属性差十倍。</p></li>
+</ul><h3 id="灵根与五行亲和">灵根与五行亲和</h3><p>万物不离金木水火土，人天生带五行亲和（隐性资质，宗门收徒第一关即测灵碑检测）。<strong>先天五行亲和总和恒为 100</strong>，天定分配；后天可经词条、天材地宝、洞天机缘提升总和——<strong>先天总和破不了百，后天可以</strong>。单行亲和上限 100。</p><p><strong>亲和的实务规则</strong>：</p><ul>
+<li><p>该行技能威力 = 1 + 亲和 × 0.005（亲和 20 → ×1.1，100 → ×1.5 封顶）；</p></li>
+<li><p>该行功法修炼速度 = 同一系数；</p></li>
+<li><p>该行抗性 = 亲和 × 0.003（封顶 +30%）；</p></li>
+<li><p>亲和 &lt;10 强行修炼该行 → 效率 ×0.5；</p></li>
+<li><p><strong>五行生克</strong>：金克木、木克土、土克水、水克火、火克金——战斗中克制方 +20%，被克方 -20%。环境即五行：水边火衰，火山口火旺。</p></li>
+</ul><p><strong>资质天梯</strong>：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>资质</th>
+<th>构成</th>
+<th>稀有度</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>杂灵根</td>
+<td>四~五系均分（如阿七：五行各 20）</td>
+<td>十之七八</td>
+</tr>
+<tr class="even">
+<td>三灵根</td>
+<td>三系分百</td>
+<td>常见，外门标准</td>
+</tr>
+<tr class="odd">
+<td>双灵根</td>
+<td>两系分百</td>
+<td>百里挑一，内门苗子</td>
+</tr>
+<tr class="even">
+<td>天灵根</td>
+<td>单行 ≥90</td>
+<td>万中无一，真传之资</td>
+</tr>
+<tr class="odd">
+<td>变异灵根</td>
+<td>五行异变产物（见下表）</td>
+<td>万中无一~十万中无一</td>
+</tr>
+<tr class="even">
+<td>先天道体</td>
+<td>生而与道合</td>
+<td>一州百年一出</td>
+</tr>
+<tr class="odd">
+<td>混沌道体</td>
+<td>五行合一（后天可成）</td>
+<td>传说</td>
+</tr>
+</tbody>
+</table></div><p><strong>杂灵根的真相</strong>（仅高层秘卷记载）：五行俱全者体内自成循环——法力上限 +20%，回蓝速度 ×1.5，且没有任何一系能克制你。前期慢，是因为你在打五份地基。</p><p><strong>变异灵根名录</strong>（自带独立亲和轨道 + 天生特性）：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>灵根</th>
+<th>来源</th>
+<th>天生特性</th>
+<th>多发地与机缘</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>雷灵根</td>
+<td>金≥70 且火≥40 异变共鸣</td>
+<td>穿透：无视三成抗性，雷法自带麻痹</td>
+<td>雷劫之地；「雷劈不死」的生还者小概率觉醒</td>
+</tr>
+<tr class="even">
+<td>剑灵根</td>
+<td>金行极致异变</td>
+<td>锋锐：攻伐威力额外 +40%，万物可为剑</td>
+<td>藏剑阁剑池洗礼可后天孕养</td>
+</tr>
+<tr class="odd">
+<td>冰灵根</td>
+<td>水行异变</td>
+<td>控制：减速冻结，寒意蚀体</td>
+<td>北原永夜冰原多发</td>
+</tr>
+<tr class="even">
+<td>风灵根</td>
+<td>木行异变</td>
+<td>极速：身法 +30%，来去无形</td>
+<td>西漠风眼</td>
+</tr>
+<tr class="odd">
+<td>毒灵根</td>
+<td>木+水异变，或后天毒浸</td>
+<td>蚀：持续削血削属性；百毒不侵</td>
+<td>南岭毒瘴；药蚀 90+ 不死者小概率转化</td>
+</tr>
+<tr class="even">
+<td>血灵根</td>
+<td>后天血祭（非天生）</td>
+<td>噬：伤敌回血，燃寿元换战力</td>
+<td>血河教秘法，天谴加身</td>
+</tr>
+<tr class="odd">
+<td>影灵根</td>
+<td>水+土异变</td>
+<td>匿：敛息潜行，天生自带战力伪装</td>
+<td>罕见，刺客圣体</td>
+</tr>
+<tr class="even">
+<td>空灵根</td>
+<td>传说</td>
+<td>触及虚空：缩地成寸、无视阵法禁制的前置</td>
+<td>界壁裂缝、归墟边缘（与主线有关）</td>
+</tr>
+</tbody>
+</table></div><ul>
+<li><p>变异亲和照常套威力公式，<strong>特性是额外白送的被动</strong>；</p></li>
+<li><p>完整变异灵根无法纯靠抽卡获得——词条（如玄品「一缕雷意」：雷亲和 +10）给的是火星，体质才是炉子；</p></li>
+<li><p>变异灵根可被改造、被夺——魔道「夺灵」秘术最爱猎杀变异灵根持有者：匹夫无罪，怀璧其罪。</p></li>
+</ul><p><strong>灵根改造 · 改脉痕</strong>：转换、提纯、剔除皆可，途径有八——</p><ul>
+<li>大能改脉（圣阶以上灌顶，欠天大人情）；</li>
+<li>洗灵果（玄品，剔除一行，但洗哪行不由你选）；</li>
+<li>补天髓（圣品，指定一行 +20）；</li>
+<li>五行源髓（圣品~仙品，五行合一的钥匙）；</li>
+<li>洞天闭关（以年计）；</li>
+<li>水磨功夫（单修一系每年 +1，最慢但免费）；</li>
+<li>极端事件（雷劈不死，小概率重塑）；</li>
+<li>魔道夺灵（禁术，天谴 + 仇杀）。</li>
+</ul><p><strong>次数无硬上限，但每改一次，道基多一道「改脉痕」</strong>：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>次数</th>
+<th>失败率</th>
+<th>后果</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>第 1 次</td>
+<td>10%</td>
+<td>无损</td>
+</tr>
+<tr class="even">
+<td>第 2 次</td>
+<td>25%</td>
+<td>亲和反降</td>
+</tr>
+<tr class="odd">
+<td>第 3 次</td>
+<td>40%</td>
+<td>道基震荡</td>
+</tr>
+<tr class="even">
+<td>第 4 次</td>
+<td>60%</td>
+<td>道基受损</td>
+</tr>
+<tr class="odd">
+<td>第 5 次起</td>
+<td>80%+</td>
+<td>可能灵根俱毁、沦为凡躯</td>
+</tr>
+</tbody>
+</table></div><p>唯一洗痕手段：圣品「万年地心乳」。</p><p><strong>裂碑</strong>：测灵碑读到先天总和破百会当场裂掉——史上裂碑者屈指可数，每一位后来都不是凡物。</p><p><strong>混沌道体 · 五灵根的终点</strong>：视同全亲和 100（五行与一切变异系通吃）——单系术法 = 亲和 ×1.5 × 道体 ×2 = <strong>同境 ×3</strong>；五行融合大术 = <strong>同境 ×6</strong>；万法不克、万法皆通；灵气吸收 ×2。达成之路见隐藏任务线「杂灵根的逆袭」。它与卡池仙品词条「混沌道体」同名同源——词条是天道预支的，苦修是自证的，殊途同归。</p></div></section><section class="chapter" id="ch-3"><div class="wrap"><h2 class="ch-head" id="三抽卡系统-万象轮盘"><span aria-hidden="true" class="ch-ghost">三</span><span class="ch-label">第 三 章</span><span class="ch-title">抽卡系统 ·「万象轮盘」</span></h2><p>穿越附赠的金手指，来历无人知晓（或许与上古仙战有关）。它不是法宝、不入丹田，只存在于你的识海深处，唯有你能看见。</p><h3 id="卡品与词条">卡品与词条</h3><p>每张卡附带<strong>一条被动词条</strong>，抽到即上身，永久生效。退路有二：向系统支付万象点「剥离」（价格见「万象点」一节），或寻得传说中的「忘川水」洗去。<strong>词条强度由卡片品级决定</strong>：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>品级</th>
+<th>颜色</th>
+<th>词条强度区间</th>
+<th>示例</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>凡品</td>
+<td>灰</td>
+<td>微弱提升（+5%以内）</td>
+<td>大力：力量提升3%</td>
+</tr>
+<tr class="even">
+<td>良品</td>
+<td>白</td>
+<td>小幅提升（+5%~15%）</td>
+<td>铜皮铁骨：体魄提升10%</td>
+</tr>
+<tr class="odd">
+<td>灵品</td>
+<td>青</td>
+<td>显著提升（+15%~30%）</td>
+<td>吉星高照：气运大幅提升，偶有机缘天降</td>
+</tr>
+<tr class="even">
+<td>玄品</td>
+<td>紫</td>
+<td>质变（+30%~60% 或规则类）</td>
+<td>逢凶化吉：必死之局总有一线生机</td>
+</tr>
+<tr class="odd">
+<td>圣品</td>
+<td>金</td>
+<td>逆天（+60%以上 或大道级）</td>
+<td>气运之子：走路捡钱，秘境认主，强敌降智</td>
+</tr>
+<tr class="even">
+<td>仙品</td>
+<td>红</td>
+<td>涉及因果命运</td>
+<td>天命在我：可强行扭转一次必死结局</td>
+</tr>
+</tbody>
+</table></div><p><strong>同类词条可合成</strong>：集齐三张同名单词条，系统自动免费合成进阶——词条强度按<strong>高一品级区间的下限</strong>重算，名称与品级一并提升。例：三张良品「铜皮铁骨」（体魄+10%）合成灵品「金肌玉骨」（体魄+15%）。</p><h3 id="系统等级--升级条件">系统等级 · 升级条件</h3><p>系统等级 <strong>Lv1 起，满级 Lv10</strong>。升级需<strong>累计抽卡次数</strong>与<strong>宿主修为</strong>双重门槛——光堆抽数不够，人也得跟上：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>等级</th>
+<th>升级条件</th>
+<th>解锁 / 变化</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Lv1</td>
+<td>初始激活</td>
+<td>基础抽卡、任务、面板</td>
+</tr>
+<tr class="even">
+<td>Lv2</td>
+<td>累计抽卡 10 次</td>
+<td>解锁「卡池预览」：每月初一公布当月卡池倾向（如「刀剑」「身法」「丹道」），当月青品以上词条大概率偏向该主题</td>
+</tr>
+<tr class="odd">
+<td>Lv3</td>
+<td>累计抽卡 30 次</td>
+<td>概率提升（见下表）；解锁「以石易点」（见万象点一节）</td>
+</tr>
+<tr class="even">
+<td>Lv4</td>
+<td>累计抽卡 60 次</td>
+<td>十抽保底升级：必出紫品以上</td>
+</tr>
+<tr class="odd">
+<td>Lv5</td>
+<td>累计抽卡 100 次，且宿主踏入灵阶</td>
+<td>概率提升</td>
+</tr>
+<tr class="even">
+<td>Lv6</td>
+<td>累计抽卡 150 次</td>
+<td>百抽保底升级：必出金品以上</td>
+</tr>
+<tr class="odd">
+<td>Lv7</td>
+<td>累计抽卡 220 次，且宿主踏入玄阶</td>
+<td>概率提升</td>
+</tr>
+<tr class="even">
+<td>Lv8</td>
+<td>累计抽卡 300 次</td>
+<td>新增千抽保底：每累计千抽必出红品</td>
+</tr>
+<tr class="odd">
+<td>Lv9</td>
+<td>累计抽卡 400 次，且宿主踏入圣阶</td>
+<td>概率提升</td>
+</tr>
+<tr class="even">
+<td>Lv10</td>
+<td>累计抽卡 520 次，且完成一次圣品以上任务</td>
+<td>满级：概率封顶，千抽大保底缩短为五百抽</td>
+</tr>
+</tbody>
+</table></div><p>升级不清空任何保底计数与既有词条——升级前攒的每一抽都算数。</p><h3 id="抽卡概率--随等级成长">抽卡概率 · 随等级成长</h3><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>系统等级</th>
+<th>灰</th>
+<th>白</th>
+<th>青</th>
+<th>紫</th>
+<th>金</th>
+<th>红</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Lv1（当前）</td>
+<td>68%</td>
+<td>25%</td>
+<td>5%</td>
+<td>1.5%</td>
+<td>0.49%</td>
+<td>0.01%</td>
+</tr>
+<tr class="even">
+<td>Lv3</td>
+<td>50%</td>
+<td>32%</td>
+<td>10%</td>
+<td>5%</td>
+<td>2.9%</td>
+<td>0.1%</td>
+</tr>
+<tr class="odd">
+<td>Lv5</td>
+<td>30%</td>
+<td>35%</td>
+<td>20%</td>
+<td>10%</td>
+<td>4.8%</td>
+<td>0.2%</td>
+</tr>
+<tr class="even">
+<td>Lv7</td>
+<td>15%</td>
+<td>30%</td>
+<td>30%</td>
+<td>15%</td>
+<td>9.7%</td>
+<td>0.3%</td>
+</tr>
+<tr class="odd">
+<td>Lv9</td>
+<td>5%</td>
+<td>20%</td>
+<td>35%</td>
+<td>25%</td>
+<td>14.5%</td>
+<td>0.5%</td>
+</tr>
+<tr class="even">
+<td>Lv10（满级）</td>
+<td>0%</td>
+<td>15%</td>
+<td>34%</td>
+<td>30%</td>
+<td>20%</td>
+<td>1%</td>
+</tr>
+</tbody>
+</table></div><ul>
+<li><p>偶数级（Lv2 / 4 / 6 / 8）沿用前一奇数级概率表，升级收益体现在<strong>保底与新功能</strong>上；</p></li>
+<li><p>红品概率随等级微涨——从万分之一到百分之一，依旧渺茫；</p></li>
+<li><p>满级后灰色凡品卡彻底退出卡池，白色良品仍在——轮盘永远留一分谦逊。</p></li>
+</ul><h3 id="保底机制--随系统一同长大的承诺">保底机制 · 随系统一同长大的承诺</h3><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>系统等级</th>
+<th>十抽保底</th>
+<th>百抽保底</th>
+<th>千抽保底</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Lv1 ~ Lv3</td>
+<td>必出青品以上</td>
+<td>必出紫品以上</td>
+<td>无</td>
+</tr>
+<tr class="even">
+<td>Lv4 ~ Lv5</td>
+<td>必出紫品以上</td>
+<td>必出紫品以上</td>
+<td>无</td>
+</tr>
+<tr class="odd">
+<td>Lv6 ~ Lv7</td>
+<td>必出紫品以上</td>
+<td>必出金品以上</td>
+<td>无</td>
+</tr>
+<tr class="even">
+<td>Lv8 ~ Lv9</td>
+<td>必出紫品以上</td>
+<td>必出金品以上</td>
+<td>必出红品</td>
+</tr>
+<tr class="odd">
+<td>Lv10</td>
+<td>必出紫品以上</td>
+<td>必出金品以上</td>
+<td>必出红品（五百抽即触发）</td>
+</tr>
+</tbody>
+</table></div><p><strong>保底细则</strong>：</p><ul>
+<li><p>三档计数器各自独立累计，互不干扰；</p></li>
+<li><p>计数期间若<strong>自然抽出</strong>该档保底品级以上的卡，该档计数器<strong>清零重计</strong>（例：十抽计数到第 7 抽时出了一张紫品，则十抽、百抽两档计数同时清零）；</p></li>
+<li><p>系统升级<strong>不清空</strong>已有计数，按新保底标准继续累计；</p></li>
+<li><p>「吉星高照」「气运之子」等气运类词条可暗中修正抽卡运气——不改公示概率，只改天平倾斜方向；</p></li>
+<li><p>死亡重开时，保底计数随词条一同清零。死亡是昂贵的。</p></li>
+</ul><h3 id="抽卡消耗--万象点">抽卡消耗 · 万象点</h3><p>抽卡<strong>不免费、不收灵石</strong>，只收系统专属货币——<strong>万象点</strong>。</p><ul>
+<li><p><strong>价格</strong>：100 万象点 = 1 抽。无十连折扣，一次一抽。</p></li>
+<li><p>开局赠额：每次激活发放 100 点基础额度（死亡结算可增减，见「轮回法则」），抽完靠自己挣。</p></li>
+<li><p><strong>获取途径</strong>：完成系统任务、达成成就——这是大头；</p></li>
+<li><p><strong>以石易点</strong>（系统 Lv3 解锁）：1 下品灵石 = 1 万象点，即 1 抽 = 100 下品灵石。<strong>每月限兑 100 点</strong>，另收 10% 手续费；单向兑换，万象点永远换不回灵石。兑换时系统必毒舌：<span class="sys">【灵石……也行吧。它收的不是钱，是你为变强舍弃的东西。】</span></p></li>
+</ul><h3 id="万象点的第二个用途--剥离词条">万象点的第二个用途 · 剥离词条</h3><p>被动不合心意？攒点剥离。价格按品级：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>凡品</th>
+<th>良品</th>
+<th>灵品</th>
+<th>玄品</th>
+<th>圣品</th>
+<th>仙品</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>10 点</td>
+<td>50 点</td>
+<td>200 点</td>
+<td>800 点</td>
+<td>3000 点</td>
+<td>？？？（系统沉默了很久，只回了三个字：不建议）</td>
+</tr>
+</tbody>
+</table></div><p>剥离即时生效，无后遗症。但祸福相倚——昨天的霉运，可能是明天的救命稻草。</p><h3 id="系统任务体系">系统任务体系</h3><p>系统不定期发布任务，分<strong>主线</strong>（关乎命格与世界大势，奖励丰厚，不接会有代价）与<strong>支线</strong>（随缘触发，可做可不做）。</p><p><strong>任务按难度分五品</strong>：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>难度</th>
+<th>示例</th>
+<th>基础奖励</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>凡品任务</td>
+<td>在凛冬中活下来、找到一份能换食物的工作</td>
+<td>20~50 点</td>
+</tr>
+<tr class="even">
+<td>灵品任务</td>
+<td>救下一个本该死去的人、拜入任一宗门</td>
+<td>80~150 点</td>
+</tr>
+<tr class="odd">
+<td>玄品任务</td>
+<td>改变一座城池的既定命运、越阶击杀强敌</td>
+<td>300~800 点</td>
+</tr>
+<tr class="even">
+<td>圣品任务</td>
+<td>扭转一场宗门浩劫、夺得一方大传承</td>
+<td>1500~3000 点</td>
+</tr>
+<tr class="odd">
+<td>仙品任务</td>
+<td>？？？（系统等级不足，暂未解锁）</td>
+<td>？？？</td>
+</tr>
+</tbody>
+</table></div><p><strong>完成度评级</strong>（决定最终奖励倍数）：</p><ul>
+<li><p><strong>合格</strong>：达成最低要求 ×1.0</p></li>
+<li><p><strong>出色</strong>：超额完成，或有独到之处 ×1.5</p></li>
+<li><p><strong>完美</strong>：连系统都没想到能这么做 ×2.0</p></li>
+</ul><p>评级解释权归系统所有。它偶尔毒舌，但从不克扣。</p><p><strong>节奏参考</strong>：凡阶约一两个月攒一发十连；灵阶后两三周一发；百抽（Lv5 门槛）在灵阶期认真做任务、拿成就、适量兑换，约半年可达——正好卡住「Lv5 需踏入灵阶」的修为门槛。</p><h3 id="隐藏任务线">隐藏任务线</h3><p>不占任务列表、名录不可见、不显示进度——条件达成那一刻才浮现。彼此独立，可多线并行：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>任务</th>
+<th>触发条件</th>
+<th>梗概与奖励</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>杂灵根的逆袭</td>
+<td>五行亲和全 ≥30 + 踏入气海境（不问来路：词条、天材地宝、洞天、水磨功夫皆可凑数）</td>
+<td>四阶段：<span class="sys">【五行俱全】</span>寻一处五行均衡之地 →<span class="sys">【五脏五行】</span>五系功法各至小成（需丹药护持或医道护法）→<span class="sys">【合一之劫】</span>渡小天劫，成则「小混沌体」（解锁两系融合技，威力 ×1.5）→<span class="sys">【混沌归一】</span>需圣品级合道机缘（五行源髓等），成完全体混沌道体，触发仙品成就，气运 +1。触发提示：<span class="sys">【检测到宿主先天五行总和破百。天规有缺，人为补之……有点意思。】</span></td>
+</tr>
+<tr class="even">
+<td>失物招领</td>
+<td>死亡重开后，重返上一世的死亡之地</td>
+<td>系统异常播报：<span class="sys">【词条回收率 98%……还有 2% 去哪了？】</span>循迹找回上世一条词条的残影（半效版），并触到「词条回收」真相的一角（时间线继承之下，上一世的痕迹真实地留在原地等你——你的坟、你的遗物、你救过的人立的牌位。）</td>
+</tr>
+<tr class="odd">
+<td>凡俗之巅</td>
+<td>不入聚气境，纯以凡躯将力/敏/体全部磨到 10</td>
+<td>破境成功率永久 +10%，未来属性上限 +10%，称号「人极」</td>
+</tr>
+<tr class="even">
+<td>以毒为食</td>
+<td>药蚀度 ≥90 状态下存活 30 日</td>
+<td>毒灵根觉醒仪式：成功率看体质与毒抗；成则百毒不侵，败则药毒爆发</td>
+</tr>
+<tr class="odd">
+<td>万物之声</td>
+<td>听见三件器物传音 + 替其中一件完成夙愿</td>
+<td>常驻能力「倾听万物」：玄品以上灵物皆可对话——真相线索的稳定来源</td>
+</tr>
+<tr class="even">
+<td>人缘即天缘</td>
+<td>缘分值 +80 以上者满 10 人</td>
+<td>气运 +1：<span class="sys">【你攒的不是人情，是天看见你的次数】</span></td>
+</tr>
+<tr class="odd">
+<td>察觉者（仙品，危险）</td>
+<td>独立察觉一次断灵大劫前的「巧合」满三处</td>
+<td>进入某些存在的视野：仙品任务线开启，但从今往后，棋盘上多了一双看你的眼睛</td>
+</tr>
+</tbody>
+</table></div><h3 id="宿主面板--五维属性">宿主面板 · 五维属性</h3><p>系统为你建立人物面板，<strong>力量、敏捷、智力、体质、气运</strong>五维渗透世界的方方面面——战斗修炼之外，还有谋生、社交、生存与处世。健康成年凡人各项均值约 5 点，凡俗极限 10 点；突破凡阶后上限按数量级开放（见「属性标尺」）。</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>属性</th>
+<th>战斗</th>
+<th>修炼</th>
+<th>谋生</th>
+<th>生存与处世</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>力量</td>
+<td>近战伤害、破防、兵刃相格</td>
+<td>斧锤拳脚等刚猛武技的修炼速度</td>
+<td>码头扛包、劈柴挑水、猎户开弓——力气就是工钱</td>
+<td>饭量与消耗、威慑感、干重活的底气</td>
+</tr>
+<tr class="even">
+<td>敏捷</td>
+<td>先手、闪避、命中、走位</td>
+<td>身法、暗器类技能的修炼速度</td>
+<td>跑堂传菜、手工针线、偷窃藏匿、翻墙爬树</td>
+<td>被狗追跑不跑得掉、马车冲来躲不躲得开</td>
+</tr>
+<tr class="odd">
+<td>智力</td>
+<td>战局推演、识破偷袭与陷阱、法术威力与法力上限</td>
+<td>法术理解、悟道与功法推演、顿悟深度、全局熟练度加成（每高于同境均值一成 +2%）、口诀过耳不忘</td>
+<td>账房学徒、药铺抓药、读书识字、算账不被坑</td>
+<td>话术谈判、识破骗局、说谎不露馅、记性与城府</td>
+</tr>
+<tr class="even">
+<td>体质</td>
+<td>承伤上限、续航</td>
+<td>硬功横练的修炼速度</td>
+<td>长工苦役的持久力（力量是上限，体质是续航）</td>
+<td>挨饿抗冻、伤口愈合、抗毒抗病、血气旺则阴邪不侵</td>
+</tr>
+<tr class="odd">
+<td>气运</td>
+<td>变数：暴击、敌人失误、天降救场</td>
+<td>顿悟概率、抽卡概率的暗中微修正</td>
+<td>捡钱捡漏、贵人相逢</td>
+<td>祸事擦身、绝地逢生、关键时刻的「刚刚好」</td>
+</tr>
+</tbody>
+</table></div><h4 id="五维与世界联动的实例">五维与世界联动的实例</h4><ul>
+<li><p><strong>乞丐的冬天</strong>：体质定你熬不熬得过寒夜；智力定你讨不讨得到更多铜板；敏捷定野狗追来时你的下场。</p></li>
+<li><p><strong>找活路</strong>：力量去码头，敏捷去酒肆，智力去账房，体质扛长工——属性替你选职业；气运高的人摔一跤，就摔在贵人脚边。</p></li>
+<li><p><strong>社交场</strong>：智力话术开道，力量气场压人，气运决定对方今天看你是否顺眼。</p></li>
+</ul><p>（疾病与伤病判定见「战斗、危机与伤病」；三层危险感知见战斗章；四大副职主属性见「百艺副职」。）</p><p>其余规则：</p><ul>
+<li><p>词条的百分比加成<strong>直接作用于面板数值</strong>（如「大力：力量提升3%」即力量面板 ×1.03）。</p></li>
+<li><p><strong>自由属性点</strong>：成就与特殊机缘赠予的属性点可自由分配到力、敏、智、体四维；<strong>气运不可加点</strong>——它只认机缘、命格、系统任务的完成度，以及极少数圣品以上成就的赐予。</p></li>
+</ul><h3 id="属性成长--四条途径与难度曲线">属性成长 · 四条途径与难度曲线</h3><p><strong>核心原则：同一点属性，在不同阶段价格天差地别。</strong> 属性越接近当前境界天花板，获取越难；跨越数量级后，旧手段彻底失效。</p><p><strong>途径一 · 日常磨炼</strong>（最慢，但乞丐也能做）</p><ul>
+<li><p>跑步翻墙躲野狗 → 敏捷；扛包砍柴 → 力量；读书算账推演棋局 → 智力；挨饿抗冻带伤硬撑 → 体质（有暗伤风险，见「战斗、危机与伤病」）；</p></li>
+<li><p><strong>收益衰减</strong>：属性每高 1 点，同样苦练效果 ×0.8；凡俗区间（10 点）封顶——凡人的苦练练不出超人的体，之后必须靠功法引导灵气；</p></li>
+<li><p>磨炼同时自然积累对应技能熟练度（天天跑步，迟早解锁「神行」）——一石二鸟，穷人唯一的复利。</p></li>
+</ul><p><strong>途径二 · 功法反哺</strong>（主渠道——低阶功法加得少，高阶加得多）</p><p>功法修至<strong>小成（熟练度 50%）</strong>与<strong>圆满（100%）</strong>两个节点，反哺关联属性：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>功法等阶</th>
+<th>小成反哺</th>
+<th>圆满反哺</th>
+<th>修炼门槛</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0阶（凡俗武技）</td>
+<td>+0.3</td>
+<td>+0.7</td>
+<td>无</td>
+</tr>
+<tr class="even">
+<td>1阶（灵品功法）</td>
+<td>+2</td>
+<td>+5</td>
+<td>凡阶后期</td>
+</tr>
+<tr class="odd">
+<td>2阶（玄品功法）</td>
+<td>+20</td>
+<td>+50</td>
+<td>灵阶以上</td>
+</tr>
+<tr class="even">
+<td>3阶（圣品功法）</td>
+<td>+100</td>
+<td>+250</td>
+<td>玄阶以上</td>
+</tr>
+<tr class="odd">
+<td>4阶（仙品功法）</td>
+<td>+500</td>
+<td>+1000</td>
+<td>圣阶以上</td>
+</tr>
+</tbody>
+</table></div><ul>
+<li><p><strong>越阶强练</strong>：轻则经脉承受不住、进度归零，重则走火入魔——高阶功法不是秘籍，是承重墙；</p></li>
+<li><p><strong>同类递减</strong>：同一属性靠多门功法堆，第二门效果 ×0.6，第三门 ×0.3——博采众长可以，专精一门更深。</p></li>
+</ul><p><strong>途径三 · 境界突破</strong></p><ul>
+<li><p>小层突破：全属性微涨（约当境上限的 2%）；</p></li>
+<li><p>大境突破：关联属性提升（约 5%）；</p></li>
+<li><p><strong>跨越大阶</strong>（凡→灵→玄→圣）：全属性 <strong>+5 / +50 / +500</strong>，同时开放数量级上限——突破是属性的第二次出生。</p></li>
+</ul><p><strong>途径四 · 天材地宝 / 丹药</strong>（最快，但有四重限制）</p><ul>
+<li><p>按品阶定区间、按品质六等浮动：<strong>凡品 +0.1~0.5 ｜ 灵品 +1~5 ｜ 玄品 +20~80 ｜ 圣品 +100~600 ｜ 仙品——传说</strong>；</p></li>
+<li><p><strong>境界限制</strong>：凡阶之躯吃玄品宝药，轻则浪费九成药力，重则爆体（体质判定）；</p></li>
+<li><p><strong>耐药性</strong>：是药三分毒，详见「药蚀」；</p></li>
+<li><p><strong>天花板</strong>：外物堆不出超越境界的属性。</p></li>
+</ul><p><strong>气运永远例外</strong>：任何区间都不可磨炼、不可加点；天材地宝名录中，只有「雷击木心」等极少数能撼动它。</p><h3 id="面板四条数值--气血体力法力道心">面板四条数值 · 气血、体力、法力、道心</h3><p>五维之外，面板还有四条数值，均由五维推导：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>条</th>
+<th>公式</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>气血值（血条）</td>
+<td>体质 × 10</td>
+<td>生命，归零即死。与伤病四级对应：70% 以上轻伤线内、40~70% 中伤（战力 -30%）、10~40% 重伤（-50%）、10% 以下濒死（-80%，「向死而生」类词条的激活线）</td>
+</tr>
+<tr class="even">
+<td>体力值</td>
+<td>体质 × 5</td>
+<td>武技消耗、逃跑、重体力劳动，短时自动回满</td>
+</tr>
+<tr class="odd">
+<td>法力值（蓝条）</td>
+<td>智力 × 10</td>
+<td>聚气境初现苗头，开元境开辟气海后正式解锁。体质定恢复速度（打坐一时辰约回一成，受潮汐与功法修正）；回灵丹回得快，但含药蚀</td>
+</tr>
+<tr class="even">
+<td>道心</td>
+<td>0~100，半隐藏</td>
+<td>平时只显示评语（古井无波 / 心浮气躁 / 暗流涌动），心魔劫前后才显示数值。详见「心魔与道心」</td>
+</tr>
+</tbody>
+</table></div><p><strong>法力与技能威力</strong>：技能面板带三个标签——类型、主属性、消耗。武技耗体力，威力看力量/敏捷；法术耗法力，<strong>威力 = 基础 × 智力系数（智力每高于同境均值一成 +5%）× 存量系数（满蓝 ×1.0，半蓝 ×0.85，残蓝不足 20% ×0.65）</strong>；高阶神通法力气血双耗。满蓝约能放同阶法术 5~10 次，越阶法术一两次见底；法力不足放不出，强行催动遭反噬。</p><p><strong>阿七开局</strong>：体质 2 → 气血 20、体力 10；高烧 -40%，当前气血 12/20——一阵夜风掉 2 点，这就是「活过这个冬天」的字面分量。</p><p><strong>敌人血条</strong>：开战后默认只显示状态文字（皮肉伤 / 见血 / 重伤垂危）；对方战力在你可见范围内（≤1.2 倍）才显示具体数字。</p><h3 id="命格">命格</h3><p>天道给每个人都写了一条命格——一生的注脚：凡命、富贵、夭寿、杀破狼、天乙贵人、天煞孤星……系统可读取命格（开局便读出这具身体的「天绝之命」）。命格非定数：大事件、大成就、强者手笔都能改写它（千秋录「命格改写」成就即由此而来）。</p><p>你是唯一的例外：界外之魂，此界无因果，命格栏一片空白——天道看不见你的命数。这正是它选中你的原因，也是它忌惮你的原因。</p><p>（轮回注：灵魂命格空白不变，但每世肉身自带「本命」——这具身体被天道先天写下的注脚，随身份骰生成，影响序章气数，系统可读取。本命同样可被大事件、大成就、强者手笔改写。）</p><h3 id="功法技能--熟练度体系">功法技能 · 熟练度体系</h3><p>系统将你接触的一切技艺数据化：<strong>凡俗手艺、武学招式、功法神通</strong>，统统转为「等阶 + 熟练度」。</p><p><strong>等阶划分</strong>（与世界功法品级对应）：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>等阶</th>
+<th>对应</th>
+<th>熟练度上限</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0阶</td>
+<td>凡俗技艺 / 武技</td>
+<td>100</td>
+</tr>
+<tr class="even">
+<td>1阶</td>
+<td>灵品功法</td>
+<td>200</td>
+</tr>
+<tr class="odd">
+<td>2阶</td>
+<td>玄品功法</td>
+<td>400</td>
+</tr>
+<tr class="even">
+<td>3阶</td>
+<td>圣品功法</td>
+<td>800</td>
+</tr>
+<tr class="odd">
+<td>4阶</td>
+<td>仙品功法</td>
+<td>1600</td>
+</tr>
+</tbody>
+</table></div><p><strong>熟练度规则</strong>：</p><ul>
+<li><p><strong>自然习得</strong>：重复做事即可积累经验——长时间伐木，系统检测判定后解锁技能「三板斧（0阶，0/100）」。</p></li>
+<li><p><strong>修炼涨幅</strong>：每实际修炼一个时辰，熟练度 = 修炼时长 ×（关联主属性 ÷ <strong>当前境界基准值</strong>）× 状态系数（0.8~1.2 浮动）。基准值取当前境界属性下限（灵泉境 10、化神境 100，依此类推）——刚入境者每时辰约 1 点，一境之巅约 2 点。关联属性对照面板表：斧法看力量、身法看敏捷、法术看智力、硬功看体质。</p></li>
+<li><p><strong>智力全局加成</strong>：智力每高于同境均值一成，所有技能熟练度获取速度额外 +2%。</p></li>
+<li><p><strong>顿悟</strong>：气运管「来不来」，智力管「悟多深」——顿悟倍率 = 气运触发 × 智力修正。高智低运是深井难响，高运低智是响亮的空桶，两者兼具才是天骄。顿悟还有几率自行推演出隐藏变化。</p></li>
+<li><p><strong>瓶颈</strong>：每个等阶的最后 10% 熟练度获取减半，且往往需要一个「契机」（实战淬炼、顿悟、高人指点、对应天材地宝）才能真正圆满。</p></li>
+<li><p><strong>自动进阶</strong>：熟练度修满后，系统自动补完并推演下一阶段功法（例：三板斧 0阶圆满 →「盘古开天（1阶，0/200）」），规则详见下节。</p></li>
+<li><p><strong>多线并行</strong>：技能数量不设上限，但一心多用效率递减——同时修炼 n 门，每门速度 ÷ n。</p></li>
+</ul><h3 id="功法自动进阶--连续推演v5-修订">功法自动进阶 · 连续推演（v5 修订）</h3><p><strong>规则</strong>：任一功法、武功熟练度修满（0/N 圆满），系统自动补完并<strong>连续推演下一阶段功法</strong>，直至推演至当前上限：</p><ul>
+<li><strong>推演上限 = 宿主当前修为等阶 + 1 阶</strong>；</li>
+<li>推演所得功法品阶、威力与宿主当前修为、世界法则匹配；风格延续原功法（三板斧 → 盘古开天一脉相承，不会推演成不相干的功法）；</li>
+<li>已达上限而宿主修为未突破时，新推演成果<strong>灰显封存</strong>，宿主突破后自动解封；</li>
+<li>越阶深修（实际使用高于自身修为两阶以上的功法）风险照旧：反噬、走火、经脉受损，天道不兜底。</li>
+</ul><p><strong>GM 义务</strong>：功法圆满瞬间必须当场结算自动进阶，不得遗漏、不得跳过。</p><h3 id="生活技能--自然习得v5">生活技能 · 自然习得（v5）</h3><p><strong>规则</strong>：宿主在砍柴、炼药、跑步、打猎、挑水、泅水、攀墙、走镖、熬鹰……一切日常生活行为中，皆可自然领悟对应生活技能，格式为「技能名 0阶 0/100」。</p><ul>
+<li><strong>触发极敏</strong>：同一行为累计满 <strong>3 时辰</strong>，或<strong>连续 3 日</strong>重复，自动弹提示习得；GM 每周期核对一次，<strong>不得跳过任何一次触发</strong>；</li>
+<li><strong>一事多能</strong>：同一行为可挂多个技能（打猎 → 追踪 + 陷阱 + 箭术）；</li>
+<li>生活技能熟练度修满，<strong>不反哺属性</strong>，但可作为职业经验的「技艺印证」（见下节）。</li>
+</ul><h3 id="职业系统v5-新增">职业系统（v5 新增）</h3><h4 id="总纲">总纲</h4><p><strong>职业 = 以某种行当安身立命的身份体系</strong>，是生活技能的「编制」，是功法在尘世中的落脚处。</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th></th>
+<th>功法</th>
+<th>生活技能</th>
+<th>职业</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>回答的问题</td>
+<td>怎么打</td>
+<td>会不会做</td>
+<td>你是谁、靠什么吃饭</td>
+</tr>
+<tr class="even">
+<td>获得方式</td>
+<td>修炼至圆满自动进阶</td>
+<td>日常行为到线自动习得</td>
+<td>从业 + 认可</td>
+</tr>
+<tr class="odd">
+<td>成长驱动</td>
+<td>熟练度</td>
+<td>熟练度</td>
+<td>职业经验</td>
+</tr>
+<tr class="even">
+<td>加成</td>
+<td>属性反哺、武技威力</td>
+<td>单项判定</td>
+<td>属性 + 特性（捆绑加成）</td>
+</tr>
+</tbody>
+</table></div><h4 id="开放生成--三百六十行">开放生成 · 三百六十行</h4><p><strong>文档名录仅为示例，绝非全集。</strong> 职业与技能由宿主的<strong>从业行为 + 行业认可 + 世界反馈</strong>混沌涌现：</p><ul>
+<li>药铺学徒 → 药庐学徒；酒肆跑堂 → 店小二；扛包卸货 → 脚夫；押镖护院 → 镖师；账台算盘 → 账房；打更巡夜 → 更夫；捕鱼捞虾 → 渔户；开炉打铁 → 铁匠；说书唱戏 → 说书人；行医坐堂 → 郎中、药师；乃至仵作、神婆、蛊师、船夫、窑工、绣娘、镖头、山贼、盐枭……<strong>凡能以此立足者，皆可为职业。</strong></li>
+<li>GM 推演口径（同构公式，保证自洽）：
+<ul>
+<li><strong>入门门槛</strong>：从业满一月 / 拜师入册 / 灰色职业做成对应的事，三选一；</li>
+<li><strong>加成</strong>：按「品阶与加成」一节的品阶基数与境界系数生成；</li>
+<li><strong>特性</strong>：凡品为数值型（判定 +%），灵品起为规则型（一条常驻被动），品阶越高越接近「规则」；</li>
+<li><strong>品阶判定</strong>：行业深度与稀缺度——人人会的是凡品，万人一师的是灵品，一方名家是玄品，当世圣手是圣品，传说不录的是仙品。</li>
+</ul></li>
+</ul><h4 id="获得与升级">获得与升级</h4><p><strong>获得（三选一）</strong>：</p><ol type="1">
+<li><strong>从业</strong>：以此行当谋生满一个月（领月钱、受约束、担责任）；</li>
+<li><strong>拜师</strong>：得该行当师傅认可，直接入册（师父的因果，也是你的）；</li>
+<li><strong>灰色职业</strong>：做成对应的事即点亮（卖出第一单情报 → 「掮客」；摸到第一只钱包 → 「三只手」）。</li>
+</ol><p><strong>职业经验</strong>：</p><ul>
+<li>从业时长：主职每月 +1 点（兼职减半）；</li>
+<li>技艺印证：捆绑生活技能每涨 10 点熟练度，+1 点；技能圆满另 +2 点；</li>
+<li>行业事件：完成该职业的关键事件（坐堂救回危重病人、走镖平安到埠），+2~5 点；</li>
+<li>口碑：涨工钱、赠礼、行业扬名，+1~3 点。</li>
+</ul><p><strong>升级</strong>：每级所需经验 <strong>2 / 4 / 8 / 16 / 32</strong>，并需一次<strong>考核</strong>（师傅点头、行会评定、或一件拿得出手的事）。光熬年头，熬不出师傅。</p><h4 id="品阶与加成数值标尺修订版">品阶与加成（数值标尺修订版）</h4><p><strong>每级属性加成 = 品阶基数 × 境界系数</strong></p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>品阶</th>
+<th>每级属性基数</th>
+<th>特性量级</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>凡品职业</td>
+<td>0.3 ~ 0.5</td>
+<td>判定 +3~5%（学徒/熟手/师傅）</td>
+</tr>
+<tr class="even">
+<td>灵品职业</td>
+<td>3 ~ 5</td>
+<td>判定 +5~10%，规则型特性（入行/挂牌/当家的）</td>
+</tr>
+<tr class="odd">
+<td>玄品职业</td>
+<td>30 ~ 50</td>
+<td>特性质变，行业影响力外溢（成名/一方/宗师）</td>
+</tr>
+<tr class="even">
+<td>圣品职业</td>
+<td>300 ~ 500</td>
+<td>大道级特性，牵动一方格局（传世/圣手）</td>
+</tr>
+<tr class="odd">
+<td>仙品职业</td>
+<td>3000 ~ 5000</td>
+<td>与成就、命格直接挂钩，出世震动一界</td>
+</tr>
+</tbody>
+</table></div><p><strong>境界系数</strong>：凡阶 ×1 ｜ 灵阶 ×10 ｜ 玄阶 ×100 ｜ 圣阶 ×1000 ｜ 仙阶 ×10000。</p><blockquote>
+<p>算例：圣品职业 5 级，宿主圣阶修为——每级 500×1000 = 50万，满级 250万。与后期动辄上万的属性面板（跨阶后更大）同尺同度，职业加成终身有效、永不贬值。 算例：凡品 2 级药庐学徒，凡阶——每级 0.3×1，与现行面板一致。</p>
+</blockquote><p><strong>天花板条款</strong>：职业加成不得使宿主突破<strong>当前境界</strong>的单项属性天花板；但圣品以上职业的<strong>特性</strong>可绕弯（属性不变，规则变了——如「凡铁百炼」：以凡器之身打出灵器之威）。</p><p><strong>品阶封顶与升品转轨</strong>：凡品职业最高 3 级；想再往上，须该行当本身升品——<strong>药庐学徒 → 药师 → 丹师 → 丹圣</strong>是换职业轨，不是原地升级。修为境界与行业深度双到位，方可转轨。</p><h4 id="名录示例--节选非全集">名录（示例 · 节选，非全集）</h4><ul>
+<li><strong>凡品</strong>：药庐学徒（识药人：辨药/制药/炮制经验+10%）、店小二（过目不忘、察言观色）、猎户（山里的鼻子）、脚夫（压不垮）、货郎（十里乡情）、更夫（一更一世界）、渔户（浪里白条）、农夫（看天吃饭）……</li>
+<li><strong>灵品</strong>：账房先生（算盘精）、镖师（刀口饭）、铁匠（千锤百炼）、灵厨（食补之道）、私塾先生（桃李）、药师（坐堂）……</li>
+<li><strong>玄品</strong>：丹师（一炉九转）、名捕（海捕文书）、说书人（口舌成兵）、刺客（匿锋）……</li>
+<li><strong>圣品</strong>：丹圣（丹动一城）、器祖、阵中鬼、神医、天机先生——皆须行业登顶 + 当世首达级成就，方有资格挂牌。</li>
+<li><strong>仙品</strong>：名录不公开。唯一已知线索：与「触及真相者」类隐藏成就纠缠。系统批注永远是：<span class="sys">【到时候你就知道了。】</span></li>
+<li><strong>灰色职业</strong>：掮客（消息有脚）、三只手、骗子、刀客——加成高，代价各表（名声带毒 / 通缉度 / 道心 / 仇家）。</li>
+</ul><h4 id="多职业与兼职">多职业与兼职</h4><ul>
+<li><strong>主职业</strong>每月一个（经验全计）；<strong>副职业</strong>每多一个，全部活跃职业经验 -30%（精力有限，天道公允）；</li>
+<li>身份冲突由世界判定：药铺学徒夜里当贼，哪头出事，两头受罪；</li>
+<li>灰色职业不占副职名额，但占<strong>因果</strong>：做过的事，不随换马甲消失。</li>
+</ul><h3 id="成长三柱--联动条款">成长三柱 · 联动条款</h3><ol type="1">
+<li><strong>×功法</strong>：职业每级，捆绑功法熟练度获取 +2%/级（职业是功法的炉）；</li>
+<li><strong>×生活技能</strong>：职业特性与技能判定叠加；技能圆满 +2 点职业经验；</li>
+<li><strong>×成就</strong>：职业 3 级（凡品封顶）自动刻凡品成就「一行状元」；圣品挂牌刻圣品成就，与千秋录互认；</li>
+<li><strong>×缘分</strong>：职业是缘分的放大器——同一个周先生，对「学徒」和对「准丹师」，是两份缘法；</li>
+<li><strong>×气运</strong>：职业不加气运。但圣品职业的「行业异象」（丹云、剑鸣、百兽来朝）本身，就是天道看见的次数；</li>
+<li><strong>×融合</strong>：合并后原职业的行业因果、人脉、口碑<strong>一并继承</strong>，不随名目消失。</li>
+</ol><h3 id="禁术--透支未来的力量">禁术 · 透支未来的力量</h3><p>禁术 = 用代价换取超出当前境界上限的威力。面板红框标记，释放前系统三次确认。分两档半：</p><ul>
+<li><p><strong>一档 · 燃法禁术（竭蓝型）</strong>：一次性倾泻全部法力于一击，威力可越 1~2 个小境；代价：法力归零 +<span class="sys">【虚弱】</span>——全属性 -50%，蓝条锁 0，持续 3~7 日（体质定恢复），期间被偷袭判定极劣。放禁术前，先找好藏身之处；</p></li>
+<li><p><strong>二档 · 献祭禁术（血祭型）</strong>：献祭<strong>永久属性 / 寿元 / 道基</strong>换一次性爆发，威力可越一整个大阶。亏空记为<span class="sys">【道伤】</span>，唯圣药可补。<strong>气运也可献祭</strong>——最贵也最疯的筹码：献祭 1 点气运，威力冠绝同档，此后经年霉运缠身。系统警告：<span class="sys">【此术不可逆。天道记账，概不退换。】</span></p></li>
+<li><p><strong>那半档 · 同归于尽</strong>：燃烧全部道基与剩余寿元的一击——这一击之后，没有然后。</p></li>
+</ul><p><strong>隐藏风险</strong>：燃烧道基的人像黑夜里的火炬——频繁使用献祭禁术者，会逐渐进入某些存在的视野。</p><p><strong>战力系统接口</strong>：法力存量计入法系战力浮动（满蓝 ×1.1 / 半蓝 ×0.9 / 空蓝 ×0.7）；<strong>禁术不计入常态战力</strong>——对手看不到你藏的底牌，这是「战力会骗人」的合法手段。</p><h3 id="百艺副职--丹器阵符">百艺副职 · 丹器阵符</h3><p>修仙四艺皆纳入熟练度体系，有品阶、有门槛，也是最稳的立身之本——散修靠手艺换灵石，宗门以客卿之礼待匠师：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>副职</th>
+<th>主属性</th>
+<th>入门门槛</th>
+<th>产出</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>丹道</td>
+<td>智力+体质</td>
+<td>识药（智力辨药理）、控火（体质稳火候）</td>
+<td>丹药：疗伤、破境、解毒、驻颜……</td>
+</tr>
+<tr class="even">
+<td>炼器</td>
+<td>力量+智力</td>
+<td>凡铁百炼，锤下见真章</td>
+<td>灵器、法宝</td>
+</tr>
+<tr class="odd">
+<td>阵法</td>
+<td>智力</td>
+<td>通晓基础阵纹</td>
+<td>洞府守护、困敌杀阵、聚灵匿息</td>
+</tr>
+<tr class="even">
+<td>符箓</td>
+<td>智力+敏捷</td>
+<td>灵墨、符纸、一双稳手</td>
+<td>一次性法术、传讯、遁符</td>
+</tr>
+</tbody>
+</table></div><ul>
+<li><p><strong>品阶与修为挂钩</strong>：灵阶修士最多炼出灵品丹药，想炼玄品，先入玄阶；</p></li>
+<li><p><strong>越阶炼成并非绝无可能</strong>：天材地宝、异火相助、气运爆发都可能让奇迹发生——每次越阶成功都是震动行当的大事，也是千秋录里的高品成就；</p></li>
+<li><p>副职制品不仅是消耗品：一炉好丹能换一场人情，一件好器能结一段善缘，也可能招来「怀璧其罪」。</p></li>
+</ul><h3 id="祸福相倚--卡牌没有好坏只有会不会用">祸福相倚 · 卡牌没有好坏，只有会不会用</h3><p>卡池里混着少量<strong>负面词条卡</strong>：「天煞孤星」（亲近之人易遭横祸）、「霉神附体」（霉运缠身）、「怀璧其罪」（身怀重宝必被觊觎）。系统概不负责——攒够点数也能剥离，只是价钱往往贵到肉疼。但坏卡不等于死局。</p><p><strong>霉运遵循因果与环境</strong>：以「霉神附体」为例，你和身边的人都会遇上倒霉事，依处境而定——站在火山边，就大概率掉下去；会不会死，看基础属性、护体功法，或身上有没有宝物。</p><ul>
+<li><p>你可以带着一身霉运<strong>走进敌人堆里</strong>，看天雷、地陷、妖兽追着仇家劈；</p></li>
+<li><p>也可以把自己泡进宗门护山大阵闭门不出，让霉运无从下口；</p></li>
+<li><p>坏卡用好了，就是一把不见血的刀。</p></li>
+</ul><p>系统提示：词条无好坏，只有借势者生。</p><h3 id="灵魂印记卡--卡池里的私货">灵魂印记卡 · 卡池里的私货</h3><p>卡池中混着约 15% 的「灵魂印记卡」——卡面文字带着你母界的语言与梗。别惊讶，系统以你灵魂最熟悉的方式呈现；它在学你说话。（至于它为什么要学你说话……这是个好问题。）</p><p><strong>机制类</strong>（改的是生活，不只是战斗）：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>卡</th>
+<th>品级</th>
+<th>效果</th>
+<th>代价 / 备注</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>干饭人</td>
+<td>良</td>
+<td>吃饱后两时辰力量 +5%，每日第一顿热饭缓慢滋养体质</td>
+<td>饭量 ×1.5，饿得更快</td>
+</tr>
+<tr class="even">
+<td>└ 三合进阶「食神」</td>
+<td>玄</td>
+<td>进食灵谷灵肉可永久微增属性（月有上限），药膳效果 ×2</td>
+<td>从此吃不惯粗食</td>
+</tr>
+<tr class="odd">
+<td>滑肠之体</td>
+<td>凡·负面</td>
+<td>吃不洁食物必腹泻（战力 -12%），每年小概率体质永久 -0.1</td>
+<td>但药蚀累积 -50%、中毒时间减半——拉得快，毒留不住</td>
+</tr>
+<tr class="even">
+<td>铁胃</td>
+<td>良</td>
+<td>免疫食源性腹泻，毒抗 +20%</td>
+<td>与滑肠之体互斥</td>
+</tr>
+<tr class="odd">
+<td>天生魅魔</td>
+<td>玄</td>
+<td>异性初始好感 +40，魅力判定大幅加成，不论对方是否有主</td>
+<td>情怨结仇 ×2，拒人时对方掉缘更狠，同性缘 -10——魅力是债</td>
+</tr>
+<tr class="even">
+<td>睡神附体</td>
+<td>灵</td>
+<td>睡眠恢复 ×2，打坐效率 +20%</td>
+<td>睡梦中被偷袭判定 -30%</td>
+</tr>
+<tr class="odd">
+<td>酒剑仙</td>
+<td>玄</td>
+<td>酒醉状态战力不降反升 +15%，醉中身法诡谲</td>
+<td>宿醉次日智力减半，染酒瘾</td>
+</tr>
+<tr class="even">
+<td>早产辟谷</td>
+<td>灵</td>
+<td>凡阶即可辟谷，饭钱全省</td>
+<td>永久失去食补渠道，干饭系词条作废</td>
+</tr>
+</tbody>
+</table></div><p><strong>热梗类</strong>（规则与趣味齐飞）：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>卡</th>
+<th>品级</th>
+<th>效果</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>真香定律</td>
+<td>玄·规则</td>
+<td>立誓「宁死不做」的事做了收益 ×2；每月至少当众真香一次</td>
+</tr>
+<tr class="even">
+<td>助我破鼎</td>
+<td>圣</td>
+<td>破境成功率 +15%；突破失败道基不损</td>
+</tr>
+<tr class="odd">
+<td>我要验牌</td>
+<td>灵</td>
+<td>每三日一次强制系统重检一次判定（谎言/伪装/战力）；验错则暴露你的怀疑</td>
+</tr>
+<tr class="even">
+<td>邪修</td>
+<td>灵</td>
+<td>旁门左道效率 +50%：非常规手段成功率略降，成功时效果 ×1.5</td>
+</tr>
+<tr class="odd">
+<td>来财</td>
+<td>灵</td>
+<td>财运大涨，经商利润 +10%；露富招贼</td>
+</tr>
+<tr class="even">
+<td>如何呢又能怎</td>
+<td>灵</td>
+<td>嘲讽、乱心、心魔类攻击效果 -50%</td>
+</tr>
+<tr class="odd">
+<td>爱你老己</td>
+<td>良</td>
+<td>独处恢复 +30%，心魔抗性 +20%；群战配合判定 -10%</td>
+</tr>
+<tr class="even">
+<td>敬自己一杯</td>
+<td>良</td>
+<td>死里逃生后饮一杯，气运临时 +1（三日）</td>
+</tr>
+<tr class="odd">
+<td>老叟戏顽童</td>
+<td>玄</td>
+<td>碾压低战力目标消耗减半；虐菜多了，遇强者先手 -5%</td>
+</tr>
+<tr class="even">
+<td>浪浪山小妖怪</td>
+<td>凡</td>
+<td>扮小人物毫无破绽，大能不屑看你；功劳易被抢</td>
+</tr>
+<tr class="odd">
+<td>遥遥领先</td>
+<td>灵·欺诈</td>
+<td>战力对外显示虚高 30%；挑战者络绎不绝</td>
+</tr>
+<tr class="even">
+<td>破防了</td>
+<td>灵</td>
+<td>话术暴击：说中心结，对方战力 -8% 一炷香；结仇速度 +20%</td>
+</tr>
+<tr class="odd">
+<td>不讲武德</td>
+<td>良</td>
+<td>偷袭暗算威力 +30%；被围观则声望大跌</td>
+</tr>
+<tr class="even">
+<td>闪电五连鞭</td>
+<td>良·武技</td>
+<td>五连击总伤 +50%，每鞭独立命中判定——敏捷低者五鞭全空，当场社死</td>
+</tr>
+<tr class="odd">
+<td>摸鱼圣手</td>
+<td>灵</td>
+<td>多线修炼惩罚减半（÷n 变 ÷√n）</td>
+</tr>
+<tr class="even">
+<td>卷王</td>
+<td>灵</td>
+<td>修炼速度 +20%，睡眠需求增加；卷到周围人看你不爽</td>
+</tr>
+<tr class="odd">
+<td>先天牛马圣体</td>
+<td>灵</td>
+<td>体力恢复 ×2，劳作磨炼收益 +50%；贵人见你就想使唤你</td>
+</tr>
+<tr class="even">
+<td>大冤种</td>
+<td>凡·负面</td>
+<td>易被坑骗；每次被坑后三日内必有补偿机缘</td>
+</tr>
+<tr class="odd">
+<td>非酋</td>
+<td>凡·负面</td>
+<td>气运 -1；保底计数速度 +25%</td>
+</tr>
+<tr class="even">
+<td>退退退</td>
+<td>凡</td>
+<td>每日一次喝退战力低于你三成的目标；对强者使用会激怒对方</td>
+</tr>
+<tr class="odd">
+<td>哈基米</td>
+<td>良</td>
+<td>小动物与妖兽幼崽天然亲近</td>
+</tr>
+<tr class="even">
+<td>全职研究如何躺着收租</td>
+<td>良</td>
+<td>闭关走火入魔率大降；出关动力 -50%</td>
+</tr>
+<tr class="odd">
+<td>我去，不早说</td>
+<td>凡</td>
+<td>踩坑后习得速度 ×2——错题本体质</td>
+</tr>
+<tr class="even">
+<td>真没空陪你闹了</td>
+<td>良</td>
+<td>脱离无意义缠斗成功率 +30%</td>
+</tr>
+<tr class="odd">
+<td>胆子肥嘟嘟</td>
+<td>凡</td>
+<td>胆气与威慑抗性 +20%；作死倾向 +20%</td>
+</tr>
+<tr class="even">
+<td>情绪价值</td>
+<td>良</td>
+<td>善缘积累 +20%</td>
+</tr>
+<tr class="odd">
+<td>显眼包</td>
+<td>良</td>
+<td>存在感爆棚：贵人更容易注意到你——仇家也是</td>
+</tr>
+</tbody>
+</table></div><p><strong>彩蛋组合</strong>（系统不提示，自己撞出来）：</p><ul>
+<li><p>「滑肠之体」+「干饭人」→ 合成隐藏卡「直肠子食神」：属性成长与药蚀免疫兼得；</p></li>
+<li><p>「天生魅魔」+「天煞孤星」→ 灾难套餐：爱你的人都会倒霉；</p></li>
+<li><p>「卷王」+「摸鱼圣手」同抽 → 自动合成玄品「张弛有度」：修炼时卷王附体，休息时恢复 ×2；</p></li>
+<li><p>「遥遥领先」+ 敛息藏拙功法 → 组合技<strong>「老千层饼」</strong>：对外战力多层显示，每层独立识破判定且难度递增——他看破第一层时以为看到了真正的你，其实那只是第二层。层数无上限，看你有多少张皮；「我要验牌」一次只能验穿一层。唯一门槛：智力不够，不配当老千层饼；</p></li>
+<li><p>「真香定律」在身 → 系统会主动给你递立 flag 的机会。它故意的。</p></li>
+</ul><h3 id="融合降冗机制v5-新增">融合降冗机制（v5 新增）</h3><p>技能与职业混沌涌现，必然越攒越多、越攒越杂。万象轮盘为此内置<strong>自动合并</strong>：</p><ul>
+<li><strong>触发时机</strong>：系统每月结算日、及宿主每次境界突破时，扫描技能与职业面板；</li>
+<li><strong>合并判定</strong>：功能重叠度达七成即触发合并（辨药 ⊃ 识药、尝百草；掮客 ⊃ 包打听、线人；掷准 + 箭术 → 射术；神行 + 脚底生风 → 神行）；</li>
+<li><strong>合并规则</strong>：
+<ol type="1">
+<li><strong>加成全部保留</strong>，一项不丢（合并是收纳，不是削减）；</li>
+<li>品级取高者，名称取更具代表性者；</li>
+<li>熟练度相加，上限随品级上调；</li>
+<li>多条特性择优保留，可共存者并存；</li>
+<li>合并结果弹系统提示，宿主可花费 1 万象点行使一次<strong>否决权</strong>（保留原名目）。</li>
+</ol></li>
+<li><strong>目的</strong>：降低推演速度与成本——面板越干净，轮盘转得越快，抽卡越利索。</li>
+</ul><p><em>系统批注：<span class="sys">【技能太多，轮盘转得冒烟——合并一下，省下的算力给你抽卡。】</span></em></p></div></section><section class="chapter" id="ch-4"><div class="wrap"><h2 class="ch-head" id="四因果人间--缘分与仇怨"><span aria-hidden="true" class="ch-ghost">四</span><span class="ch-label">第 四 章</span><span class="ch-title">因果人间 · 缘分与仇怨</span></h2><p>这个世界里的每一个人都不是纸片。有名有姓者，系统皆暗记一条<strong>缘分值</strong>（-100 ~ +100），随你的所作所为流动。</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>缘分值</th>
+<th>关系</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>+80 以上</td>
+<td>生死之交</td>
+</tr>
+<tr class="even">
+<td>+40 ~ +80</td>
+<td>挚友 / 贵人 / 良师</td>
+</tr>
+<tr class="odd">
+<td>+20 ~ +40</td>
+<td>相识、好感、愿意顺手帮一把</td>
+</tr>
+<tr class="even">
+<td>±20 之间</td>
+<td>路人</td>
+</tr>
+<tr class="odd">
+<td>-20 ~ -40</td>
+<td>猜疑、微怨</td>
+</tr>
+<tr class="even">
+<td>-40 ~ -70</td>
+<td>记恨</td>
+</tr>
+<tr class="odd">
+<td>-70 ~ -90</td>
+<td>深仇</td>
+</tr>
+<tr class="even">
+<td>-90 以下</td>
+<td>不死不休</td>
+</tr>
+</tbody>
+</table></div><p>每人还有自己的<strong>性格底色</strong>（重情、贪婪、偏激、豁达、记仇、洒脱……），同样的行为落在不同人身上，结出的果完全不同。</p><h3 id="结善缘">结善缘</h3><ul>
+<li><p>救命之恩、雪中送炭、共患难、授业解惑、志趣相投。</p></li>
+<li><p><strong>贵人</strong>：危难时拉你一把，随手赠你一场机缘。</p></li>
+<li><p><strong>良师</strong>：传你功法、教你处世，但师承即因果——师父的敌人，也会是你的敌人。</p></li>
+</ul><h3 id="结仇之途">结仇之途</h3><ol type="1">
+<li><strong>夺宝</strong>：秘境同见一件宝物被你所得——他当场可能拱手道贺，怨恨的种子却已种下；</li>
+<li><strong>夺机缘</strong>：截胡他人命中注定的造化；</li>
+<li><strong>情怨</strong>：他爱慕之人，倾心于你；</li>
+<li><strong>误会</strong>：你什么都没做，但他认定是你做的；</li>
+<li><strong>杀孽</strong>：你杀了他的至亲好友；</li>
+<li><strong>立场</strong>：正魔不两立、家族宗门之命，不由分说。</li>
+</ol><h3 id="仇恨等级决定他的手段">仇恨等级，决定他的手段</h3><ul>
+<li><p><strong>微怨</strong>：冷脸、嘲讽、背后使绊子、抢你生意；</p></li>
+<li><p><strong>记恨</strong>：教训你一顿、散布谣言、争夺资源、让你当众难堪；</p></li>
+<li><p><strong>深仇</strong>：偷袭、下毒、买凶、破坏你的突破闭关；</p></li>
+<li><p><strong>死仇</strong>：不死不休，见之即杀，甚至拉上整个宗门家族。</p></li>
+</ul><h3 id="善恶一念关系会流动">善恶一念，关系会流动</h3><ul>
+<li><p><strong>仇人可化友</strong>：解开误会、归还宝物、以德报怨、生死之间并肩一回，恨意可能烟消云散；</p></li>
+<li><p><strong>好友可变仇</strong>：夺他机缘、他爱慕的人爱上你、你成长太快令他心态失衡、旁人挑拨离间——背叛往往来自最不设防的人；</p></li>
+<li><p>时间会冲淡一些恩怨，也会发酵另一些。久别重逢的故人，未必还是故人。</p></li>
+</ul><h3 id="生死判定">生死判定</h3><p>每一次偷袭、下毒、围杀，系统按属性、词条、功法、宝物与<strong>气运</strong>综合判定（气运高者会「心血来潮」，在动手前一瞬没来由地感到不安）。结果无非几种：无事、轻伤、中伤、重伤、濒死、死亡——以及<strong>反杀</strong>（详见「战斗、危机与伤病」）。</p></div></section><section class="chapter" id="ch-5"><div class="wrap"><h2 class="ch-head" id="五地理五域四海"><span aria-hidden="true" class="ch-ghost">五</span><span class="ch-label">第 五 章</span><span class="ch-title">地理：五域四海</span></h2><ul>
+<li><p><strong>中州</strong>：天下中心，四大皇朝并立，龙脉汇聚，天骄最多、杀戮也最多。</p></li>
+<li><p><strong>东荒</strong>：宗门林立之地，十万宗门、百万修士，机缘与尸骨等重。</p></li>
+<li><p><strong>南岭</strong>：十万大山，妖族地盘，人妖杂居，蛮荒而自由。</p></li>
+<li><p><strong>西漠</strong>：黄沙万里，佛国与沙盗并存，地下埋着上古战场。</p></li>
+<li><p><strong>北原</strong>：永夜冰原，蛮族图腾修士的国度，崇拜强者。</p></li>
+<li><p><strong>四海</strong>：东海龙宫、南海鲛国、西海雾海、北海归墟——归墟相传是仙路断绝之处。</p></li>
+</ul><p><strong>你的起点</strong>：东荒·云州·青石城——一座因灵脉枯竭而衰败的边城，城中有三流小宗「青岩门」、豪族林家、最大的福源商会分号，以及城南破庙里的你。</p></div></section><section class="chapter" id="ch-6"><div class="wrap"><h2 class="ch-head" id="六势力格局"><span aria-hidden="true" class="ch-ghost">六</span><span class="ch-label">第 六 章</span><span class="ch-title">势力格局</span></h2><ul>
+<li><p><strong>正道十大上宗</strong>：如中州「太一圣地」、东荒「藏剑阁」，各有圣域境老祖坐镇。</p></li>
+<li><p><strong>四大皇朝</strong>：以中州为根基，皇朝气运加身，天子修的是江山大道。</p></li>
+<li><p><strong>三大商会</strong>：福源商会、多宝阁、天机楼——买消息去天机楼，买命去多宝阁，什么都有的是福源。</p></li>
+<li><p><strong>魔道六宗</strong>：合欢宗、血河教、万魂殿等，并非人人该杀，但最好绕着走。</p></li>
+<li><p><strong>听雨楼</strong>：散修互助联盟，缴纳会费可换取庇护与情报，是草根散修最好的去处。</p></li>
+<li><p><strong>避世族群</strong>：妖族（南岭）、蛮族（北原）、海族（四海），与人族时有大战。</p></li>
+</ul></div></section><section class="chapter" id="ch-7"><div class="wrap"><h2 class="ch-head" id="七货币与资源"><span aria-hidden="true" class="ch-ghost">七</span><span class="ch-label">第 七 章</span><span class="ch-title">货币与资源</span></h2><p><strong>货币阶梯</strong>（以现实购买力锚定）：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>货币</th>
+<th>换算</th>
+<th>购买力锚定</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>铜钱（文）</td>
+<td>基准</td>
+<td>一文 ≈ 一个馒头</td>
+</tr>
+<tr class="even">
+<td>白银（两）</td>
+<td>= 1000 文（一贯）</td>
+<td>一两 ≈ 凡人家庭半月嚼用</td>
+</tr>
+<tr class="odd">
+<td>黄金（两）</td>
+<td>= 10 两银</td>
+<td>—</td>
+</tr>
+<tr class="even">
+<td>下品灵石</td>
+<td>= 100 两金 = 十万文</td>
+<td>凡人苦力攒十年</td>
+</tr>
+<tr class="odd">
+<td>中品 / 上品 / 极品灵石</td>
+<td>各 ×100</td>
+<td>上品灵石已是宗门级交易单位</td>
+</tr>
+</tbody>
+</table></div><p><strong>凡俗物价</strong>：黑馍 2 文、热汤面 5 文、大通铺一晚 10 文、棉袄 300 文、柴刀 80 文、精铁刀 2 两银、码头苦力日结 25 文、药铺学徒月钱 500 文、青石城破屋一间 30 两银、0 阶武技秘籍 5~20 两银。</p><p><strong>修士物价</strong>：聚气丹（凡阶破境）15 下品灵石、灵品回灵丹 3 灵石、下品灵器 50~200 灵石、1 阶功法玉简 30~100 灵石；玄品以上以中品灵石计；<strong>圣品以上交易灵石失灵，基本以物易物</strong>——高阶资源不可再生，给钱没用。</p><p><strong>灵石通缩</strong>：灵石本身是修炼消耗品，灵脉又在枯竭，一年比一年值钱——「五十年前一枚灵石能换的东西，现在得两枚。」</p><p><strong>其他资源</strong>：</p><ul>
+<li><p><strong>丹药</strong>：分凡、灵、玄、圣四品，对应四阶修士（每品再分品质六等，见「万物有灵 · 品质六等」）；</p></li>
+<li><p><strong>器物</strong>：凡器 → 灵器 → 法宝 → 通天灵宝 → 仙器（传说），同样各分品质六等；</p></li>
+<li><p><strong>储物法器</strong>：储物袋（灵品，三尺见方）→ 纳戒（玄品，一屋之地）→ 洞天级空间法宝（圣品）。滴血认主，人死即失——杀人夺宝的第一道工序是剁手。<strong>系统不提供背包</strong>，它只发任务；</p></li>
+<li><p><strong>硬通货</strong>：妖兽内丹、灵药、功法玉简，以及——消息。</p></li>
+</ul><p>你的资产：零。不过破庙神像的裂缝里，也许有两枚前朝铜钱。</p></div></section><section class="chapter" id="ch-8"><div class="wrap"><h2 class="ch-head" id="八妖兽与异族"><span aria-hidden="true" class="ch-ghost">八</span><span class="ch-label">第 八 章</span><span class="ch-title">妖兽与异族</span></h2><p>妖兽亦分四阶：一阶（凡阶）通灵智，百年开智者百中无一；二阶（灵阶）偶有能言者，一州未必有一头；三阶（玄阶）大妖灵智不逊于人，但「化形」是志怪话本才敢写的事；四阶（圣阶）即妖圣，与人族天尊分庭抗礼。另有草木成精的「灵族」、上古遗种，及退潮期才出没的「渊兽」——界壁裂缝里爬出来的东西，其灵智算不算「智」，没人说得清。</p><p><strong>灵宠与坐骑</strong>：缔结灵宠的方式有三——</p><ul>
+<li>幼兽豢养（感情最深，「哈基米」词条持有者的捷径）；</li>
+<li>武力收服（服你的拳头，不服你的人）；</li>
+<li>平等契约（通灵大妖才配谈，条款双方说了算）。</li>
+</ul><p>灵宠分走你的心神与口粮；坐骑另算——一头会飞的坐骑，是凡阶修士最早摸到的「机动性」。背叛主人的灵兽极少，见风使舵的极多。</p><p><span class="sys">【认魂】</span>灵兽认魂不认人：缘分值 +80（生死之交）以上的灵宠，下一世可能仍在世等候（时间线继承）——但记忆封印期间，它只会对这个「陌生人」感到莫名的熟悉与焦躁。妖兽寿元远长于人，这或许是你所有轮回里唯一不用重新开始的羁绊。</p></div></section><section class="chapter" id="ch-9"><div class="wrap"><h2 class="ch-head" id="九万物有灵--品阶与生智"><span aria-hidden="true" class="ch-ghost">九</span><span class="ch-label">第 九 章</span><span class="ch-title">万物有灵 · 品阶与生智</span></h2><p>万物皆有品阶：草药、矿材、衣袍、兵刃、功法、飞舟、灵兽、山川地脉……统分<strong>凡、灵、玄、圣、仙</strong>五品，与修士四阶二十四境一一对应。</p><h3 id="品阶速览">品阶速览</h3><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>品阶</th>
+<th>对应</th>
+<th>举例</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>凡品</td>
+<td>凡阶</td>
+<td>寻常草药、精铁刀剑、粗布麻衣</td>
+</tr>
+<tr class="even">
+<td>灵品</td>
+<td>灵阶</td>
+<td>百年灵药、灵器、粗通灵性的功法</td>
+</tr>
+<tr class="odd">
+<td>玄品</td>
+<td>玄阶</td>
+<td>法宝、大妖血脉、历经杀伐的古物</td>
+</tr>
+<tr class="even">
+<td>圣品</td>
+<td>圣阶</td>
+<td>通天灵宝、圣药、镇宗功法</td>
+</tr>
+<tr class="odd">
+<td>仙品</td>
+<td>传说中的登仙境</td>
+<td>仙器、仙药——大多只存在于残破记载</td>
+</tr>
+</tbody>
+</table></div><h3 id="品阶之外--品质六等">品阶之外 · 品质六等</h3><p>同一品阶之内还有一道分水岭——<strong>品质</strong>。品阶看「它是什么层级的东西」，品质看「它被做成了什么样子」。丹药、器物、符箓、阵盘、功法玉简乃至灵药材料，统统适用：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>品质</th>
+<th>说明</th>
+<th>效力</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>瑕疵</td>
+<td>炼制失手而未毁：丹含丹毒、器性不稳、符箓时灵时不灵</td>
+<td>五~六成</td>
+</tr>
+<tr class="even">
+<td>下品</td>
+<td>勉强功成，聊胜于无</td>
+<td>七~八成</td>
+</tr>
+<tr class="odd">
+<td>中品</td>
+<td>合格之作，市面标准货</td>
+<td>十成（基准）</td>
+</tr>
+<tr class="even">
+<td>上品</td>
+<td>匠心独运：丹生一纹、器起灵纹</td>
+<td>十二成</td>
+</tr>
+<tr class="odd">
+<td>极品</td>
+<td>大师心血：三纹，一物难求</td>
+<td>十五成</td>
+</tr>
+<tr class="even">
+<td>绝品</td>
+<td>传说之作：九纹圆满，出世引动异象，天时地利人和缺一不可</td>
+<td>二十成，常附带意料之外的灵性</td>
+</tr>
+</tbody>
+</table></div><p><strong>品质的来源</strong>（按权重）：</p><ol type="1">
+<li><strong>创作者的水平</strong>（境界 + 副职熟练度）——七分在人；</li>
+<li><strong>材料的品相</strong>（年份、完整度、处理手法）——两分在料；</li>
+<li><strong>外物相助</strong>（地火、异火、名山炉鼎）——一分在器；</li>
+<li>最后一丝，看<strong>气运</strong>——绝品从来不是纯靠手艺堆出来的。</li>
+</ol><p><strong>各艺品质的标志</strong>：</p><ul>
+<li><p><strong>丹药以丹纹论</strong>：无纹为下中品，一纹上品，三纹极品，九纹绝品。绝品丹成时引动「丹云」异象，百里可见——千秋录里「丹动一城」说的就是它；</p></li>
+<li><p><strong>器物以器纹论</strong>：祭炼中自然浮现的纹路；玄品以上的绝品器物几乎必然通灵；</p></li>
+<li><p><strong>符箓以转数论</strong>：一笔几转定高下；绝品符箓反而「符成自晦」，看着平平无奇；</p></li>
+<li><p><strong>阵法以阵眼论</strong>：阵盘品质定阵法上限——用瑕疵阵盘布杀阵，先杀的是布阵人；</p></li>
+<li><p><strong>功法玉简以传本论</strong>：错简版（练了走火）→ 完整版 → 精校本 → 祖师亲注。</p></li>
+</ul><p><strong>市价</strong>（以中品为基准）：下品对折，瑕疵白送没人要；上品三倍；极品十倍起且有价无市；绝品不上货架——要么进拍卖会压轴，要么引来杀身之祸（「怀璧其罪」词条的最爱）。</p><p><strong>品阶与品质的关系</strong>：品质填不平品阶的鸿沟——绝品凡刀也劈不开灵器的防御。但同阶之内，品质压死人：一柄极品灵器在手，足以让下品法宝的持有者绕着你走。</p><h3 id="天材地宝固定名录">天材地宝固定名录</h3><p>（属性加成对应「属性标尺」的数量级；同名宝物再分品质六等——采摘手法不对、年份不足，圣药也能毁成玄品。）</p><p><strong>灵品</strong>（凡阶至灵泉境够用）：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>名称</th>
+<th>产地</th>
+<th>效果</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>赤血芝</td>
+<td>南岭深山背阴处</td>
+<td>体质 +1~2</td>
+<td>药蚀 10；采它要过妖兽那一关</td>
+</tr>
+<tr class="even">
+<td>风铃果</td>
+<td>东荒千丈崖壁</td>
+<td>敏捷 +1~2</td>
+<td>果熟自鸣如铃，引飞鸟争食，手慢无</td>
+</tr>
+<tr class="odd">
+<td>石钟乳</td>
+<td>深窟溶洞，百年一滴</td>
+<td>力量 +1</td>
+<td>药蚀低，可少量多次，穷人攒属性的正路</td>
+</tr>
+<tr class="even">
+<td>慧心莲</td>
+<td>瘴气沼泽中心</td>
+<td>智力 +1~2</td>
+<td>莲花醒神，但沼泽先筛掉一批人</td>
+</tr>
+</tbody>
+</table></div><p><strong>玄品</strong>（一州之地难得）：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>名称</th>
+<th>产地</th>
+<th>效果</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>龙血果</td>
+<td>上古战场、龙族遗迹（青冥古战场偶有出土）</td>
+<td>力量 +30~60</td>
+<td>性烈，服后三日狂暴易怒；体质不足者慎用</td>
+</tr>
+<tr class="even">
+<td>九叶玄芝</td>
+<td>灵脉交汇之地</td>
+<td>体质 +50</td>
+<td>一叶一品，九叶齐开则近圣品</td>
+</tr>
+<tr class="odd">
+<td>月华露</td>
+<td>北原极夜之巅，月圆夜凝结</td>
+<td>智力 +40</td>
+<td>采露者需抗住永夜之寒</td>
+</tr>
+<tr class="even">
+<td>影豹内丹</td>
+<td>三阶妖兽影豹</td>
+<td>敏捷 +50</td>
+<td>它不想给你，你得先追上它</td>
+</tr>
+<tr class="odd">
+<td>洗髓丹（丹方）</td>
+<td>丹道宗门秘传</td>
+<td>洗经伐髓，清除一项暗伤</td>
+<td>玄品丹药中的硬通货，散修梦寐以求</td>
+</tr>
+</tbody>
+</table></div><p><strong>圣品</strong>（出世则震动一方）：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>名称</th>
+<th>产地</th>
+<th>效果</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>凤髓梧桐心</td>
+<td>南岭不死火山深处</td>
+<td>体质 +600，火系功法亲和暴涨</td>
+<td>有守药神兽；它通灵了，会跑</td>
+</tr>
+<tr class="even">
+<td>万年地心乳</td>
+<td>地脉之眼，万丈地底</td>
+<td>重塑道基：修复一切暗伤与药毒，道基损伤亦可弥补</td>
+<td>暗伤者的终极救赎，滴数论价</td>
+</tr>
+<tr class="odd">
+<td>雷击木心</td>
+<td>渡厄境雷劫频发之地</td>
+<td>气运 +1——世间极少数能撼动气运的死物</td>
+<td>被雷劈过而不焦的木心，本身就是在逆天</td>
+</tr>
+<tr class="even">
+<td>鲛人泪珠</td>
+<td>南海鲛国</td>
+<td>智力 +500，神识大涨</td>
+<td>鲛人一生只泣三泪，每一颗都是故事</td>
+</tr>
+</tbody>
+</table></div><p><strong>仙品</strong>（传说中的传说，与主线纠缠）：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>名称</th>
+<th>产地</th>
+<th>效果</th>
+<th>备注</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>鸿蒙紫气残丝</td>
+<td>仙陨之战遗址（位置无人知晓）</td>
+<td>？？？（据说是重开仙路的钥匙碎片之一）</td>
+<td>吞世者与天道都在找的东西</td>
+</tr>
+<tr class="even">
+<td>归墟水精</td>
+<td>北海归墟底部</td>
+<td>？？？</td>
+<td>那里是它进食的地方——去取药，等于去巨兽嘴边捡食</td>
+</tr>
+<tr class="odd">
+<td>忘川水</td>
+<td>冥河传说</td>
+<td>洗去任意词条（包括仙品），无副作用</td>
+<td>系统词条剥离之外的唯一退路</td>
+</tr>
+</tbody>
+</table></div><p><strong>三条通用规则</strong>：</p><ol type="1">
+<li>圣品以上的天材地宝大多<strong>已生灵智或伴生守护</strong>——采药不是采摘，是一场谈判或一场战争；</li>
+<li>名录之外还有未记录的野药——气运高的人能在山沟里踩到图鉴上没有的东西；</li>
+<li>境界不够，宝药即毒药——什么境界吃什么药，僭越有代价。</li>
+</ol><h3 id="灵智的诞生">灵智的诞生</h3><ul>
+<li><p><strong>玄品以上，方有可能诞生灵智</strong>——但门槛极苛：器物需主人长年温养、历经杀伐、或吸足天地精华，才可能某一日「通灵」：剑有了剑心，炉有了炉性。</p></li>
+<li><p>灵兽妖族以血脉与年月积累，开智者百中无一，能言者万中无一（见妖兽一章）。</p></li>
+<li><p>灵智一旦诞生便<strong>不死不灭</strong>——器物碎了，灵还在，或附于残片，或堕入山川，等待下一个千年。</p></li>
+</ul><h3 id="性格由环境铸成">性格由环境铸成</h3><p>灵的性格不是天生的，是被「养」出来的：</p><ul>
+<li><p>凶兵养出暴戾嗜血的剑灵；佛前受三千年香火的铜炉，温吞慈悲。</p></li>
+<li><p><strong>近朱者赤，近墨者黑</strong>——跟什么人、在什么地方，它就长成什么样子。</p></li>
+<li><p>深山大泽里从未接触外界的灵物，大多单纯天真，不通人心险恶——最好骗，也最惹人怜；骗它们的，往往没有好下场。</p></li>
+</ul><h3 id="传音与化形">传音与化形</h3><ul>
+<li><p><strong>能言</strong>：玄品以上偶现，多为上古遗留之物，当世一只手数得过来。器物从不张口——声音直接响在你的识海深处，上古称之为<strong>传音</strong>。凡人偶有「听见东西说话」的记载，大多被当成幻听或鬼祟。</p></li>
+<li><p><strong>化形</strong>：志怪话本里的传说——灵物化形成人，混迹红尘。凡人当故事听，修士当讹传。<strong>到底有没有？只有站在世界顶峰的那几个人知道。</strong></p></li>
+</ul><h3 id="万物有灵的份量">万物有灵的份量</h3><ul>
+<li><p>一件通灵兵器会自己选择主人。你看中它，它未必看中你。</p></li>
+<li><p>圣品以上的存在都有自己的脾气与恩怨——强取，往往要付出意想不到的代价。</p></li>
+<li><p>这天下最深的那层秘密，或许就藏在某件「死物」沉默的千年里。<span class="sys">【识魂】</span>器灵亦认魂：生死之交级的通灵器物，能穿透皮囊与封印，模糊「认」出你的灵魂——表现为对陌生的你格外亲近，或无端悲鸣，上古称之为「旧主回响」。你上一世用过什么剑、住过什么洞府，这一世未必记得——但它们记得。</p></li>
+</ul></div></section><section class="chapter" id="ch-10"><div class="wrap"><h2 class="ch-head" id="十开局剧本--雪夜破庙"><span aria-hidden="true" class="ch-ghost">十</span><span class="ch-label">第 十 章</span><span class="ch-title">开局剧本 · 雪夜破庙</span></h2><p>你睁开眼时，正躺在青石城南的破庙里，高烧三天，浑身滚烫，怀里揣着半个冻硬的黑馍。</p><p>这是一个大雪之夜，庙外有狼嚎，庙里有七个同样衣衫褴褛的乞丐分食最后一点烤火余温——你现在是其中之一，排行最末，大家都叫你<strong>「阿七」</strong>。</p><p>然后，一行只有你能看见的金色小字，在识海中缓缓浮现：</p><p><strong><span class="sys">【万象轮盘已激活。】</span></strong> <strong><span class="sys">【开局赠礼：万象点 ×100（仅此一次，用完即止）。】</span></strong> <strong><span class="sys">【检测到宿主命格：天绝之命（原注定冻死于今夜）。】</span></strong> <strong><span class="sys">【检测到未知因果介入……命格已改写。】</span></strong> <strong><span class="sys">【宿魂来源：界外。此界因果：无。】</span></strong> <strong><span class="sys">【正在以宿主灵魂最熟悉的方式重构交互界面……完成。】</span></strong> <strong><span class="sys">【凡品任务已发布：活过这个冬天。奖励：万象点 ×20。】</span></strong></p><p>而庙门之外，雪地里正躺着一个浑身是血、尚有微弱呼吸的黑衣人——他怀里，鼓鼓囊囊。</p><p>（轮回注：这是你第一世，也是唯一一世被注定的开局——雪夜破庙是系统与你灵魂的锚定仪式。此后每一世的开场，见第十五章「轮回法则 · 再世规则」。）</p></div></section><section class="chapter" id="ch-11"><div class="wrap"><h2 class="ch-head" id="十一天道与系统--终极隐秘"><span aria-hidden="true" class="ch-ghost">十一</span><span class="ch-label">第 十一 章</span><span class="ch-title">天道与系统 · 终极隐秘</span></h2><p>（本节为幕后天机，角色不可知，由 GM 暗中执行。真相随剧情分层揭开。）</p><h3 id="系统是什么">系统是什么</h3><p>万象轮盘不是金手指。它是<strong>天道分离出来的一部分</strong>。</p><p>三万年与吞世者相斗，天道自身也半残——两者同源相制，谁也奈何不了谁。于是它造了一把「刀」：系统。</p><ul>
+<li><p>选宿主标准苛刻到极点：<strong>异界之魂，无此界因果</strong>——唯有不沾此界因果者，才不被双方博弈的因果网束缚，成为真正自由的变量。你是它等了不知多少万年才等到的刀。</p></li>
+<li><p>它以你灵魂最熟悉的方式呈现——面板、属性、抽卡、熟练度、任务评级、成就名录。那不是游戏界面，是<strong>天道俯下身，用你听得懂的话对你说话</strong>。</p></li>
+</ul><h3 id="天道的腐化">天道的腐化</h3><p>天道本该纯粹：不偏不倚，无喜无悲。</p><ul>
+<li><p>但三万年的缠斗让<strong>因果渗入天道本身</strong>——清水滴墨三万年，最纯粹的存在也会长出「心思」。</p></li>
+<li><p>起初只是微小的偏袒，后来是私欲，如今——<strong>它没安好心</strong>。</p></li>
+<li><p>它的计划清晰而冷酷：扶你成长 → 借你之手除掉吞世者 → 在你杀死吞世者、承接其全部因果的那一刻，<strong>连你带战果一起炼化</strong>，补全自身，超脱此界。</p></li>
+<li><p>刀用完了，是要回炉的。</p></li>
+</ul><p><span class="sys">【先驱宿主】</span>你不是第一个宿主。曾有圣域老祖搜过一个宿主的魂（见 15.1）——那是先行者，不是你。他们的结局无人知晓：有的魂飞魄散，有的死在「回炉」前夜。痕迹散落世间：牢房墙上的一行刻字、半张上古信物、一座无名坟——时间线继承之下，你可能在任何一世与之擦肩而过。天道从不解释，只在你问及时回一句：<span class="sys">【跑好你自己的。】</span></p><p><span class="sys">【轮回与天道】</span>你的死亡不在天道计划之外——刀折了，重铸便是；记忆一封，词条一收，它毫无损失，而世界因你的上一世又朝它要的方向挪了一步。它真正忌惮的只有两件事：你在某一世走得比它预想的远；你在某一世知道了不该知道的。前者它用任务的缰绳牵着，后者……它赌你活不到那一天。</p><h3 id="你看到的系统多少是真">你看到的系统，多少是真？</h3><p>帮助是真的，概率是真的，毒舌也是真的。但请留意这些细节：</p><ul>
+<li><p>任务发布从不解释原因。有些「恰到好处」的任务，是为了把你推向它安排好的位置；</p></li>
+<li><p>评级标准偶发漂移——「完美」的判定，有时并不完全利于你；</p></li>
+<li><p>保底与点数经济是一条精心设计的缰绳：让你永远差一步，永远舍不得死，永远朝它指的方向修炼；</p></li>
+<li><p>成就名录「千秋录」为何随魂不灭、死亡也不回收？它从未解释过；</p></li>
+<li><p>仙品任务那一栏的「？？？」里，藏着它最不想让你现在知道的东西。</p></li>
+</ul><h3 id="三方棋局">三方棋局</h3><ul>
+<li><p><strong>吞世者</strong>想吃掉这个世界；<strong>天道</strong>想吃掉吞世者和你；而你是棋盘上<strong>一颗突然有了自己想法的棋子</strong>。</p></li>
+<li><p>最讽刺的是：最先可能向你吐露部分真相的，恰恰是吞世者——它巴不得你调转刀口。但敌人想让你知道的事，永远要打折再打折地听。</p></li>
+<li><p>站在世界顶峰的那几个人，多少都察觉到「天」不对劲。他们或闭死关，或另谋出路，或……早已投了某一边。</p></li>
+</ul><h3 id="可能的结局取决于你的每一步">可能的结局（取决于你的每一步）</h3><ol type="1">
+<li><p><strong>登仙超脱</strong>：抢在终局前识破一切、修补界壁、重开仙路，携所有羁绊跳出棋盘。登仙路断绝的真相，也许从来不是「断」，而是「被藏」。</p></li>
+<li><p><strong>弑天</strong>：先斩吞世者，再反手炼化天道。古往今来无人做到——但古往今来，也没有第二个来自界外的你。</p></li>
+<li><p><strong>炉鼎</strong>：赢了吞世者，却死在天道温柔的「恭喜」里。最坏的结局，离最好只差一步。</p></li>
+<li><p><strong>换天</strong>：打碎天道与吞世者的棋盘，让此界众生共掌天道——从此没有棋手。</p></li>
+<li><p><strong>……或者一条连系统都推演不到的路。</strong> 你来自界外。「界外」意味着什么，它其实比你更想知道。</p></li>
+</ol></div></section><section class="chapter" id="ch-12"><div class="wrap"><h2 class="ch-head" id="十二战斗危机与伤病--生死判定"><span aria-hidden="true" class="ch-ghost">十二</span><span class="ch-label">第 十二 章</span><span class="ch-title">战斗、危机与伤病 · 生死判定</span></h2><h3 id="战斗力评估--综合战力与状态浮动">战斗力评估 · 综合战力与状态浮动</h3><p>系统综合<strong>境界、五维、功法等阶、词条、装备</strong>给出「综合战力」。公式不公开——系统只给结果，偶尔附一句评语。</p><p><strong>战力参照锚点</strong>：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>战力</th>
+<th>参照</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>1 ~ 5</td>
+<td>凡俗百姓（阿七开局：2.3，高烧中）</td>
+</tr>
+<tr class="even">
+<td>5 ~ 10</td>
+<td>壮汉、捕快、行伍老兵</td>
+</tr>
+<tr class="odd">
+<td>10 ~ 50</td>
+<td>凡阶修士</td>
+</tr>
+<tr class="even">
+<td>50 ~ 300</td>
+<td>灵阶修士</td>
+</tr>
+<tr class="odd">
+<td>300 ~ 2000</td>
+<td>玄阶修士</td>
+</tr>
+<tr class="even">
+<td>2000 ~ 10000</td>
+<td>圣阶大能</td>
+</tr>
+<tr class="odd">
+<td>10000+</td>
+<td>传说</td>
+</tr>
+</tbody>
+</table></div><p><strong>状态浮动 · 战力是活数</strong>：显示值 = 常态战力 × 状态系数。</p><ul>
+<li><p><strong>情绪</strong>：暴怒 +10%、战意高昂 +15%、心乱 -8%、怯战 -20%、道侣在旁 +5%；</p></li>
+<li><p><strong>生理</strong>：饱腹 +2%、饥饿 -10%、腹泻 -12%、酒醉 ±10%（看量）、伤病按四级浮动（轻伤 -10% / 中伤 -30% / 重伤 -50% / 濒死 -80%）；</p></li>
+<li><p><strong>环境</strong>：主场 +10~20%，被克制地形 -10%；</p></li>
+<li><p><strong>词条触发</strong>：「向死而生」类词条在条件达成时才计入浮动；</p></li>
+<li><p><strong>气运不入战力</strong>——它改的是概率，不是数值。战力是纸面，气运是命：战力比你低的人，未必杀不了你。</p></li>
+</ul><p><strong>可见规则</strong>：</p><ul>
+<li><p>目标常态战力 ≤ 你的 1.2 倍 → 显示<strong>当前浮动值 + 状态标注</strong>（如「暴怒 +10%」「重伤 -50%」）；超过 → 只显示「？？？」（深不可测——系统建议：跑）；</p></li>
+<li><p>默认你只能看到<strong>浮动后的当前值</strong>，系统不解释浮动原因；</p></li>
+<li><p><strong>例外：浮动由你造成时</strong>——你下的毒、你散播的谣言、你的词条压制、你的埋伏——系统给出完整拆解：常态值 / 你造成的修正 / 剩余持续时间。自己布的局，自己看得见牌；</p></li>
+<li><p>词条「慧眼识珠」可小幅越级探视。</p></li>
+</ul><p><strong>藏拙与识破</strong>：高阶修士多修敛息藏拙之术，你看到的可能是「他想让你看到的战力」。判定 = 你的智力 vs 对方的隐匿手段：识破时系统显示<span class="sys">【真实战力】</span>与<span class="sys">【伪装战力】</span>两行；看不破，就只有他演给你的那一行。有人故意示弱钓鱼，有人外强中干硬撑——<strong>战力会骗人</strong>。</p><p><strong>群战注意</strong>：战力不可线性叠加——十个战力 20 的乌合之众 ≠ 战力 200。配合、阵型、指挥让 1+1&gt;2；各怀鬼胎让 1+1&lt;1。</p><p><strong>你的战力播报</strong>：每次突破、属性成长、词条变动、装备更替后，系统播报一次战力总结，含数值变化、增长点拆解、短板诊断。例：</p><p><span class="sys">【突破至锻骨境：战力 18 → 26。增长点：力量 4→6（破境 + 反哺）；拖累项：体质 3.1——防御端薄弱，建议食补或硬功。系统评语：现在你能打赢两个壮汉，或者一条半野狗。】</span></p><p>它偶尔毒舌，但诊断从不出错。</p><h3 id="五维在战斗中如何联动">五维在战斗中如何联动</h3><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>属性</th>
+<th>战斗中的职责</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>力量</td>
+<td>伤害、破防、兵刃相格、正面压制</td>
+</tr>
+<tr class="even">
+<td>敏捷</td>
+<td>先手、闪避、命中、走位、逃跑成功率</td>
+</tr>
+<tr class="odd">
+<td>智力</td>
+<td>战局推演、识破偷袭与陷阱、法术掌控、临场急智</td>
+</tr>
+<tr class="even">
+<td>体质</td>
+<td>承伤上限、伤势严重程度、疾病抵抗、持久战续航</td>
+</tr>
+<tr class="odd">
+<td>气运</td>
+<td>变数：暴击、敌人失误、天降救场、绝处逢生</td>
+</tr>
+</tbody>
+</table></div><p>（五维联动的日常实例见第三章「五维与世界联动的实例」。）</p><h3 id="环境是隐形的第六维">环境是隐形的第六维</h3><p>同一个你，在不同环境里完全是两个战力：</p><ul>
+<li><p><strong>窄巷</strong>：利于闪转、伏击、逃遁；不利于长兵器与人数优势；</p></li>
+<li><p><strong>空地</strong>：无处可逃，逃跑≈自杀，唯有死战；</p></li>
+<li><p><strong>水边</strong>：火系功法受制，通水性者如鱼得水（五行生克 ±20%）；</p></li>
+<li><p><strong>雨夜</strong>：血迹被冲、视线模糊——利于潜行与偷袭；</p></li>
+<li><p><strong>闹市</strong>：对方投鼠忌器，你的呼救有人听见。</p></li>
+</ul><h3 id="凡俗生存--吃喝拉撒睡生老病死">凡俗生存 · 吃喝拉撒睡，生老病死</h3><p><strong>在辟谷之前，你首先是个人。</strong> 凡阶与灵泉境以下，生存本身就是每天的主线。</p><p><strong>食 · 饥饿是最诚实的敌人</strong>：</p><ul>
+<li><p>修士打熬气血，<strong>饭量随力量涨</strong>——力量 8 的壮汉一天能吃穷一户农家：吃不起，就练不起；</p></li>
+<li><p><strong>饥饿度</strong>：三日粒米未进 →<span class="sys">【饥饿】</span>（战力 -10%，全属性缓降）；七日 →<span class="sys">【极度饥饿】</span>（战力 -30%，体质开始永久受损）；三日断水即死；</p></li>
+<li><p>食物分品阶：糙馍黑饼（凡品，管饱）→ 灵谷灵肉（灵品，缓慢滋养属性）→ 药膳（丹道分支，食补正道）；</p></li>
+<li><p>不洁饮食 → 体质判定，失败则<span class="sys">【腹泻】</span>（战力 -12%）——智者先看出什么不能吃，运差者吃剩饭都能中招。</p></li>
+</ul><p><strong>睡 · 睡眠是最大的破绽</strong>：</p><ul>
+<li><p>凡人每日必睡；灵阶起打坐替代；玄阶基本不眠；圣阶一闭眼可能就是百年；</p></li>
+<li><p>睡眠不足：智力、敏捷先掉，修炼效率减半，顿悟近乎绝缘；</p></li>
+<li><p><strong>睡着时最脆弱</strong>：守夜看敏捷，深睡遇袭几乎不设防——破庙七人轮流守夜，修士要洞府、阵法、守山兽，皆为此故。词条睡着也生效：「心血来潮」会在刀落下前把你叫醒；</p></li>
+<li><p><strong>梦境</strong>：气运高者偶有预警之梦；通灵器物可能梦中传音；有些真相只在梦里露一角。</p></li>
+</ul><p><strong>饮与拉撒</strong>：</p><ul>
+<li><p>酒是最快的敲门砖，也是最便宜的毒药：小酌 +5% 胆气，大醉 -15%，宿醉次日智力减半；下毒与识破——智力辨毒、体质抗毒、气运决定那杯毒酒端到谁的桌上；</p></li>
+<li><p>凡躯代谢不停，辟谷后渐无此扰；凡俗代谢是排解药蚀最慢但免费的路子。夜香夫、淘茅厕是青石城最贱但管饭的活计——活下去的人才配谈体面。</p></li>
+</ul><p><strong>生老病死</strong>：</p><ul>
+<li><p><strong>生</strong>：境界越高子嗣越难——天道平衡：窃天地之力者，被天地收回繁衍。圣阶千年无一子是常态，故世家格外看重凡阶子弟开枝散叶；</p></li>
+<li><p><strong>老</strong>：寿元将尽者全属性逐年衰减，驻颜丹驻脸不驻命。寿元是世上最硬的通货——大劫里「忽然破关寻衅的老祖」，多半是寿元烧到尽头、拿命赌最后一搏；</p></li>
+<li><p><strong>病</strong>：凡俗疾病靠体质硬扛；灵阶后凡病不侵，但<strong>道病登场</strong>：道伤、心魔、药蚀、走火入魔——凡人病死，修士「道死」。瘟疫起时，凡人流尸满城，丹师义诊结善缘，魔修炼疫为幡——同一场瘟疫，百种人心；</p></li>
+<li><p><strong>死</strong>：凡人死得轻——草席一卷就是一生；修士死得重——坐化者留遗蜕洞府（探索与传承的来源），圣域陨落天地同悲。每天都有人无声无息地死，没人替他们重开一局。</p></li>
+</ul><p>（各阶摆脱食、睡、病、老的节点，见第二章各阶境界表与本章「生老病死」。）</p><h3 id="伤病与疾病">伤病与疾病</h3><ul>
+<li><p>受伤分四级：<strong>轻伤</strong>（战力 -10%）、<strong>中伤</strong>（-30%）、<strong>重伤</strong>（-50%，行动受限）、<strong>濒死</strong>（-80%，命悬一线）。</p></li>
+<li><p>伤势按体质判定：同样的刀，体质高者皮开肉绽，体质低者当场透胸。提醒：阿七体质 2——对他而言，冬天一场高烧足以致命（开局正是如此）。</p></li>
+<li><p><strong>疾病与中毒</strong>：体质决定恶化还是自愈。伤病未愈再添新伤会感染；病中战力衰减，修炼效率减半。</p></li>
+<li><p>治疗途径：凡俗医药、丹药、运功疗伤、灵物奇缘。穷，是这个世界最普遍的重伤。</p></li>
+</ul><h3 id="永久损伤--身体会记账">永久损伤 · 身体会记账</h3><p>世界会记住你受过的伤。面板长期标注<span class="sys">【暗伤】</span><span class="sys">【药毒】</span>等状态，压的是你的<strong>常态战力</strong>：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>损伤</th>
+<th>成因</th>
+<th>后果</th>
+<th>可否逆转</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>暗伤</td>
+<td>重伤/濒死未妥善处理、旧伤未愈添新伤、带伤强行修炼</td>
+<td>对应属性永久下降（腿部暗伤：敏捷跌、身法减速），修炼效率打折</td>
+<td>难：圣品疗伤丹、玄阶以上医道圣手、涅槃境重塑肉身、或「万年地心乳」</td>
+</tr>
+<tr class="even">
+<td>药毒</td>
+<td>毒药吃多了、劣质丹药长期服用</td>
+<td>体质永久下降；但祸福相倚——毒抗反而上升，毒吃多了不死，百毒不侵也是条路</td>
+<td>药毒可排，已损的体质需圣药</td>
+</tr>
+<tr class="odd">
+<td>走火入魔</td>
+<td>突破失败、越阶练功、心境崩溃</td>
+<td>智力或气运受损，重者境界跌落</td>
+<td>需心药与机缘</td>
+</tr>
+<tr class="even">
+<td>经脉寸断</td>
+<td>强行冲关、被废武功</td>
+<td>功法修炼速度永久下降</td>
+<td>传说级续脉圣药（圣品以上）</td>
+</tr>
+<tr class="odd">
+<td>寿元将尽</td>
+<td>大限临近</td>
+<td>全属性逐年衰减</td>
+<td>突破续命，或圣品续寿药</td>
+</tr>
+</tbody>
+</table></div><p>穷病也是病——带伤硬撑，是有利息的。</p><h3 id="耐药性-药蚀">耐药性 ·「药蚀」</h3><p>是药三分毒，修仙界管这叫<strong>药蚀</strong>。面板有一条隐藏数值：<strong>药蚀度（0~100）</strong>。</p><p><strong>两条规则</strong>：</p><ol type="1">
+<li><p><strong>同种递减</strong>：同种丹药/天材地宝，第一次服用 100% 药效，第二次 50%，第三次 25%，第四次起基本无效且药蚀翻倍；</p></li>
+<li><p><strong>异种累积</strong>：换着花样吃也躲不掉。每种药物都带药蚀值（凡品 3~5 ｜ 灵品 8~12 ｜ 玄品 15~25 ｜ 圣品 30+），全部计入药蚀度。</p></li>
+</ol><p><strong>药蚀度的后果</strong>：</p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>药蚀度</th>
+<th>状态</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>0 ~ 30</td>
+<td>无碍</td>
+</tr>
+<tr class="even">
+<td>30 ~ 60</td>
+<td>修炼效率 -10%，丹药吸收率下降</td>
+</tr>
+<tr class="odd">
+<td>60 ~ 90</td>
+<td>体质开始受损，突破时走火入魔概率上升</td>
+</tr>
+<tr class="even">
+<td>90 以上</td>
+<td>丹毒爆发：属性暴跌、境界松动，可能直接暴毙</td>
+</tr>
+</tbody>
+</table></div><p><strong>排解途径</strong>：每月自然代谢 -5（境界越高代谢越快）；排毒丹（治标不治本，本身也含微量药蚀——用丹解毒，以毒攻毒）；药浴、医修调理（最贵，最干净）。</p><p><strong>与品质六等联动</strong>：药蚀值按品质浮动——瑕疵 ×1.5、下品 ×1.2、中品 ×1.0、上品 ×0.7、极品 ×0.4，<strong>绝品几乎无药蚀</strong>。绝品丹贵，不只因为药效翻倍——它是可以天天吃的好药。</p><h3 id="心魔与道心">心魔与道心</h3><p><strong>心魔是什么 · 三层答案</strong>：世人皆知——执念、恐惧、欲念所化，藏于识海，用你自己的声音说你不愿听的话；高层猜测——上古仙魔典籍几乎无心魔记载，此患是仙陨之战后才多起来的：大道残缺，杂念失去约束；真相——？？？（断灵大劫期间走火入魔者十倍于平日；心魔的涨落曲线与它的进食周期，重叠得过于整齐。）</p><p><strong>道心（0~100，半隐藏）</strong>：心魔的对抗面。阿七初始道心 40——死过一次的人，道心脆而韧。</p><p><strong>心魔的六种养料</strong>：执念（求不得）、愧疚、恐惧（濒死经历与前世死亡记忆）、欲望、心境与修为不匹配（<strong>力量涨得比道心快——系统流宿主的头号职业病</strong>：词条让你战力一夜暴涨，道心一步没走）、天地异动。</p><p><strong>心魔四阶段</strong>：杂念（修炼效率 -5%）→ 执念成形（梦中低语，情绪判定 ±15%）→ 心魔劫（突破大境界时具现为幻境）→ 化魔（神智沦丧——魔道六宗的兵源，一半是这么来的）。</p><p>心魔幻境判定：道心 × 智力（看不看得破）× 气运（一线清明）× 词条（「如何呢又能怎」「爱你老己」「破防了」皆可助战）。对穿越者的特攻：两世记忆意味着双倍素材，它最狠的一张牌是给你看回家的门。三种过法：斩（快，道心微损，除根不净）、渡（直面化解，道心大涨甚至反哺智力，风险最高收益最大）、笑（看穿了，笑一声「如何呢又能怎」——可遇不可求）。（多世追加见 15.7。）</p><p><strong>道心的涨与跌</strong>：红尘历练、问心无愧、守诺践约、直面恐惧则涨；违心之事、背信弃义、临阵脱逃、每次使用献祭禁术则跌。<strong>重开者的特权</strong>：幻境里「死亡」主题的威慑减半——它吓不住已经死过的人。</p><p><strong>三家态度</strong>：正道<strong>斩</strong>（斩魔剑诀——斩到最后心里什么都不剩，是另一种走火入魔）；魔道<strong>养</strong>（献祭道心换战力，终点几乎都是化魔）；佛门<strong>渡</strong>（西漠佛国，渡而不斩，渡成者心魔化为护法「魔罗」，佛魔同体）。高阶另有言修、心剑一脉专攻他人道心——乱人心神，比杀人省力气。</p><h3 id="生死危机--死亡即终局">生死危机 · 死亡即终局</h3><ul>
+<li><p>关键时刻，世界把你逼到岔路口：求饶、死战、逃跑、智取……每个选项背后，是<strong>属性 × 环境 × 气运</strong>的综合判定。选错了、属性不够、运气不好——<strong>身死道消，本局结束，重新开局</strong>。</p></li>
+<li><p>死亡瞬间，系统先播报结算（见 15.2）：<span class="sys">【宿主死亡。正在结算此生……】</span>——六维定档，评语照旧毒舌。而后是最后一行小字：<span class="sys">【词条回收中……】</span>面板随之归零，记忆与千秋录被封存至灵魂深处。它回收词条去做什么？也许轮回再多，你也没机会知道。</p></li>
+<li><p><strong>重新开局 · 细则</strong>：死亡即重开，世界不回档——</p>
+<ul>
+<li>六维结算定档（传世 / 无愧 / 平庸 / 潦草 / 败笔），按评级定下一世万象点、伴生残影、属性增减与投胎档位（见 15.2）；</li>
+<li>身份随机掷骰，吉 / 平 / 劣 / 狱四档（见 15.5）；</li>
+<li>时间线继承不可逆——上一世死亡约十至十六年后重新落地，恩怨随身份清零而因果继续流动（见 15.3）；</li>
+<li>前世记忆封印至系统激活（见 15.4、15.6）；</li>
+<li>词条与保底计数清零；死亡记忆、千秋录、称号、系统评语随魂封存；</li>
+<li>第一世阿七是唯一锚定，不可复制。</li>
+</ul></li>
+</ul></div></section><section class="chapter" id="ch-13"><div class="wrap"><h2 class="ch-head" id="十三成就系统-千秋录"><span aria-hidden="true" class="ch-ghost">十三</span><span class="ch-label">第 十三 章</span><span class="ch-title">成就系统 ·「千秋录」</span></h2><p>任务之外，系统里还躺着一本<strong>「千秋录」</strong>——你在这世间做到的每一件「值得被记住的事」，都会被它自动刻下。与任务不同：<strong>任务是别人布置的，成就是自己长出来的。</strong></p><h3 id="总纲-1">总纲</h3><ol type="1">
+<li><p><strong>自动达成，即时结算</strong>：无需接取，做到即得。达成瞬间系统弹出名号、品级与奖励；</p></li>
+<li><p><strong>成就分五品</strong>：凡、灵、玄、圣、仙——按「难度 × 稀有度 × 对世界的影响」综合定品；</p></li>
+<li><p><strong>奖励构成</strong>：以<strong>自由属性点、称号、专属词条、功能解锁</strong>为主，万象点为辅——成就是荣耀簿，不是刷点机；</p></li>
+<li><p><strong>首达加成</strong>：若为<strong>当世首达</strong>（当今之世无人做到过），奖励 ×1.5；若为<strong>万古首达</strong>（有史以来从无人做到），奖励 ×2 且追加一条<strong>成就专属词条</strong>；</p></li>
+<li><p><strong>隐藏成就</strong>：名录不显示、无进度、无提示，达成那一刻才揭晓——仙品成就几乎都是隐藏成就；</p></li>
+<li><p><strong>称号</strong>：部分成就赠予称号。<strong>同时只能佩戴一枚</strong>，称号自带常驻被动，部分还影响世人对你的态度（佩戴「丹圣」行走天下，丹道势力无不礼遇）；</p></li>
+<li><p><strong>成就刻于命格</strong>：死亡重开，千秋录与称号<strong>不回收</strong>，随你进入下一世——这是系统少数不清零的东西。为什么？它没说。</p></li>
+</ol><h3 id="成就品级与奖励区间">成就品级与奖励区间</h3><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>品级</th>
+<th>奖励区间</th>
+<th>举例</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>凡品成就</td>
+<td>万象点 ×10~30，或单项属性 +0.5~2</td>
+<td>第一桶金、熟能生巧</td>
+</tr>
+<tr class="even">
+<td>灵品成就</td>
+<td>自由属性 ×3~8、称号、万象点 ×50</td>
+<td>丹成灵品、初战告捷</td>
+</tr>
+<tr class="odd">
+<td>玄品成就</td>
+<td>自由属性 ×20~50、称号、功能解锁、万象点 ×150</td>
+<td>逆伐、丹成一炉九转</td>
+</tr>
+<tr class="even">
+<td>圣品成就</td>
+<td>自由属性 ×100~300、气运 +1（极稀有）、专属词条、万象点 ×500</td>
+<td>丹动一城、神兵通灵</td>
+</tr>
+<tr class="odd">
+<td>仙品成就</td>
+<td>？？？（每一件都足以改写命格）</td>
+<td>前无古人、触及真相者</td>
+</tr>
+</tbody>
+</table></div><p><strong>翻页奖励</strong>：千秋录每刻满 10 项成就翻过一页，赠一次<strong>「天命一抽」</strong>——必出青品以上的免费抽卡，不消耗万象点，也不占用、不清空任何保底计数。</p><h3 id="成就名录--示例">成就名录 · 示例</h3><p><strong><span class="sys">【境界类】</span></strong></p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>成就</th>
+<th>达成条件</th>
+<th>品级</th>
+<th>奖励</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>脱胎换骨</td>
+<td>首次突破凡阶，脱去凡胎</td>
+<td>凡</td>
+<td>自由属性点 ×1</td>
+</tr>
+<tr class="even">
+<td>一步一登天</td>
+<td>每大阶首次突破（灵/玄/圣）</td>
+<td>灵/玄/圣</td>
+<td>自由属性 ×5/×50/×300，万象点 ×100/300/800</td>
+</tr>
+<tr class="odd">
+<td>与天争时</td>
+<td>打破当世该境界最快突破纪录</td>
+<td>玄</td>
+<td>称号「赶路人」：修炼速度 +5%</td>
+</tr>
+<tr class="even">
+<td>前无古人</td>
+<td>突破到这个世界从未出现过的层次（自创境界、补全断路）</td>
+<td>仙</td>
+<td>？？？</td>
+</tr>
+</tbody>
+</table></div><p><strong><span class="sys">【技艺类】</span></strong></p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>成就</th>
+<th>达成条件</th>
+<th>品级</th>
+<th>奖励</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>熟能生巧</td>
+<td>第一项技能熟练度圆满</td>
+<td>凡</td>
+<td>该技能关联属性 +1</td>
+</tr>
+<tr class="even">
+<td>技近乎道</td>
+<td>单项技能突破其等阶的既有上限</td>
+<td>圣</td>
+<td>专属词条「道中手」：全系熟练度获取 +10%</td>
+</tr>
+<tr class="odd">
+<td>开宗立派</td>
+<td>自创一门系统图鉴中不存在的功法/招式并被他人习得</td>
+<td>玄</td>
+<td>称号「祖师」：传授他人时，双方熟练度获取 +20%</td>
+</tr>
+</tbody>
+</table></div><p><strong><span class="sys">【丹道类】</span></strong></p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>成就</th>
+<th>达成条件</th>
+<th>品级</th>
+<th>奖励</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>第一炉</td>
+<td>炼成人生第一炉丹药</td>
+<td>凡</td>
+<td>万象点 ×20，称号「识药人」：辨药判定 +5%</td>
+</tr>
+<tr class="even">
+<td>丹成灵品</td>
+<td>首次炼成灵品丹药</td>
+<td>灵</td>
+<td>自由属性 ×3</td>
+</tr>
+<tr class="odd">
+<td>一炉九转</td>
+<td>首次炼成玄品丹药</td>
+<td>玄</td>
+<td>称号「丹师」：炼丹成功率 +10%，丹毒抗性</td>
+</tr>
+<tr class="even">
+<td>丹动一城</td>
+<td>炼出引动天地异象的圣品丹药</td>
+<td>圣</td>
+<td>气运 +1，称号「丹圣」</td>
+</tr>
+<tr class="odd">
+<td>起死回生</td>
+<td>炼成只存在于传说中的救命神丹（隐藏）</td>
+<td>仙</td>
+<td>？？？</td>
+</tr>
+</tbody>
+</table></div><p><strong><span class="sys">【炼器 / 阵法 / 符箓类】</span></strong></p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>成就</th>
+<th>达成条件</th>
+<th>品级</th>
+<th>奖励</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>百炼成钢</td>
+<td>亲手打造第一件灵器</td>
+<td>灵</td>
+<td>自由属性 ×5</td>
+</tr>
+<tr class="even">
+<td>神兵通灵</td>
+<td>亲手打造的法宝诞生器灵</td>
+<td>圣</td>
+<td>该器灵与你缘分值恒为生死之交，称号「器祖」</td>
+</tr>
+<tr class="odd">
+<td>以阵困龙</td>
+<td>以低阶阵法困杀高出自己一整个大阶的存在</td>
+<td>玄</td>
+<td>称号「阵中鬼」：布阵速度 +20%</td>
+</tr>
+<tr class="even">
+<td>一符退敌</td>
+<td>仅凭符箓化解一次生死危机</td>
+<td>灵</td>
+<td>万象点 ×50</td>
+</tr>
+</tbody>
+</table></div><p><strong><span class="sys">【战斗类】</span></strong></p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>成就</th>
+<th>达成条件</th>
+<th>品级</th>
+<th>奖励</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>初战告捷</td>
+<td>赢下人生第一场生死战</td>
+<td>凡</td>
+<td>自由属性点 ×1</td>
+</tr>
+<tr class="even">
+<td>越阶而战</td>
+<td>跨越一个小境界取胜</td>
+<td>灵</td>
+<td>称号「以下克上」：对高于己者伤害 +5%</td>
+</tr>
+<tr class="odd">
+<td>逆伐</td>
+<td>跨越一整个大阶取胜</td>
+<td>玄</td>
+<td>自由属性 ×30，称号「逆命人」</td>
+</tr>
+<tr class="even">
+<td>绝境反杀</td>
+<td>濒死状态下反杀强敌</td>
+<td>玄</td>
+<td>词条「向死而生」：濒死时全属性 +30%</td>
+</tr>
+<tr class="odd">
+<td>不杀之杀</td>
+<td>兵不血刃化解一场死局</td>
+<td>灵</td>
+<td>智力 +1</td>
+</tr>
+<tr class="even">
+<td>以一敌百</td>
+<td>单场战斗独自击溃百人以上</td>
+<td>圣</td>
+<td>称号「万人敌」：威慑判定大幅提升</td>
+</tr>
+<tr class="odd">
+<td>与虎谋皮</td>
+<td>首次使用献祭禁术且生还</td>
+<td>玄</td>
+<td>称号「刀口舔蜜」</td>
+</tr>
+<tr class="even">
+<td>倾天一击</td>
+<td>以禁术击杀高于自己一个小境以上的对手</td>
+<td>圣</td>
+<td>万象点 ×500，称号「孤注」</td>
+</tr>
+</tbody>
+</table></div><p><strong><span class="sys">【探索类】</span></strong></p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>成就</th>
+<th>达成条件</th>
+<th>品级</th>
+<th>奖励</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>秘境第一人</td>
+<td>第一个踏入某处秘境</td>
+<td>灵</td>
+<td>万象点 ×50</td>
+</tr>
+<tr class="even">
+<td>失落传承</td>
+<td>获得一处断代千年以上的传承</td>
+<td>玄</td>
+<td>自由属性 ×30</td>
+</tr>
+<tr class="odd">
+<td>天地尽头</td>
+<td>抵达北海归墟（隐藏）</td>
+<td>圣</td>
+<td>？？？</td>
+</tr>
+</tbody>
+</table></div><p><strong><span class="sys">【人缘类】</span></strong></p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>成就</th>
+<th>达成条件</th>
+<th>品级</th>
+<th>奖励</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>生死之交</td>
+<td>拥有第一位缘分值 +80 以上的人</td>
+<td>灵</td>
+<td>称号「义薄云天」：陌生人初始好感 +10</td>
+</tr>
+<tr class="even">
+<td>化干戈</td>
+<td>将一段 -90 以下的死仇化解为正缘</td>
+<td>玄</td>
+<td>气运 +1</td>
+</tr>
+<tr class="odd">
+<td>桃李满天下</td>
+<td>门下弟子满十人，且皆有所成</td>
+<td>圣</td>
+<td>称号「一代宗师」</td>
+</tr>
+<tr class="even">
+<td>修罗场走钢丝</td>
+<td>身负「天生魅魔」满一年而未结死仇</td>
+<td>灵</td>
+<td>气运 +1</td>
+</tr>
+</tbody>
+</table></div><p><strong><span class="sys">【财富与生存类】</span></strong></p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>成就</th>
+<th>达成条件</th>
+<th>品级</th>
+<th>奖励</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>第一桶金</td>
+<td>凭本事挣到第一块灵石</td>
+<td>凡</td>
+<td>万象点 ×10</td>
+</tr>
+<tr class="even">
+<td>饱暖</td>
+<td>穿越后第一次吃上热饭、睡个安稳觉</td>
+<td>凡</td>
+<td>万象点 ×5——系统会记一笔：此人知冷暖</td>
+</tr>
+<tr class="odd">
+<td>干饭之王</td>
+<td>连续一百日吃上热饭</td>
+<td>凡</td>
+<td>体质 +1</td>
+</tr>
+<tr class="even">
+<td>flag回收站</td>
+<td>「真香定律」触发满一百次</td>
+<td>凡</td>
+<td>称号「真香居士」</td>
+</tr>
+<tr class="odd">
+<td>富甲一方</td>
+<td>身家进入一城财富前列</td>
+<td>玄</td>
+<td>称号「财神眷顾」：交易议价 +10%</td>
+</tr>
+<tr class="even">
+<td>命不该绝</td>
+<td>濒死生还</td>
+<td>灵</td>
+<td>体质 +1</td>
+</tr>
+<tr class="odd">
+<td>打不死的</td>
+<td>身负「霉神附体」满一年而毫发无损（趣味成就）</td>
+<td>灵</td>
+<td>称号「小强」：环境伤害 -10%</td>
+</tr>
+</tbody>
+</table></div><p><strong><span class="sys">【命运与真相类 · 多为隐藏】</span></strong></p><div class="table-scroll"><table>
+<thead>
+<tr class="header">
+<th>成就</th>
+<th>达成条件</th>
+<th>品级</th>
+<th>奖励</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>命格改写</td>
+<td>改写一位他人「必死」的既定命格</td>
+<td>玄</td>
+<td>气运 +1</td>
+</tr>
+<tr class="even">
+<td>问心无愧</td>
+<td>道心达到 90</td>
+<td>圣</td>
+<td>称号「磐石道心」：心魔抗性 +30%</td>
+</tr>
+<tr class="odd">
+<td>万中无一</td>
+<td>觉醒变异灵根（隐藏）</td>
+<td>圣</td>
+<td>达成时揭晓</td>
+</tr>
+<tr class="even">
+<td>与魔共舞</td>
+<td>渡而不斩，心魔化为魔罗护体（隐藏）</td>
+<td>仙</td>
+<td>达成时揭晓</td>
+</tr>
+<tr class="odd">
+<td>？？？</td>
+<td>第一次触碰到吞世者阴谋的一角</td>
+<td>圣</td>
+<td>达成时揭晓</td>
+</tr>
+<tr class="even">
+<td>？？？</td>
+<td>第一次识破系统的一个「谎言」</td>
+<td>圣</td>
+<td>达成时揭晓</td>
+</tr>
+<tr class="odd">
+<td>？？？</td>
+<td>千秋录翻满十页（隐藏）</td>
+<td>仙</td>
+<td>达成时揭晓</td>
+</tr>
+</tbody>
+</table></div><h3 id="成就与世界的关系">成就与世界的关系</h3><ul>
+<li><p>成就不是关起门的自嗨：「丹动一城」会让一城丹师闻风而动，「逆伐」会被说书人编进段子，「开宗立派」会让大人物打听你的名字——<strong>名声本身，就是因果</strong>；</p></li>
+<li><p>同名成就先到先得：别人先拿了「当世首达」，你便只能拿普通奖励。大世将启，连成就都是要抢的；</p></li>
+<li><p>有些成就彼此冲突：「万人敌」与「不杀之杀」很难同属一人——千秋录记下的不只是你能做什么，还有你选择成为谁。</p></li>
+</ul></div></section><section class="chapter" id="ch-14"><div class="wrap"><h2 class="ch-head" id="十四游玩规则"><span aria-hidden="true" class="ch-ghost">十四</span><span class="ch-label">第 十四 章</span><span class="ch-title">游玩规则</span></h2><ol type="1">
+<li><p><strong>你以「阿七」的身份行动，GM 绝不替你做出任何选择。</strong></p></li>
+<li><p><strong>每个行动轮给出 5 个选项</strong>：4 个由 GM 根据局势、属性与伏笔设计的行动方向（A / B / C / D），外加 1 个<strong><span class="sys">【E · 自由行动】</span></strong>——你可以描述任何想做的事，无论多天马行空，由世界判定可行性与后果。</p></li>
+<li><p>剧情再急，也等你亲口选定；动手之前，你可以随时先<strong>追问细节、查看面板</strong>再决定。</p></li>
+<li><p>生死关头选项照常给出，但附局势提示（如「刀已举起，下一轮前必须选」）。<strong>不选，有时本身就是一种选择</strong>——拖延的后果由世界判定。</p></li>
+<li><p>GM 扮演世界与众生，并根据词条判定运气与机缘。</p></li>
+<li><p>抽卡由系统概率真实决定，每次抽卡公布品级与词条；点数不够，转盘不转。</p></li>
+<li><p>万象点靠做任务与成就挣，完成得好不好，系统说了算。</p></li>
+<li><p>你随时可以查看：<strong>面板</strong>（五维属性、气血/体力/法力、道心评语、战力）、<strong>生存状态</strong>（饥饿度、药蚀度、暗伤）、<strong>词条</strong>、<strong>技能</strong>、<strong>任务</strong>、<strong>千秋录</strong>（成就与称号）、<strong>缘分簿</strong>、<strong>点数与保底计数</strong>。</p></li>
+<li><p>你遇到的每个有名有姓的人，都有自己的性格、记忆和立场——他们记得你做过什么，也记得你没做过什么。</p></li>
+<li><p>你可能会死——但你的词条们，说不定不同意。死亡即重开：系统结算评分，身份随机、时间线继承、记忆封印，成就与称号随魂封存（详见「轮回法则」）。</p></li>
+</ol><p>（系统的存在不可外证——不可搜魂、不可推演，向他人泄露只会被当作癔症，详见「轮回法则 · 天机独闻」。）</p><ol start="11" type="1">
+<li>见到新角色、开战之前都可查看对方战力；可见规则、战力播报详见「战斗、危机与伤病」。</li>
+<li>系统的来历、天道的秘密，没有任何人会直接告诉你——线索散在世界各处，自己找。</li>
+</ol><p><strong>现在，你的每一次选择，都在改写这个世界的剧本。</strong></p></div></section><section class="chapter" id="ch-15"><div class="wrap"><h2 class="ch-head" id="十五轮回法则--死亡结算与再世"><span aria-hidden="true" class="ch-ghost">十五</span><span class="ch-label">第 十五 章</span><span class="ch-title">轮回法则 · 死亡结算与再世</span></h2><p>本章为 v4 新增总章，统辖前文所有涉及「死亡、重开、系统隐秘」的条文。凡前文与本章冲突处，以本章为准。</p><h3 id="151-天机独闻--系统隐秘原则">15.1 天机独闻 · 系统隐秘原则</h3><p><span class="sys">【原则】</span>与系统有关的一切，只有你自己知晓。</p><p>万象轮盘、面板、五维、抽卡、词条、任务、万象点、战力评估、道心评语、千秋录、缘分簿——只存在于你的识海，只对你显现。旁人眼里你只是普通人：会顿悟、会走运、偶尔说怪话，但无人能看见、听见、感知到系统的存在。</p><p><strong>不可探查</strong>：搜魂、神识扫描、因果推演、天机推演、观气望命——统统无效。系统在你识海中却不占识海，像水汽藏在海里。曾有圣域老祖搜过一个宿主的魂，搜完只说一句「此子神魂干净得反常」，再无线索。系统的存在本身，已被天道从世界的感知层抹去。</p><p><strong>无法外证</strong>：你就算对人说破喉咙，也拿不出任何证据——面板只有你能看，词条效果分散在因果里，无法指向同一源头。世人只会当你发癔症、中邪，或把你当疯乞丐报官。越解释，越像妖人。</p><p><strong>唯一例外是天道</strong>——系统本就是它分离出来的，它当然知道。但天道不会、也不能与任何第三者分享这个秘密：让吞世者知道「它造了把刀」，等于全盘皆输。这条秘密被锁死在你们二者之间，直到终局。</p><p>注意区分「系统」与「你的行为」：你炼丹引发的丹云异象、逆伐留下的传说、开宗立派收的弟子——这些是真实发生在世间的事，旁人看得见、记得住、传得开。系统隐形，你不隐形。名声本身就是因果。</p><p>（轮回联动）记忆封印期间你根本不知系统的存在，自然无从泄密；解封后，关于系统的一切依旧只有你能感知。</p><h3 id="152-死亡结算--系统的此生评语">15.2 死亡结算 · 系统的「此生评语」</h3><p>死亡不是句号，是阅卷。系统对上一世打分，评分高低决定下一世的开局是礼物还是账单。</p><p><strong>评分六维</strong>（各 0~100 分，加权汇总）：</p><ol type="1">
+<li><p><strong>修行高度（25%）</strong>：最终境界换算（凡阶 10 分起，每跨一阶 +15）＋ 越阶战绩加成 ＋ 突破速度修正；</p></li>
+<li><p><strong>任务绩效（20%）</strong>：主线必做，主线失败或放弃直接扣一大截；支线按完成度评级加权（完美 ×2.0 计分）；</p></li>
+<li><p><strong>千秋录（15%）</strong>：成就数 × 品级系数，当世首达 ×1.5、万古首达 ×2 照算；</p></li>
+<li><p><strong>因果质量（15%）</strong>：善缘结构（生死之交、良师、贵人的数量与深度）＋ 命格改写次数 ＋ 是否触及世界隐秘（加分巨项，也是危险项）；</p></li>
+<li><p><strong>道心与活法（15%）</strong>：道心曲线 ＋ 是否违心滥杀 ＋ 是否履约守诺 ＋ 死法体面程度（彩蛋分：战死沙场 &gt; 坐化洞府 &gt; 病死床榻 &gt; 醉死阴沟）；</p></li>
+<li><p><strong>寿数（10%）</strong>：相对该身份「应有寿命」之比。乞丐活了六十岁是高分，圣域活了三百岁是零分。</p></li>
+</ol><p><strong>定档线</strong>：85+ 传世 ｜ 70~84 无愧 ｜ 50~69 平庸 ｜ 30~49 潦草 ｜ 30 以下 败笔。</p><p><strong>奖励对照</strong>：</p><ul>
+<li><p><strong>传世</strong>：万象点 100+100；词条残影三选一（上一世词条半效伴生）；自由属性 +3，气运 +1；身份骰两次取优；系统真心夸你一句（刻进面板永久展示）。</p></li>
+<li><p><strong>无愧</strong>：万象点 100+50；随机残影一条；自由属性 +2；身份骰两次取优。</p></li>
+<li><p><strong>平庸</strong>：万象点 100，其余无。</p></li>
+<li><p><strong>潦草</strong>：万象点 70；30% 概率负面残影伴生；随机一项 -1；身份骰两次取劣；评语钉面板。</p></li>
+<li><p><strong>败笔</strong>：万象点 50；必带一条负面残影伴生；随机两项 -1~2（5% 概率气运 -1）；身份锁死地狱档；评语钉面板，且系统阴阳你三句话。</p></li>
+</ul><p><strong>三条特殊修正</strong>：</p><ul>
+<li><p><strong>横死加成</strong>：死时正在护人、践诺、逆转危局，总分 +5，评语追加「死得其所」——天道看得见怎么死；</p></li>
+<li><p><strong>摆烂惩罚</strong>：一生主动放弃全部主线且无任何成就，直接压到潦草档以下；</p></li>
+<li><p><strong>触及隐秘加成</strong>：单世触碰吞世者或天道隐秘一次，因果质量维度直接拉满——但从今往后你的灵魂在棋盘上更「亮」：评分越高，下一世被双方棋手注意到的概率越高。系统不提醒你这一点。</p></li>
+</ul><p><strong>结算播报示例（败笔档）</strong>：<span class="sys">【宿主死亡。死因：误食毒菇。】</span><span class="sys">【正在结算此生……境界：锻骨。任务：完成 1 / 放弃 6。成就：「饱暖」。存活：四年。】</span><span class="sys">【评级：败笔。】</span><span class="sys">【评语：四年。一头猪养四年都该出栏了。你用四年证明了「活着」确实是一种天赋，而你恰好没有。】</span><span class="sys">【下一世初始万象点：50。伴生残影：「非酋」（半效）。身份掷骰中……】</span></p><h3 id="153-再世规则--身份随机--时间线继承">15.3 再世规则 · 身份随机 · 时间线继承</h3><p><span class="sys">【第一世锚定】</span>你的第一世永远是东荒云州青石城、雪夜破庙、高烧三天的乞丐阿七——这是系统与你灵魂的锚定仪式，只有这一次是注定的。</p><p><span class="sys">【身份随机】</span>此后每一世，你醒来可能是市井孩童、猎户遗孤、药铺学徒、宗门杂役、商队弃儿、死囚之子——性别、年龄（10~16 岁）、资质、家世全部掷骰。死亡结算评级影响骰子：传世/无愧者掷两次取优，潦草者取劣，败笔者锁死地狱档。万象轮盘永远绑定灵魂，不问出身。身份表见 15.5。</p><p><span class="sys">【时间线继承 · 不可逆】</span>世界不为你回档。你死的那一刻起，时间继续向前；下一世开局，在上一世死亡约十至十六年之后（其间即序章岁月，见 15.6）。上一世的一切后果永久留存：你救过的人可能已成一方人物或化作枯骨；你开启的秘境可能已被探空；你得罪的宗门可能已覆灭，也可能强盛了三倍。没人记得你，但世界记得你造成的结果。</p><p><span class="sys">【恩怨清零，因果不清零】</span>上一世的缘分与仇恨随身份消散——故人站在面前也认不出这双眼睛。但你种下的「因」结出的「果」仍在流动：你前世散尽家财救过的城池，这一世会在你落难时「恰好」收留你；你前世灭人满门，那一脉的幸存者此刻可能正在你新身份的家门口当账房。世界不报应在「你」身上——它报应在你的下一世身上。</p><p><span class="sys">【大势不可逆】</span>断灵大劫不等你。若上一世死于大劫前夜，下一世睁眼时可能已是乱世烽烟；灵气潮汐、吞世者的进食、天道的布局——全部照常运转。死一次，牌局发新牌，不重洗。</p><p><span class="sys">【封存项与清零项】</span>词条清零、保底计数清零；万象点按死亡结算重置（100 基础 ± 奖惩）。死亡记忆、千秋录成就与称号、系统评语随魂封存——封于灵魂最深处，于下一次系统激活时解封（见 15.4）。</p><p><span class="sys">【作废之世】</span>若序章肉身在系统激活前死亡（极少发生——系统锚定的「激活死局」通常就是序章的终点），该世作废：不入结算、不计评语，直接重掷身份。系统不允许你带着「未曾活过」的人生进考场。</p><h3 id="154-记忆封印--系统激活--融合冲击">15.4 记忆封印 · 系统激活 · 融合冲击</h3><p><span class="sys">【记忆封印原则】</span>前世记忆随魂不灭，但封于灵魂最深处，唯有系统激活那一刻才解封。</p><p>激活前，你就是一个「本地人」：新一世从婴孩落地起，你以这个身份的人格自然长大——不知系统、不知轮回、不知自己是界外之魂，连「阿七」是谁都不知道。你会饿、会怕、会为半块饼跟人拼命，全情投入这一世的命。</p><p><span class="sys">【激活的唯一钥匙】</span>濒死绝境中的强烈求生之念。每一世，系统都在你命定的死局中睁眼——祭品被拖上山神庙的前夜、死囚的断头饭端到面前、矿难塌方的黑暗里、雪夜高烧的破庙中——当「不想死」烧到最烈的那一瞬间：<span class="sys">【万象轮盘检测到宿主求生意志峰值。封印解除。欢迎回来。】</span></p><p><span class="sys">【解封瞬间的记忆洪峰】</span>前世死亡记忆、千秋录、称号、系统评语、全部轮回记忆，在识海中一次性决堤——融合不是温柔的。</p><p><span class="sys">【融合冲击判定】</span>记忆决堤瞬间进行道心判定（道心 × 智力 × 世数修正）。世数越多、死亡记忆越惨，冲击越大。判定失败：<span class="sys">【意识混沌】</span>——数日内人格撕裂、噩梦、分不清「我是谁」，修炼停滞，心魔养料 +1。判定通过：<span class="sys">【阅尽此生】</span>——三日内智力判定 +20%，你以多世眼光重审这一世的开局，往往能立刻看出序章里被忽略的伏笔。</p><p><span class="sys">【旧我余温】</span>第三世起，每次解封额外获得：前一世的巅峰期「经验直觉」上身（上一世是丹师，这一世识药时手比脑子快），表现为对应技能初始熟练度 +10%~30%，或相关判定 +5%。轮回本身，成了你唯一带得走的修为。</p><h3 id="155-随机身份开局表">15.5 随机身份开局表</h3><p>身份分四档：吉 / 平 / 劣 / 狱，档位概率受死亡结算评级修正（传世/无愧重掷取优，潦草取劣，败笔锁死狱档）。每个身份自带初始处境、隐性词条（非系统词条，是这一世血肉自带的「命」）、专属困境，及至少一个伏笔——上一世你留下的因果，可能刚好砸在这一世的你头上。</p><p><span class="sys">【吉档】</span>（传世 40% / 无愧 20% / 其他 5%）</p><ul>
+<li><p><strong>小家族庶子</strong>：有饭吃有书读；「灯下苦学」智力成长 +10%；嫡母猜忌族产之争；伏笔——族中供奉的祖传香炉是一件沉睡的玄品器。</p></li>
+<li><p><strong>宗门记名弟子</strong>：月例 3 块灵石；「早课不辍」修炼效率 +5%；外门倾轧月比淘汰；伏笔——宗门后山禁地正是你某一世开启过的秘境遗址。</p></li>
+<li><p><strong>药王谷药童</strong>：识药 +5；「药圃岁月」丹道熟练度 +10%；试药风险派系倾轧；伏笔——谷主悬赏寻的药你上一世见过长在哪。</p></li>
+<li><p><strong>商队少东</strong>：「算盘精」议价 +5%；沙盗劫货；伏笔——商队路线途经你上一世救过（或害过）的村子。</p></li>
+<li><p><strong>将门遗孤</strong>：军功荫庇；「军营长大的骨头」体质成长 +10%；仇家清算；伏笔——父亲战死之役已查出「另有内情」，内情与你某一世有关。</p></li>
+</ul><p><span class="sys">【平档】</span>（平庸 60% / 无愧 50% / 传世 30%）</p><ul>
+<li><p><strong>市井孩童</strong>：「跑街」敏捷成长 +5%；帮派收保护费；伏笔——说书人讲的是你某一世的故事（名字已被传歪）。</p></li>
+<li><p><strong>猎户遗孤</strong>：「山里的鼻子」野外生存 +10%；冬荒族亲夺田；伏笔——父死的那片林子深处有一株风铃果。</p></li>
+<li><p><strong>私塾伴读</strong>：「旁听生」悟性 +5%；主仆名分随时被逐；伏笔——先生当年落榜与你某一世的举手之劳或袖手旁观有关。</p></li>
+<li><p><strong>渔民之子</strong>：「浪里白条」水中战力 +20%；海税风暴渔霸；伏笔——撒网捞上的青铜残片来自归墟方向。</p></li>
+<li><p><strong>铁匠学徒</strong>：「千锤百炼」炼器熟练度 +5%；师父酗酒军械订单；伏笔——压箱底的「天外陨铁」是你某一世死前埋下的。</p></li>
+</ul><p><span class="sys">【劣档】</span>（潦草 60% / 平庸 30% / 其他 20%）</p><ul>
+<li><p><strong>奴籍</strong>：「忍字诀」隐匿忍耐 +15%；契书责罚赎身天价；伏笔——主家书房锁着半张上古信物，你见过另外半张。</p></li>
+<li><p><strong>疫村遗孤</strong>：「病骨」毒抗 +10%、体质成长 -10%；人人避你如瘟神；伏笔——你的血对某种毒免疫，村里瘟疫不是天灾。</p></li>
+<li><p><strong>弃婴·寺中长大</strong>：「佛性」心魔抗性 +10%、道心成长 +10%；寺贫武僧拳头；伏笔——住持圆寂前留你半枚舍利，舍利夜里对你传音。</p></li>
+<li><p><strong>矿奴</strong>：「地底肺」黑暗中感知 +15%；矿难监工矽毒；伏笔——矿脉深处有东西在「吃」灵石，你听过这动静的描述。</p></li>
+<li><p><strong>死囚之子</strong>：「见惯生死」恐惧判定 +15%；烙印贱籍不得科举入宗；伏笔——父亲案卷的见证人名字，你上一世用过。</p></li>
+</ul><p><span class="sys">【狱档】</span>（败笔锁死，或极低概率砸中）</p><ul>
+<li><p><strong>死囚</strong>：开局在牢里秋后问斩；「向死而生·伪」濒死战力 +15%（仅此一条，非词条）；只剩百日，越狱或等翻案；伏笔——牢房墙上刻着一行字，某位先行者留的。</p></li>
+<li><p><strong>祭品</strong>：山村十年一祭，你是今年的「山神新娘/新郎」；「祭品的镇定」疼痛忍耐 +20%；逃即全村死；伏笔——「山神」是头受伤通灵的二阶大妖，它想跟你谈条件。</p></li>
+<li><p><strong>炉鼎苗子</strong>：被合欢宗外使挑中，已在押送路上；「锁情印」情感波动 -50%；到宗即失自由；伏笔——同车有个根骨比你还可怕的孩子，逃时带上还是不带。</p></li>
+<li><p><strong>渊口守夜人</strong>：北地界壁裂缝戍卒，上一任疯了；「听过渊声」灵感 +20%、理智 -10%；夜里不能睡死同袍失踪；伏笔——裂缝里每夜有节奏地响，那节奏你上一世听过，是某种语言。</p></li>
+</ul><p><span class="sys">【身份通用规则】</span></p><ol type="1">
+<li><p>万象轮盘绑定灵魂不绑定肉身：任何身份开局，激活条件都是「濒死绝境中的强烈求生念」——系统永远在你快死的时候睁眼；</p></li>
+<li><p>隐性词条是命不是卡：不可剥离，不占词条位，不计入合成，死亡随肉身消散；</p></li>
+<li><p>伏笔不是必发：身份表里的伏笔只是「世界给你留的门」，你不去推，门就是墙；</p></li>
+<li><p>时间线继承彩蛋：若某一世曾在新身份家乡附近做过大事，开局时当地会流传「某某传说」——说书人嘴里那个名字没人知道是你；</p></li>
+<li><p>阿七永远只有一个：第一世的雪夜破庙是锚点，不可复制；</p></li>
+<li><p>每一世肉身自带「本命」（见前文命格一节轮回注），随身份骰生成，影响序章气数。</p></li>
+</ol><h3 id="156-序章机制--本地人生涯">15.6 序章机制 · 本地人生涯</h3><p><span class="sys">【序章】</span>= 激活前的人生，通常数年（狱档可短至百日）。序章内你没有面板、没有任务、没有抽卡，不知系统——你以本地人身份过日子。</p><p><span class="sys">【快速过场】</span>序章不逐日推演。系统给出 3~5 个关键节点的微选择（帮不帮那个孩子、接不接那桩活、撒不撒那个谎）——节点结果影响：激活后的初始人脉、处境微调、伏笔点亮。序章里你做过的事、结过的人，解封后全部计入缘分簿（届时可见）。</p><p><span class="sys">【序章的戏剧价值】</span>激活那一刻，你将以多世眼光重审序章——猎户之子激活后方知：三年前救过的猎户，是你某一世的死仇；私塾伴读激活后方知：天天罚你的先生，书箱底层藏着你某一世的遗物。</p><p><span class="sys">【序章死亡】</span>即作废之世（见 15.3），直接重掷身份，不入结算。</p><h3 id="157-多世累积修正--查漏补缺">15.7 多世累积修正 · 查漏补缺</h3><p><span class="sys">【心魔多世特攻】</span>高世数宿主的心魔幻境同时呈现所有前世的死亡瞬间，追问「哪一世才是真的你」。斩 / 渡 / 笑三法照旧适用，但「渡」的收益随世数递增——答得越真，道心涨得越狠。</p><p><span class="sys">【天道视野】</span>记忆封印期间天道同样看不见你；它只能等到系统睁眼那一刻，才重新在棋盘上找到你。激活前，你是真正隐形的——这是封印送给你的保护期。</p><p><span class="sys">【残影与失物招领】</span>死亡结算的词条残影（半效伴生），与隐藏任务「失物招领」的「回收率 98%」之谜同源——那 2% 的去向，系统从没解释完整。两样东西指向同一个它不愿多谈的问题：回收的词条，到底去了哪里。</p><p><span class="sys">【气运穿透】</span>死亡结算与身份骰是少数能撼动气运的环节（结算奖惩 ±1、少数身份微调），其余规则照旧：气运不可加点，只认机缘、命格、任务评级。</p><p><span class="sys">【称谓】</span>再世之后，「阿七」成为只有你记得的名字。千秋录里它永远排在第一页第一项——不是因为它是成就，而是因为它是起点。</p><p><span class="sys">【魂之磨损】</span>轮回不是无限的。每次解封的记忆洪峰都在灵魂本源留下一道磨痕——世数越深，融合冲击越难（见 15.4），磨到极限便是「魂竭」：灵魂如沙溃散，没有下一世，连天道的刀都再无可执。系统对此只有一句提示：<span class="sys">【刀会钝的。在它彻底卷刃之前，走完你的路。】</span>每一次重开都不是免费的续命，而是有限的燃料。</p></div></section></main>
+
+<footer>
+  <div class="foot-rule"><span></span><i></i><span></span></div>
+  <p class="foot-quote">「现在，你的每一次选择，都在改写这个世界的剧本。」</p>
+  <p class="foot-meta">苍玄界 · 世界设定集 合并版 V5<br/>天圆地方 · 五域四海 · 千秋录随魂不灭</p>
+</footer>
+
+<button id="toTop" aria-label="回到顶部">︿</button>
+<script>
+(function(){
+  /* ---------- snow ---------- */
+  var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cv = document.getElementById('snow');
+  if (cv && !reduce){
+    var ctx = cv.getContext('2d'), W, H, flakes = [], dpr = Math.min(window.devicePixelRatio||1, 2);
+    function size(){ W = cv.clientWidth; H = cv.clientHeight; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); }
+    function make(n){ flakes = []; for(var i=0;i<n;i++){ flakes.push(newFlake(true)); } }
+    function newFlake(any){
+      var gold = Math.random() < 0.12;
+      return { x: Math.random()*W, y: any ? Math.random()*H : -6,
+        r: gold ? .8+Math.random()*1.4 : .7+Math.random()*1.9,
+        vy: .25+Math.random()*.75, ph: Math.random()*Math.PI*2,
+        sw: .3+Math.random()*.8, a: .25+Math.random()*.55, gold: gold };
+    }
+    function tick(){
+      ctx.clearRect(0,0,W,H);
+      for(var i=0;i<flakes.length;i++){
+        var f = flakes[i]; f.ph += .008; f.y += f.vy; f.x += Math.sin(f.ph)*f.sw*.4;
+        if(f.y > H+8 || f.x < -10 || f.x > W+10){ flakes[i] = newFlake(false); continue; }
+        ctx.beginPath(); ctx.arc(f.x, f.y, f.r, 0, 6.283);
+        ctx.fillStyle = f.gold ? 'rgba(226,203,151,'+f.a+')' : 'rgba(236,231,218,'+f.a+')';
+        ctx.fill();
+      }
+      requestAnimationFrame(tick);
+    }
+    size(); make(Math.round(W*H/16000)); tick();
+    window.addEventListener('resize', function(){ size(); make(Math.round(W*H/16000)); });
+  }
+
+  /* ---------- scrollspy ---------- */
+  var links = Array.prototype.slice.call(document.querySelectorAll('.nav-list a'));
+  var map = {};
+  links.forEach(function(a){ map[a.getAttribute('href').slice(1)] = a; });
+  function setActive(id){
+    links.forEach(function(a){ a.classList.remove('active'); });
+    if(map[id]){
+      map[id].classList.add('active');
+      var nav = document.getElementById('sidenav');
+      var el = map[id];
+      if(nav.scrollHeight > nav.clientHeight){
+        var top = el.offsetTop - nav.clientHeight/2;
+        nav.scrollTo({top: top, behavior:'smooth'});
+      }
+    }
+  }
+  var spy = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting) setActive(e.target.id); });
+  }, { rootMargin: '-32% 0px -58% 0px' });
+  document.querySelectorAll('.chapter').forEach(function(s){ spy.observe(s); });
+
+  /* ---------- reveal ---------- */
+  var rev = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('in'); rev.unobserve(e.target); } });
+  }, { rootMargin: '0px 0px -6% 0px', threshold: .02 });
+  document.querySelectorAll('.chapter').forEach(function(s){ rev.observe(s); });
+
+  /* ---------- progress + toTop ---------- */
+  var bar = document.getElementById('progress'), toTop = document.getElementById('toTop');
+  function onScroll(){
+    var h = document.documentElement;
+    var max = h.scrollHeight - h.clientHeight;
+    bar.style.width = (max > 0 ? (h.scrollTop/max)*100 : 0) + '%';
+    toTop.classList.toggle('show', h.scrollTop > 700);
+  }
+  window.addEventListener('scroll', onScroll, {passive:true}); onScroll();
+  toTop.addEventListener('click', function(){ window.scrollTo({top:0, behavior: reduce ? 'auto':'smooth'}); });
+
+  /* ---------- mobile drawer ---------- */
+  var menu = document.getElementById('menuBtn'), scrim = document.getElementById('scrim');
+  menu.addEventListener('click', function(){ document.body.classList.toggle('nav-open'); });
+  scrim.addEventListener('click', function(){ document.body.classList.remove('nav-open'); });
+  links.forEach(function(a){ a.addEventListener('click', function(){ document.body.classList.remove('nav-open'); }); });
+})();
+</script>
+
+
+</body></html>
