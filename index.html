@@ -44,7 +44,7 @@
     </div>
     <div class="p-block">
       <div class="tabrow">
-        <button class="on">词条</button><button>行囊</button><button>商铺</button><button>任务</button><button>时间线</button><button>千秋录</button><button>缘分簿</button>
+        <button class="on">词条</button><button>行囊</button><button>商铺</button><button>任务</button><button>时间线</button><button>千秋录</button><button>缘分簿</button><button>炼丹</button><button>炼器</button>
       </div>
       <div id="panelTabBody"></div>
     </div>
@@ -75,6 +75,17 @@
   <div class="end-box info-box">
     <div id="infoBody"></div>
     <button class="gbtn ghost gacha-close" onclick="document.getElementById(&#39;infoModal&#39;).classList.remove(&#39;open&#39;)">收起</button>
+  </div>
+</div>
+
+<div class="modal" id="nameModal">
+  <div class="end-box settings-box">
+    <h2>命 名</h2>
+    <p class="set-intro">这一世，你叫什么？名字须合此界风物（汉字或间隔号，一至八字）。留空则沿用庙中诨名「阿七」。</p>
+    <div class="set-row"><label>姓名</label><input id="nameInput" maxlength="8" placeholder="阿七" spellcheck="false"/><span class="set-tip" id="nameTip">的身份由天道掷定，名由你起</span></div>
+    <div class="gacha-btns">
+      <button class="gbtn" id="nameConfirm">定名，入局</button>
+    </div>
   </div>
 </div>
 
@@ -123,6 +134,7 @@
 
 <div id="toast"></div>
 
+<script src="js/tables.js"></script>
 <script src="js/data.js"></script>
 <script src="js/gm.js"></script>
 <script src="js/ai.js"></script>

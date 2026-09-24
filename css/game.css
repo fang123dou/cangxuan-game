@@ -193,6 +193,14 @@ button{font-family:inherit;cursor:pointer}
 .end-note{font-family:var(--sans);font-size:11.5px;color:var(--muted);line-height:1.9;margin-bottom:18px}
 
 /* ---------- toast ---------- */
+/* 选择后即时结算条：收获 / 损失 / 变数（设定补充：每次选择后明示结算） */
+.fx-ledger{border:1px solid var(--line);border-radius:8px;padding:8px 12px;margin:6px 0;background:rgba(255,255,255,.02)}
+.fxl-row{display:flex;gap:8px;font-family:var(--sans);font-size:11.5px;line-height:1.9;text-align:left}
+.fxl-row b{flex:none;font-size:10px;letter-spacing:.2em;padding-top:1px}
+.fxl-row span{color:var(--paper-70)}
+.fxl-row.g b{color:#6fa8a0}
+.fxl-row.l b{color:#c07a70}
+.fxl-row.n b{color:var(--muted)}
 #toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(14px);z-index:320;
   background:rgba(30,28,22,.95);border:1px solid var(--gold-dim);color:var(--gold-hi);
   font-size:14px;letter-spacing:.06em;border-radius:8px;padding:10px 22px;opacity:0;

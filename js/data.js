@@ -147,8 +147,6 @@ const ACHIEVEMENTS = {
   shengCard:{ name:"圣眷",       tier:3, desc:"抽得第一张圣品词条", reward:"气运 +1" },
   xianCard: { name:"？？？",     tier:4, desc:"抽得仙品词条——轮盘都安静了一瞬", reward:"达成时揭晓" },
   wolfKill: { name:"屠狼",       tier:1, desc:"独自击杀冬狼", reward:"力量 +1" },
-  savior:   { name:"雪中送炭",   tier:1, desc:"救下那个本该死去的黑衣人", reward:"缘分簿记下一笔" },
-  merciless:{ name:"见死不救",   tier:0, desc:"雪夜里，你选择了自己", reward:"道心微澜" },
   survive30:{ name:"熬过凛冬",   tier:2, desc:"活过这个冬天", reward:"万象点 ×150" },
   qingyan:  { name:"仙门弟子",   tier:2, desc:"拜入青岩门", reward:"自由属性 ×3" },
   death1:   { name:"向死而生",   tier:1, desc:"第一次死亡——死亡是昂贵的，也是公平的", reward:"轮回开启" },
@@ -164,6 +162,7 @@ const ACHIEVEMENTS = {
   wukui:    { name:"问心无愧",   tier:4, desc:"道心达到 90", reward:"称号「磐石道心」：心魔抗性 +30%" },
   fujia:    { name:"富甲一方",   tier:3, desc:"身家进入一城财富前列（三千文身家）", reward:"称号「财神眷顾」：交易议价 +10%" },
   dabusi:   { name:"打不死的",   tier:2, desc:"身负「霉神附体」满十五日而毫发无损", reward:"称号「小强」：环境伤害 -10%" },
+  danyun:   { name:"丹动一城",   tier:3, desc:"炼出绝品——九纹圆满，出世引动异象", reward:"气运 +1" },
 };
 
 /* ============ 称号（随魂封存，效果永续；面板可佩戴其一示人） ============ */
@@ -209,7 +208,7 @@ const SHOP_UNLOCK = [
     cond: () => S && S.realm >= 2 && S.day >= 15 },
 ];
 /* 药蚀（设定集）：凡品 3~5 ｜ 灵品 8~12 ｜ 玄品 15~25 ｜ 圣品 30+；排毒丹本身含微量药蚀 */
-const DRUG_SHI = { medicine: 4, gongfuTea: 4, juqiDan: 10, zhuJidan: 20, paiduDan: 2 };
+const DRUG_SHI = { medicine: 4, gongfuTea: 4, juqiDan: 10, zhuJidan: 20, paiduDan: 2, huiLingDan: 10, xisuiDan: 20 };
 
 /* ============ 任务系统见 js/quests.js（天道卷宗） ============ */
 /* ============ 文案 ============ */
@@ -320,7 +319,7 @@ function genWx(key) {
    品阶基数（3.4）：凡品 0.3~0.5 ｜ 灵品 3~5；境界系数：凡阶 ×1（灵阶 ×10 预留）
    入门三选一（3.3）：从业满一月 ／ 拜师入册 ／ 灰色职业做成对应的事
    品阶封顶：凡品最高 3 级，再往上须行当升品转轨（药庐学徒→药师→丹师→丹圣 是换轨，不是原地升级）
-   名录仅为示例、绝非全集；master 为可拜师的行当 NPC（缘分 ≥20「好感」后触发入行支线） */
+/* 名录仅为示例、绝非全集；master 为可拜师的行当 NPC（缘分 ≥20「好感」后触发入行支线） */
 const PROFESSIONS = {
   yaolu: {
     name: "药庐学徒", tier: 0, tierName: "凡品", master: "周先生", skill: "识药",
@@ -376,6 +375,7 @@ const PROFESSIONS = {
     attrs: { int: 3, con: 3 }, traitMod: {},
     trait: "「坐堂」：规则型特性——丹药药蚀积累减半（识得药性，丹毒不侵）",
     requires: { prof: "yaolu", lv: 3, bond: 80 },
+    next: "danshi",
     questDesc: "药庐学徒做到头，便是转轨之时：修为境界与行业深度双到位，方可挂上「药师」的牌。",
     offerText: "周先生捻须良久：「学徒做得，坐堂可做得？这一声『药师』，我拿不准——你自己挣。」",
     doneText: "回春堂门口多了一块小木牌。周先生背着手走开了，嘴角是翘的。",
@@ -388,4 +388,82 @@ const PROFESSIONS = {
     offerText: "钱三拨了下算盘：「心算过我，账台就是你的。」",
     doneText: "钱三把一方旧算盘推给你：「从今天起，商会的账，过你的手。」",
   },
+  danshi: { // 药庐学徒→药师→丹师 是换轨（3.4）；丹师不系固定 NPC——前置瓶颈时云游丹师随机现身（23:10 补丁）
+    name: "丹师", tier: 1, tierName: "灵品", master: "", skill: "炼丹", dynamic: true,
+    attrs: { int: 4, con: 2 }, traitMod: {},
+    trait: "「掌炉」：开炉炼丹——丹纹数随境界与熟练度而涨，药蚀了然于胸",
+    questDesc: "", offerText: "", doneText: "",
+  },
+  qishi: { // 铁匠学徒→铸师→炼器师；器火一脉同样云游无定（23:10 补丁）
+    name: "炼器师", tier: 1, tierName: "灵品", master: "", skill: "炼器", dynamic: true,
+    attrs: { str: 3, int: 3 }, traitMod: {},
+    trait: "「抡锤」：起灶炼器——凡器起步，锤下见真章",
+    questDesc: "", offerText: "", doneText: "",
+  },
+  tiejiang: { // 器火一脉前置（凡品）：师傅为每世随机NPC
+    name: "铁匠学徒", tier: 0, tierName: "凡品", master: "", skill: "拉风箱", dynamic: true,
+    attrs: { str: 0.4, con: 0.3 }, traitMod: {},
+    trait: "「火性」：炉边打滚的人，懂铁也懂火——器火一脉的筑基",
+    questDesc: "", offerText: "", doneText: "",
+    next: "zhushi",
+  },
+  zhushi: { // 器火一脉转轨（灵品）：铁匠学徒满级 + 师傅缘分 ≥80
+    name: "铸师", tier: 1, tierName: "灵品", master: "", skill: "锻打", dynamic: true,
+    attrs: { str: 3, int: 2 }, traitMod: {},
+    requires: { prof: "tiejiang", lv: 3, bond: 80 },
+    trait: "「百炼」：一块铁坯过百遍火、千遍锤，才算听话",
+    questDesc: "", offerText: "", doneText: "",
+    next: "qishi",
+  },
+};
+
+/* ============ 炼丹 · 炼器（设定补丁 v5 · 第七/九章 + 22:41 补丁） ============
+   辅材坊市通贩（商铺可购，铜钱）；主材只走三通道：任务奖励 / 特殊 NPC 交易 / 击杀取材——永不进店。
+   配方主材锚定设定集名录：赤血芝·石钟乳·九叶玄芝（第九章灵/玄品名录）、精铁（第七章凡俗物价锚定 2 两银）、玄铁（灵器之胚）。
+   品质来源：七分在人（境界+副职熟练度）、两分在料（料足）、一分在器（丹炉/炼锤）、一丝气运。
+   六品质效力（第九章）：瑕疵五~六成 / 下品七~八成 / 中品十成 / 上品十二成 / 极品十五成 / 绝品二十成 */
+const QUALITY_TIERS = [
+  { key: "xiaci",   name: "瑕疵", mult: 0.55 },
+  { key: "xiaping", name: "下品", mult: 0.75 },
+  { key: "zhong",   name: "中品", mult: 1.0 },
+  { key: "shang",   name: "上品", mult: 1.2 },
+  { key: "jipin",   name: "极品", mult: 1.5 },
+  { key: "jue",     name: "绝品", mult: 2.0 },
+];
+const CRAFT_AUX = [ // 辅材：坊市通贩（商铺「辅材」区，铜钱购入，入材料账）
+  { id: "lingtan",   name: "灵炭", price: 8,  desc: "松烟与树脂炼的炭，火性稳，丹炉灶膛都用它。" },
+  { id: "shanquan",  name: "山泉", price: 3,  desc: "城外石缝间的活泉水，煎药淬火的引子。" },
+  { id: "yaoshougu", name: "妖兽骨", price: 30, desc: "妖兽遗骨，磨粉入坯，可增器物韧性。" },
+];
+const RECIPES = {
+  dan: [
+    { id: "r_juqi", name: "聚气丹", pin: "凡品", main: "赤血芝", aux: { lingtan: 2, shanquan: 1 },
+      out: { item: "juqiDan", n: 1 }, base: 65, desc: "凡阶破境之丹。主材赤血芝（南岭深山背阴处，灵品名录——采它要过妖兽那一关）。" },
+    { id: "r_huiling", name: "回灵丹", pin: "灵品", main: "石钟乳", aux: { lingtan: 1, shanquan: 2 },
+      out: { item: "huiLingDan", n: 1 }, base: 50, desc: "灵品丹药，回气养元（气血 +25）。主材石钟乳（深窟溶洞，百年一滴）。" },
+    { id: "r_xisui", name: "洗髓丹", pin: "玄品", main: "九叶玄芝", aux: { lingtan: 3, shanquan: 3 },
+      out: { item: "xisuiDan", n: 1 }, base: 30, desc: "洗经伐髓，清除一道暗伤——玄品丹药中的硬通货，散修梦寐以求。主材九叶玄芝（灵脉交汇之地，一叶一品）。" },
+  ],
+  qi: [
+    { id: "r_jingtie", name: "精铁刀", pin: "凡器", main: "精铁坯", aux: { lingtan: 2 },
+      out: { gear: "weapon", name: "精铁刀", baseDmg: 4 }, base: 65, desc: "凡俗好刀（第七章锚：精铁刀 2 两银）。主材精铁坯走 NPC 交易——铁匠师傅的库袋里存着好料。" },
+    { id: "r_qinggang", name: "青钢剑", pin: "灵器", main: "玄铁", aux: { lingtan: 3, yaoshougu: 1 },
+      out: { gear: "weapon", name: "青钢剑", baseDmg: 8 }, base: 45, desc: "下品灵器（第七章锚：50~200 灵石）。主材玄铁须击杀取材或任务所得，坊市无售。" },
+  ],
+};
+
+/* ============ NPC 性格底色（设定补丁 v5 · 第四章 缘分与仇怨） ============
+   同样的行为落在不同性格上，结出的果完全不同：
+   记仇者对伤害 ×1.5 计、对善意 ×0.7 记；重情者对善意 ×1.5 记。
+   未列名的 NPC 按名字确定性分配（人间百态，不偏不倚）。 */
+const NPC_CHAR = {
+  "老丐头": "重情", "周先生": "重情", "说书人柳先生": "洒脱", "商会管事钱三": "贪婪",
+  "瞎眼老者": "豁达", "小贼细猴": "偏激", "码头工头蛮牛": "豁达", "青岩门外门弟子陆沉": "洒脱",
+  "赌档庄家笑面佛": "贪婪", "卖炭婆": "豁达", "游方郎中": "重情", "雪夜寡妇": "重情",
+};
+const NPC_CHAR_POOL = ["重情", "贪婪", "偏激", "豁达", "记仇", "洒脱"];
+/* 性格底色落点文案（缘分信号用） */
+const NPC_CHAR_FLAVOR = {
+  "重情": "他记恩记得深。", "贪婪": "他心里拨的是利益算盘。", "偏激": "他认定的事，十头牛拉不回。",
+  "豁达": "他不与人计较，但也看得通透。", "记仇": "他记仇记得牢——恩打折，怨加倍。", "洒脱": "他笑笑，不往心里去。",
 };

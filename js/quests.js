@@ -24,20 +24,37 @@ const QU = (() => {
   }
 
   /* ---------- 任务定义 ---------- */
+  /* 开局存活任务锚定当前身份（第十章：主线不定但必定生成，第一条=符合身份的存活任务） */
+  const SURVIVE_BY_OPENING = {
+    pomiao: { name: "凡品任务：活过这个冬天", desc: "灵气潮汐涨潮之初，大雪封城。先活下来——热食、炭火、修为，都是命。" },
+    laofang: { name: "凡品任务：活过死牢寒夜", desc: "死囚牢里最不缺的就是死人。先活下来——熬过寒夜、熬过狱卒、熬过这座吃人的牢。" },
+    heikuang: { name: "凡品任务：从矿道里爬出去", desc: "塌方的黑矿窑只给了你一条缝。先活下来——爬出去、讨口水、别进工伤簿的死亡名单。" },
+    jitan: { name: "凡品任务：挣脱祭坛，活过雪夜", desc: "山民的巫祝随时会醒，绳索随时会收紧。先活下来——挣脱、跑路、别成为山神的嚼用。" },
+    yasong: { name: "凡品任务：活着走到下一座城", desc: "解差死绝的雪道上，逃犯活不过三日。先活下来——走出雪道、挣口热食、甩掉身后的马蹄声。" },
+  };
   const DEFS = {
     /* ===== 主线 · 卷一 潜龙在渊 ===== */
     mq_survive: {
-      name: "凡品任务：活过这个冬天", type: "main", passive: true,
-      desc: "灵气潮汐涨潮之初，大雪封城。先活下来——热食、炭火、修为，都是命。",
+      get name() { const o = SURVIVE_BY_OPENING[S.flags && S.flags.opening]; return o ? o.name : "凡品任务：活过眼前这一关"; },
+      get desc() { const o = SURVIVE_BY_OPENING[S.flags && S.flags.opening]; return o ? o.desc : "命格改写只是死缓。先活下来——这是所有算计的地基。"; },
+      type: "main", passive: true,
       auto: () => true,
       objectives: [{ text: () => `撑到开春（第 ${Math.min(S.day, 31)} / 31 日）`, done: () => S.day >= 31 }],
       reward: { points: 20 },
       doneText: "你看到了开春的太阳。这一冬，没白熬。",
     },
+    mq_wudao: {
+      name: "主线：求武之路", type: "main",
+      desc: "活下来只是第一步。这世道，没有拳脚与气感的穷人死得最快——寻一门功法传承，择一而修，踏入武道。",
+      auto: () => (S.quests.done || []).includes("mq_survive"),
+      objectives: [{ text: () => "获得功法传承，择一而修（《引气诀》/《锻骨拳谱》）", done: () => (S.inv.yinqi || 0) > 0 || (S.inv.quanpu || 0) > 0 }],
+      reward: { points: 30 },
+      doneText: "吐纳入体、拳意入骨——从这一刻起，你不再是任人拿捏的凡骨。武道之门，正式踏入。",
+    },
     mq_qingyan: {
       name: "主线：拜入青岩门", type: "main",
       desc: "三流小宗青岩门大开山门收徒。测灵碑、问心关、演武台——三关皆过，才是仙途起点。",
-      auto: () => S.day >= 10 || !!S.flags.qingyanRumor || !!S.flags.tingyuToken,
+      auto: () => S.day >= 10 || !!S.flags.qingyanRumor,
       objectives: [
         { text: () => "前往山门，参加三关应试", done: () => !!S.flags.qy_step1 },
         { text: () => "过测灵碑（灵光显化）", done: () => !!S.flags.qy_step1 },
@@ -57,6 +74,18 @@ const QU = (() => {
       ],
       reward: { points: 80, attr: { con: 0.3 }, dao: 2 },
       doneText: "外门名册上，你的名字被朱笔圈了一道——资源、功法、师承，从此向你敞开一线。",
+    },
+    mq_dengfeng: {
+      name: "主线：问道之途", type: "main",
+      get desc() { return "仙途没有尽头，只有一境更比一境难。破境、历练、寻缘——一步步向上走，直到有资格看见这世间真正的风景（以及风景背后那只手）。"; },
+      auto: () => (S.quests.done || []).includes("mq_outer"),
+      objectives: [
+        { text: () => `踏入通脉境（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 4 },
+        { text: () => `踏入聚气境（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 5 },
+        { text: () => `踏入开元境，凡阶圆满（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 6 },
+      ],
+      reward: { points: 120, cult: 40, luckCharm: 1 },
+      doneText: "凡阶六境，你一境一境走过来了。抬头看——灵泉之上，还有玄、圣，还有那件传说中的东西，和藏在它后面的影子。路，才刚刚开始。",
     },
 
     /* ===== 支线 ===== */
@@ -85,15 +114,6 @@ const QU = (() => {
       },
       doneText: "周先生从柜底取出一册油布包着的旧书，塞进你怀里：「别让药炉熄了，也别让心气熄了。」",
     },
-    sq_tingyu: {
-      name: "支线：听雨楼的因果", type: "side",
-      desc: "那枚「听雨」木牌是好是坏，还两说。了断这桩因果，不管以什么方式。",
-      offer: () => !!S.flags.tingyuMark || !!S.flags.tingyuGrudge,
-      offerText: "你察觉雨意森森——听雨楼的人又在暗处看你的方向了。这桩因果，该有个了断。",
-      objectives: [{ text: () => "了断听雨楼的这桩因果", done: () => !!S.flags.tingyuDone }],
-      reward: { points: 40, dao: 2 },
-      doneText: "雨声歇了。你知道，这桩因果翻篇了——下一页写什么，看你。",
-    },
     sq_xihou: {
       name: "支线：细猴的归处", type: "side",
       desc: "那个比你还瘦的小贼，手快，眼神更快。他偷的不是钱，是活路。给他指条道，或给他一顿饭。",
@@ -102,6 +122,39 @@ const QU = (() => {
       objectives: [{ text: () => `细猴的信服（缘分 ${S.npc["小贼细猴"] || 0} / 40）`, done: () => (S.npc["小贼细猴"] || 0) >= 40 }],
       reward: { points: 20, dao: 1, item: "heimu:3" },
       doneText: "细猴把三个黑馍揣进怀里，朝你重重点头：「哥，以后你的口袋，我罩着。」",
+    },
+    /* ===== 炼丹炼器材料支线（22:41 补丁）：主材只走三通道——任务奖励/NPC 交易/击杀取材 ===== */
+    sq_dan_cai: {
+      name: "支线：丹材有缺", type: "side", giver: "周先生",
+      desc: "丹炉已点，料却未备。周先生把一张药单拍给你：主材不上坊市，只走三条正路——任务、交易、取材。跑一趟药市，把该备的备齐。",
+      offer: () => hasProfession("danshi"),
+      offerText: "周先生把一张药单拍在你面前：「炉都点了，料呢？」",
+      objectives: [{ text: () => { const st = (((S.quests || {}).acceptDay) || {}).sq_dan_cai; return `跑腿采买（${st == null ? 0 : Math.min(2, S.day - st)} / 2 日）`; }, done: () => { const st = (((S.quests || {}).acceptDay) || {}).sq_dan_cai; return st != null && S.day - st >= 2; } }],
+      rewardFn: () => {
+        S.mats = S.mats || {};
+        S.mats["赤血芝"] = (S.mats["赤血芝"] || 0) + 1;
+        S.mats["灵炭"] = (S.mats["灵炭"] || 0) + 2;
+        let extra = "";
+        if (!(S.inv.ludian > 0) && Math.random() < 0.5) { S.inv.ludian = 1; extra = "、青铜丹炉 ×1"; }
+        return `赤血芝 ×1、灵炭 ×2${extra}`;
+      },
+      doneText: "药市归来，周先生验过货色，点了点头：「像回事。记住——好丹师的第一课，是认得什么料值得用命去换。」",
+    },
+    sq_qi_cai: {
+      name: "支线：器料之托", type: "side", giver: "云游器师",
+      desc: "开炉炼器，先得有料。云游师傅说他的库袋里存着好精铁，可手艺不能白传——替他跑两天腿，坯料分你一块。",
+      offer: () => hasProfession("qishi"),
+      offerText: "云游师傅把行囊往肩上一搭：「想抡锤？先替我跑两天腿——袋里的坯，分你一块。」",
+      objectives: [{ text: () => { const st = (((S.quests || {}).acceptDay) || {}).sq_qi_cai; return `跑腿出力（${st == null ? 0 : Math.min(2, S.day - st)} / 2 日）`; }, done: () => { const st = (((S.quests || {}).acceptDay) || {}).sq_qi_cai; return st != null && S.day - st >= 2; } }],
+      rewardFn: () => {
+        S.mats = S.mats || {};
+        S.mats["精铁坯"] = (S.mats["精铁坯"] || 0) + 1;
+        S.mats["灵炭"] = (S.mats["灵炭"] || 0) + 2;
+        let extra = "";
+        if (!(S.inv.lianchui > 0) && Math.random() < 0.5) { S.inv.lianchui = 1; extra = "、精铁炼锤 ×1"; }
+        return `精铁坯 ×1、灵炭 ×2${extra}`;
+      },
+      doneText: "云游师傅把一块精铁坯抛给你：「料正，火才正。去吧，锤底下见真章。」",
     },
   };
 
@@ -113,6 +166,7 @@ const QU = (() => {
   if (typeof PROFESSIONS !== "undefined") {
     for (const pid in PROFESSIONS) {
       const P = PROFESSIONS[pid];
+      if (P.dynamic) continue; // 云游师傅一脉（丹师/器火）走下方专属支线，不自动生成
       DEFS["pq_" + pid] = {
         name: `支线：入行 · ${P.name}`, type: "side", giver: P.master,
         desc: P.questDesc,
@@ -128,6 +182,66 @@ const QU = (() => {
       };
     }
   }
+
+  /* ===== 云游师傅一脉（23:10 补丁）：丹师/器火不系固定 NPC =====
+     名号每世随机生成（masterOf）；前置职业熟练度登顶即瓶颈——瓶颈时云游师傅随机现身；
+     须手动承接支线方可进阶/转轨（熟练度满绝不自动进阶，固定身份已废除）。 */
+  const dynDayObj = id => ({ text: () => { const st = (((S.quests || {}).acceptDay) || {})[id]; return `跟随见习（${st == null ? 0 : Math.min(2, S.day - st)} / 2 日）`; }, done: () => { const st = (((S.quests || {}).acceptDay) || {})[id]; return st != null && S.day - st >= 2; } });
+  const dynBondObj = (pid, need) => ({ text: () => `${masterOf(pid)}的认可（缘分 ${S.npc[masterOf(pid)] || 0} / ${need}）`, done: () => (S.npc[masterOf(pid)] || 0) >= need });
+  DEFS.dyn_tiejiang = {
+    name: "支线：入行 · 铁匠学徒", type: "side", giver: "云游铁匠",
+    desc: "炉边缺个打杂的。器火一脉与药庐不同——师傅云游四方，名号每世不同，遇见了就是缘。",
+    offer: () => !hasProfession("tiejiang") && (S.npc[masterOf("tiejiang")] || 0) >= 20,
+    offerText: "炉火的召唤：你听闻一位铁匠师傅正在寻个肯下力气、耐得住烟火的学徒。",
+    objectives: [dynBondObj("tiejiang", 40), dynDayObj("dyn_tiejiang")],
+    reward: {},
+    rewardFn: () => { const n = unlockProfession("tiejiang"); return n ? `解锁凡品职业「${n}」（师承${masterOf("tiejiang")}）` : ""; },
+    doneText: "第一炉火烧透，你学会了看火色。铁坯在你手里，慢慢开始听话。",
+  };
+  DEFS.dyn_zhushi = {
+    name: "支线：转轨 · 铸师", type: "side", giver: "云游铁匠",
+    desc: "铁匠学徒做到凡品之巅，便是瓶颈。想再进一步，须见过更大的炉、打过更硬的铁——铸师之路，从一块不听话的铁坯开始。",
+    offer: () => { const q = profList()["tiejiang"]; return !!q && q.lv >= (TABLES.PROF.tierCaps["0"] || 3) && !hasProfession("zhushi") && (S.npc[masterOf("zhushi")] || 0) >= 20; },
+    offerText: "瓶颈之期：你的铁匠手艺已至凡品之巅。一位铸师听闻了你的锤声，循着火星寻到了你。",
+    objectives: [dynBondObj("zhushi", 80), dynDayObj("dyn_zhushi")],
+    reward: {},
+    rewardFn: () => { const n = unlockProfession("zhushi"); return n ? `解锁灵品职业「${n}」（师承${masterOf("zhushi")}）` : ""; },
+    doneText: "大炉开火，百炼始成。你终于明白什么叫「铁过百遍，其义自见」。",
+  };
+  DEFS.sq_dandao = { // 丹师进阶：药师（前置）熟练度登顶 → 云游丹师现身，须手动承接
+    name: "支线：进阶 · 丹道有缘", type: "side", giver: "云游丹师",
+    desc: "药师造诣已至灵品之巅，进无可进。丹道不系于一家一店——云游四方的丹师们，只在前路断绝处现身。瓶颈之期，机缘已叩门。",
+    offer: () => {
+      if (hasProfession("danshi")) return false;
+      const q = profList()["yaoshi"];
+      if (!q || q.lv < (TABLES.PROF.tierCaps["1"] || 5)) return false;
+      const m = masterOf("danshi");
+      if (!S.flags.danMasterArrive) { S.flags.danMasterArrive = 1; addNpc(m, 20); sys(`【瓶颈之期】药师之路已至绝顶。一位云游丹师「${m}」听闻了你的名号，循着药香寻到了你。`); }
+      return true;
+    },
+    offerText: "一位背着药篓的游方人拦下你：「小友，识药坐堂皆已见顶——可愿随我学那『掌炉』之道？」",
+    objectives: [dynBondObj("danshi", 40), dynDayObj("sq_dandao")],
+    reward: {},
+    rewardFn: () => { const n = unlockProfession("danshi"); return n ? `解锁灵品职业「${n}」（师承${masterOf("danshi")}）` : ""; },
+    doneText: "丹炉第一炉火光亮起。云游师傅没说话，只把随身的旧丹铲搁在了你手心。",
+  };
+  DEFS.sq_qidao = { // 炼器师进阶：铸师（前置）熟练度登顶 → 云游器师现身，须手动承接
+    name: "支线：进阶 · 器火相传", type: "side", giver: "云游器师",
+    desc: "铸师做到灵品之巅，凡火凡铁再无可教你。真正的炼器师云游天下，只在前路断绝处现身——瓶颈之期，机缘已叩门。",
+    offer: () => {
+      if (hasProfession("qishi")) return false;
+      const q = profList()["zhushi"];
+      if (!q || q.lv < (TABLES.PROF.tierCaps["1"] || 5)) return false;
+      const m = masterOf("qishi");
+      if (!S.flags.qiMasterArrive) { S.flags.qiMasterArrive = 1; addNpc(m, 20); sys(`【瓶颈之期】铸师之路已至绝顶。一位云游器师「${m}」听闻了你的名号，循着你的锤声寻到了你。`); }
+      return true;
+    },
+    offerText: "一位风尘仆仆的背锤人蹲在你的炉边看了半晌：「火候有了灵性。可愿随我学那『通灵之器』的炼法？」",
+    objectives: [dynBondObj("qishi", 40), dynDayObj("sq_qidao")],
+    reward: {},
+    rewardFn: () => { const n = unlockProfession("qishi"); return n ? `解锁灵品职业「${n}」（师承${masterOf("qishi")}）` : ""; },
+    doneText: "异地之火点燃，风箱拉出的风声像龙吟。云游师傅咧嘴：「从今天起，器火一脉有你一支。」",
+  };
 
   /* ---------- 状态 ---------- */
   function ensure() {

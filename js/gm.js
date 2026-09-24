@@ -381,29 +381,13 @@ const GM = (() => {
       },
     },
     {
-      id: "tingyu_visitor", cond: c => (S.flags.tingyuMark || S.flags.tingyuGrudge) && !S.flags.tingyuDone && QU.isActive("sq_tingyu"), w: () => 4,
-      build(r) {
-        if (S.flags.tingyuMark) return {
-          scene: `雨夹雪的黄昏，一个戴斗笠的青衣人拦在你面前，递来一只油布小包：「楼主说，雪夜救命之恩，听雨楼记账。」他顿了顿，「账清了，两不相欠。」`,
-          choices: [
-            { label: "收下谢礼", hint: "听雨楼的谢礼，也是了断。", fx: { money: 30, flag: "tingyuDone", npc: { 听雨楼: 20 } } },
-            { label: "把「听雨」木牌还给他", hint: "信物归还，善缘更深。", fx: { flag: "tingyuDone", dao: 2, npc: { 听雨楼: 40 }, luckCharm: 1 } },
-          ],
-        };
+      id: "wudao_teacher", cond: c => typeof QU !== "undefined" && QU.isActive("mq_wudao") && !S.flags.wudaoGifted, w: () => 8,
+      build() {
         return {
-          scene: `你后颈的汗毛忽然竖起——巷口立着个戴斗笠的青衣人，腰间铜牌刻着「听雨」二字。「雪夜，破庙，十五文。」他声音很轻，「楼主说，连本带利。」`,
+          scene: `雪霁的清晨，一个断腿的落魄武师蜷在墙根晒太阳，面前摆着个缺口的粗瓷碗。见你盯着他碗边那两卷旧册子看，他嗤笑一声：「想看？拿去。一部吐纳炼气，一部淬体熬力——都是不入流的货色，练到顶也就是个凡阶把式。」他把两卷油布包着的册子往你面前一推，「老子的腿废了，传人不能断。择一部，别贪心。」`,
           choices: [
-            { label: "连本带利还钱（30 文）", hint: "破财消灾，恩怨两清。", disabled: S.money < 30, fx: { money: -30, flag: "tingyuDone", npc: { 听雨楼: 5 } } },
-            { label: "转身就跑", hint: "听雨楼的身法，未必比你慢。", fx: { check: "agi*8+luck*4+esc+d40>50",
-              success: { npc: { 听雨楼: -5 } },
-              fail: { hp: -6, money: -10 },
-              successText: "你钻进雪幕，七拐八绕——身后的脚步声不知什么时候没了。但他还会来。",
-              failText: "巷口不知何时多了第二个人。你一咬牙冲了出去，还是挨了一记。" } },
-            { label: "硬扛到底", hint: "他比你强。但退了这一次，还有下一次。", fx: { check: "str*6+agi*6+luck*3+d40>60",
-              success: { flag: "tingyuDone", dao: 2, npc: { 听雨楼: 10 } },
-              fail: { hp: -8, money: -10, npc: { 听雨楼: -10 } },
-              successText: "你硬是接下了他三招。青衣人收手，深深看你一眼：「有种。这账，楼主说缓一缓。」他走了，雨也停了。",
-              failText: "你被他一掌拍进雪里，怀里的铜钱撒了一地。他捡起属于你的那份：「利息。账还没完。」" } },
+            { label: "选《引气诀》", hint: "吐纳炼气，炼气士的正路（1 阶功法）。", fx: { item: "yinqi:1", flag: "wudaoGifted", dao: 1 } },
+            { label: "选《锻骨拳谱》", hint: "淬体熬力，武夫的路子（1 阶功法）。", fx: { item: "quanpu:1", flag: "wudaoGifted", dao: 1 } },
           ],
         };
       },
