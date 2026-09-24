@@ -217,6 +217,12 @@ button{font-family:inherit;cursor:pointer}
   background:transparent;color:var(--gold-dim);border:1px solid #3a3a36;border-radius:6px;
   cursor:pointer;transition:.25s}
 #btnSettings:hover{color:var(--gold-hi);border-color:#c6ad7f88}
+#btnReset{
+  font:inherit;font-size:13px;letter-spacing:.4em;padding:7px 8px 7px 12px;
+  background:transparent;color:var(--gold-dim);border:1px solid #3a3a36;border-radius:6px;
+  cursor:pointer;transition:.25s}
+#btnReset:hover{color:var(--blood-hi);border-color:#d05a4a88}
+@media (max-width:980px){#btnReset{letter-spacing:.2em}}
 .settings-box h2{font-size:22px;letter-spacing:.35em;margin:0 0 14px;color:var(--gold-hi);font-weight:600}
 .set-intro{font-size:13px;line-height:1.9;color:var(--paper-70);margin:0 0 16px;border-left:2px solid #c6ad7f44;padding-left:12px}
 .set-intro b{color:var(--gold-dim);font-weight:500}

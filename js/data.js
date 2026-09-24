@@ -315,3 +315,77 @@ function genWx(key) {
   wx[shuffled[0]] = 40; wx[shuffled[1]] = 30; wx[shuffled[2]] = 30; // san
   return wx;
 }
+
+/* ============ 职业名录（设定补丁 v5 · 第三章 职业系统） ============
+   品阶基数（3.4）：凡品 0.3~0.5 ｜ 灵品 3~5；境界系数：凡阶 ×1（灵阶 ×10 预留）
+   入门三选一（3.3）：从业满一月 ／ 拜师入册 ／ 灰色职业做成对应的事
+   品阶封顶：凡品最高 3 级，再往上须行当升品转轨（药庐学徒→药师→丹师→丹圣 是换轨，不是原地升级）
+   名录仅为示例、绝非全集；master 为可拜师的行当 NPC（缘分 ≥20「好感」后触发入行支线） */
+const PROFESSIONS = {
+  yaolu: {
+    name: "药庐学徒", tier: 0, tierName: "凡品", master: "周先生", skill: "识药",
+    attrs: { int: 0.3, con: 0.3 }, traitMod: { foodP: 10 },
+    trait: "「识药人」：辨药、制药、炮制经验 +10%（进食效果 +10%）",
+    questDesc: "回春堂的药香是最好的老师。周先生嘴上骂你朽木，手里的活却总在教你——得他认可，便可拜师入册。",
+    offerText: "周先生瞥你一眼：「想当学徒？先让我看看你的良心和耐性。」",
+    doneText: "周先生把一本手抄药谱拍在你胸口：「从今往后，你是药庐的人了。」",
+    next: "yaoshi",
+  },
+  jiaofu: {
+    name: "脚夫", tier: 0, tierName: "凡品", master: "码头工头蛮牛", skill: "扛包",
+    attrs: { str: 0.4, con: 0.5 }, traitMod: { defP: 4 },
+    trait: "「压不垮」：承重承伤，皮实耐造（承伤 -4%）",
+    questDesc: "码头上的日子是扛出来的。蛮牛说，肯下力气的人，码头认得他的脸。",
+    offerText: "蛮牛上下打量你：「扛得动一包米，才扛得动一个前程。试试？」",
+    doneText: "蛮牛把一条汗巾甩上你的肩：「从今天起，码头有你一碗饭。」",
+  },
+  dianxiaoer: {
+    name: "店小二", tier: 0, tierName: "凡品", master: "雪夜寡妇", skill: "跑堂",
+    attrs: { agi: 0.3, int: 0.3 }, traitMod: { socialP: 5 },
+    trait: "「察言观色」：眼观六路，人情练达（缘分获取 +5%）",
+    questDesc: "茶棚里进出的都是消息。寡妇说，手脚麻利、嘴上带笑的人，到哪儿都饿不死。",
+    offerText: "雪夜寡妇擦着桌子，头也不抬：「缺个跑堂的。吃得苦，就留下。」",
+    doneText: "寡妇丢给你一条围裙：「棚里多点人气，我的茶也好卖些。」",
+  },
+  huolang: {
+    name: "货郎", tier: 0, tierName: "凡品", master: "卖炭婆", skill: "叫卖",
+    attrs: { agi: 0.3, int: 0.3 }, traitMod: { moneyP: 5 },
+    trait: "「十里乡情」：走街串巷皆认得你（挣钱 +5%）",
+    questDesc: "卖炭婆认得满城的人。她说，一张笑脸一双快腿，就是货郎的全部家当。",
+    offerText: "卖炭婆眯眼笑：「后生，替我跑几趟腿？手脚干净，比什么都强。」",
+    doneText: "卖炭婆把一只货箱递给你：「走街串巷去吧，青石城认你这个脸。」",
+  },
+  gengfu: {
+    name: "更夫", tier: 0, tierName: "凡品", master: "瞎眼老者", skill: "打更",
+    attrs: { con: 0.4, int: 0.3 }, traitMod: { escapeP: 4 },
+    trait: "「一更一世界」：夜路走得多了，脚下自有分寸（逃脱 +4%）",
+    questDesc: "瞎眼老者眼睛看不见，耳朵却比谁都灵。他说，打更人敲的不是梆子，是这座城的觉。",
+    offerText: "瞎眼老者侧过脸：「后生，脚步比旁人稳。想学打更？」",
+    doneText: "老者把梆子塞进你手里：「一更人定，二更火烛。记住，更夫是夜里醒着的人。」",
+  },
+  sanzhishou: {
+    name: "三只手", tier: 0, tierName: "灰色", master: "小贼细猴", skill: "手上功夫", grey: true,
+    attrs: { agi: 0.5 }, traitMod: { moneyP: 8 },
+    trait: "灰色职业：加成高，代价各表（名声带毒 / 道心 / 仇家）",
+    questDesc: "细猴的手比脑子快。他说，摸到第一只钱包的那一刻，这行就点亮了——只是做过的事，不随换马甲消失。",
+    offerText: "细猴咧嘴一笑，掌心翻出一枚铜钱：「哥，想学制钱怎么自己长腿么？」",
+    doneText: "细猴教你出手的角度、收手的时机。你学会的那一刻，心里某个地方悄悄沉了一块。",
+  },
+  yaoshi: {
+    name: "药师", tier: 1, tierName: "灵品", master: "周先生", skill: "识药",
+    attrs: { int: 3, con: 3 }, traitMod: {},
+    trait: "「坐堂」：规则型特性——丹药药蚀积累减半（识得药性，丹毒不侵）",
+    requires: { prof: "yaolu", lv: 3, bond: 80 },
+    questDesc: "药庐学徒做到头，便是转轨之时：修为境界与行业深度双到位，方可挂上「药师」的牌。",
+    offerText: "周先生捻须良久：「学徒做得，坐堂可做得？这一声『药师』，我拿不准——你自己挣。」",
+    doneText: "回春堂门口多了一块小木牌。周先生背着手走开了，嘴角是翘的。",
+  },
+  zhangfang: {
+    name: "账房先生", tier: 1, tierName: "灵品", master: "商会管事钱三", skill: "算盘",
+    attrs: { int: 4 }, traitMod: { moneyP: 10 }, reqAttr: { int: 5 },
+    trait: "「算盘精」：心中有数，落笔生钱（挣钱 +10%）",
+    questDesc: "钱三的算盘成精，认人也认数。他说，脑子不够快的人，账台都上不去。",
+    offerText: "钱三拨了下算盘：「心算过我，账台就是你的。」",
+    doneText: "钱三把一方旧算盘推给你：「从今天起，商会的账，过你的手。」",
+  },
+};

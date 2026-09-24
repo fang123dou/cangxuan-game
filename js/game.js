@@ -50,6 +50,8 @@ function newLife() {
     npc: {}, npcMin: {}, flags: {}, debuff: null,
     job: null, foodStreak: 0, kills: 0,
     realmBreaks: 0, tempLuckDays: 0,
+    lastTrainDay: 0, // 三日历练：上次实力机缘的日子（每 3 天必触发一次）
+    professions: {}, // 职业系统（第三章）：{ id: { lv, exp, primary } }
     gmRecent: [], over: false, mods: {},
     yaoshi: 0, drugUse: {}, // 药蚀度（0~100，隐藏数值）与同种服药计数
     xinmo: META.world > 1 ? 10 : 0, // 心魔（0~100，半隐藏）：前世死亡记忆是它的养料
@@ -82,6 +84,13 @@ function computeMods() {
   const lg = LINGGENS[S.linggen]; // 变异灵根的天生特性
   if (lg && lg.mods) for (const k in lg.mods) m[k] = (m[k] || 0) + lg.mods[k];
   for (const tid of (META.titles || [])) { const t = TITLES[tid]; if (t && t.mod) for (const k in t.mod) m[k] = (m[k] || 0) + t.mod[k]; } // 称号效果永续
+  for (const pid in (S.professions || {})) { // 职业特性（设定补丁 v5·3.4/3.5）：凡品判定随级成长，灵品起为常驻规则
+    const P = (typeof PROFESSIONS !== "undefined") && PROFESSIONS[pid];
+    if (!P || !P.traitMod) continue;
+    const lv = S.professions[pid].lv || 1;
+    const mult = (P.tier || 0) === 0 ? lv : 1;
+    for (const k in P.traitMod) m[k] = (m[k] || 0) + P.traitMod[k] * mult;
+  }
   S.mods = m;
 }
 function findCard(id) {
@@ -110,8 +119,22 @@ function attr(k) {
   const pct = (S.mods[k + "P"] || 0) + (S.mods.allP || 0);
   let v = b * (1 + pct / 100);
   if (k === "luck") { v = b + (S.mods.luckFlat || 0) + (S.tempLuckDays > 0 ? 1 : 0); v = Math.max(1, Math.min(10, v)); }
+  const pb = profAttrBonus(k); // 职业每级属性加成（3.4）：品阶基数 × 境界系数
+  if (pb > 0) { const ceil = 10 + S.realm; v += Math.min(pb, Math.max(0, ceil - v)); } // 天花板条款：不得突破当前境界的单项属性天花板
   if (S.debuff === "weak" && k !== "luck") v *= 0.8;
   return Math.round(v * 10) / 10;
+}
+/* 职业属性加成合计：Σ(品阶基数[k] × 等级) × 境界系数（凡阶 ×1，灵阶 ×10 预留） */
+function profAttrBonus(k) {
+  if (!S.professions) return 0;
+  const coeff = S.realm >= 7 ? 10 : 1;
+  let sum = 0;
+  for (const pid in S.professions) {
+    const P = (typeof PROFESSIONS !== "undefined") && PROFESSIONS[pid];
+    if (!P || !P.attrs || !P.attrs[k]) continue;
+    sum += P.attrs[k] * (S.professions[pid].lv || 1) * coeff;
+  }
+  return Math.round(sum * 100) / 100;
 }
 function hpMax() { return Math.max(10, Math.round(attr("con") * 10)); }
 function staMax() { return Math.max(5, Math.round(attr("con") * 5)); }
@@ -220,6 +243,7 @@ function takeDrug(id, cultAmt, hpAmt) {
   S.drugUse[id] = used + 1;
   const mult = used === 0 ? 1 : used === 1 ? 0.5 : used === 2 ? 0.25 : 0; // 同种递减
   let shi = (DRUG_SHI[id] || 4) * (used >= 3 ? 2 : 1); // 第四次起药蚀翻倍
+  if (hasProfession("yaoshi")) shi = Math.round(shi * 0.5); // 灵品药师「坐堂」：识得药性，丹毒不侵（药蚀减半）
   if (hasSpecial("zhichang")) shi = 0; // 直肠子食神：药蚀免疫
   else if (hasSpecial("huachang") || hasSpecial("baidu")) shi *= 0.5; // 拉得快，毒留不住
   S.yaoshi = Math.min(100, Math.max(0, (S.yaoshi || 0) + shi));
@@ -277,6 +301,94 @@ function checkSkillMilestone(sk) {
 }
 
 /* ================= 界面工具 ================= */
+/* ================= 职业系统（设定补丁 v5 · 第三章） =================
+   入门三选一：从业满一月 ／ 拜师入册（本作主线：行当 NPC 缘分 ≥20 触发入行支线，缘分 ≥40 得认可入册）
+   灰色职业：做成对应的事即点亮（不占副职名额，但占因果）
+   经验：从业时长（每 3 日 +1）／ 技艺印证（生活技能每满 10 熟练 +1）／ 行业事件（完成任务 +2，主线 +3）／ 口碑
+   升级：2/4/8/16/32 经验一次考核；凡品封顶 3 级，须升品转轨；副职惩罚：全部活跃职业经验 -30%（3.6） */
+const PROF_NEED = { 2: 2, 3: 4, 4: 8, 5: 16 };
+const PROF_LV_NAMES = ["", "学徒", "熟手", "师傅", "名家", "圣手"];
+function profList() { if (!S.professions) S.professions = {}; return S.professions; }
+function hasProfession(pid) { return !!profList()[pid]; }
+function profDef(pid) { return (typeof PROFESSIONS !== "undefined") ? PROFESSIONS[pid] : null; }
+function profTierCap(tier) { return (tier || 0) === 0 ? 3 : 5; }
+/* 遇到生活职业者：已结识该 NPC，且缘分到了「好感」（≥20）；转轨职业另需原职业等级与更高缘分 */
+function profReqMet(P) {
+  if (typeof S.npc[P.master] !== "number") return false; // 素未谋面
+  if ((S.npc[P.master] || 0) < 20) return false;
+  if (P.reqAttr) for (const k in P.reqAttr) if (attr(k) < P.reqAttr[k]) return false;
+  if (P.requires) {
+    const r = P.requires;
+    if (!hasProfession(r.prof) || profList()[r.prof].lv < (r.lv || 1)) return false;
+    if ((S.npc[P.master] || 0) < (r.bond || 80)) return false;
+  }
+  return true;
+}
+/* 解锁副职业（支线任务奖励入口） */
+function unlockProfession(pid) {
+  const P = profDef(pid);
+  if (!P || hasProfession(pid)) return "";
+  const q = profList();
+  const first = Object.keys(q).length === 0;
+  q[pid] = { lv: 1, exp: 0, primary: first };
+  if (!S.job) S.job = P.name;
+  addNpc(P.master, 10);
+  sys(`【职业解锁】${first ? "主职业" : "副职业"} · ${P.tierName}「${P.name}」（1 级 · ${PROF_LV_NAMES[1]}）`);
+  log(`${P.doneText}`, "good");
+  if (P.grey) { // 灰色职业不占副职名额，但占因果
+    S.daoXin = Math.max(0, S.daoXin - 3); S.flags.greyKarma = 1;
+    sys(`【因果】灰色职业：名声带毒，道心 -3。做过的事，不随换马甲消失。`);
+  }
+  computeMods(); renderPanel();
+  return P.name;
+}
+/* 职业经验入账：主职全计、兼职减半；多职业并存全部经验 -30% */
+function profExpGain(pid, n) {
+  const q = profList()[pid]; const P = profDef(pid);
+  if (!q || !P || !n) return;
+  const owned = Object.keys(profList()).length;
+  q.exp += n * (q.primary ? 1 : 0.5) * (owned > 1 ? 0.7 : 1);
+  const cap = profTierCap(P.tier);
+  if (q.lv < cap && q.exp >= (PROF_NEED[q.lv + 1] ?? Infinity)) {
+    q.exp = 0; q.lv++;
+    const pass = (S.npc[P.master] || 0) >= 30;
+    sys(`【职业晋升】「${P.name}」升至 ${q.lv} 级（${PROF_LV_NAMES[q.lv]}）——${pass ? P.master + "点头认可" : "行会评定通过"}。天道酬勤，也酬有心人。`);
+    S.daoXin = Math.min(100, S.daoXin + 1);
+    if (q.lv >= cap) {
+      if (P.next) sys(`【转轨之期】「${P.name}」已至${P.tierName}之巅——想再进一步，须行当升品转轨（${profDef(P.next) ? "「" + profDef(P.next).name + "」" : "更高品阶"}）。修为境界与行业深度，双到位方可挂牌。`);
+      else sys(`【行当登顶】「${P.name}」已至${P.tierName}之巅。一方名家，从此是你的底牌。`);
+    }
+    computeMods(); renderPanel();
+  }
+}
+/* 每夜结算：从业时长（每 3 日 +1）＋ 技艺印证（捆绑生活技能每满 10 熟练 +1） */
+function profDailyTick() {
+  if (!S.professions) return;
+  for (const pid in S.professions) {
+    const P = profDef(pid); if (!P) continue;
+    let n = 0;
+    if (S.day % 3 === 0) n += 1;
+    if (P.skill) {
+      const cur = Math.floor((S.skills[P.skill] || 0) / 10);
+      const key = "psk_" + pid, prev = S.flags[key] || 0;
+      if (cur > prev) { n += cur - prev; S.flags[key] = cur; }
+    }
+    if (n > 0) profExpGain(pid, n);
+  }
+}
+/* 面板职业行：主职/副职一览，点击看详情 */
+function profRowsHTML() {
+  if (!S.professions || !Object.keys(S.professions).length)
+    return S.job ? `<div class="p-row"><span>职业</span><b>${S.job}</b></div>` : "";
+  return Object.keys(S.professions).map(pid => {
+    const P = profDef(pid), q = S.professions[pid];
+    if (!P) return "";
+    const cap = profTierCap(P.tier), need = PROF_NEED[q.lv + 1];
+    const prog = q.lv >= cap ? "已封顶" : `经验 ${Math.floor(q.exp)}/${need}`;
+    return `<div class="p-row prof-row" data-prof="${pid}"><span>${q.primary ? "主职业" : "副职业"}</span><b>${P.tierName} · ${P.name} ${q.lv} 级（${prog}）</b></div>`;
+  }).join("");
+}
+
 const $ = s => document.querySelector(s);
 function log(text, cls) {
   const div = document.createElement("div");
@@ -337,7 +449,7 @@ function renderPanel() {
      <div class="p-row lg-row" data-lg="1"><span>灵根</span><b>${linggen().name}</b></div>
      <div class="p-row tt-row" data-tt="1"><span>称号</span><b>${S.wornTitle && TITLES[S.wornTitle] ? "「" + TITLES[S.wornTitle].name + "」" : (META.titles && META.titles.length ? "未佩戴 · " + META.titles.length + " 枚" : "无")}</b></div>
      ${(META.comments && META.comments.length) ? `<div class="p-row tt-row" data-cm="1"><span>前世评语</span><b>${META.comments[META.comments.length - 1].grade} · ${META.comments.length} 世留评</b></div>` : ""}
-     ${S.job ? `<div class="p-row"><span>职业</span><b>${S.job}</b></div>` : ""}
+     ${profRowsHTML()}
      <div class="p-row"><span>状态</span><b>${S.debuff === "weak" ? "【元气大伤】" : S.hunger > 85 ? "【极度饥饿】" : S.hunger > 70 ? "【饥饿】" : "尚可"}</b></div>`;
   const lgRow = $("#rows [data-lg]"); // 灵根详情：五行亲和与实务规则
   if (lgRow) lgRow.onclick = () => {
@@ -376,6 +488,15 @@ function renderPanel() {
   if (dxRow) dxRow.onclick = () => showInfo("道心 × 心魔", `<span style="color:var(--gold-dim)">心魔用你的声音说话</span>`,
     `道心 ${Math.round(S.daoXin)}/100 · ${daoText()} ｜ 心魔 ${Math.round(S.xinmo || 0)}/100 · ${xinmoStage().name}`,
     `${xinmoStage().desc}。<br>心魔的养料：执念、愧疚、恐惧（濒死与前世死亡记忆）、欲望、心境与修为不匹配（词条让你战力一夜暴涨，道心一步没走）、天地异动。道心的涨跌：红尘历练、问心无愧则涨；违心背信、临阵脱逃则跌。<br>四阶段：杂念（修炼 -5%）→ 执念成形（梦中低语）→ 心魔劫（破境时具现，斩/渡/笑三种过法）→ 化魔（神智沦丧）。<br>化解：打坐静心、道心 60+ 自净、渡劫直面。`);
+  document.querySelectorAll("#rows .prof-row").forEach(row => row.onclick = () => { // 职业详情（第三章 3.3~3.6）
+    const pid = row.getAttribute("data-prof"), P = profDef(pid), q = S.professions[pid];
+    if (!P || !q) return;
+    const cap = profTierCap(P.tier), need = PROF_NEED[q.lv + 1];
+    const bonus = Object.keys(P.attrs || {}).map(k => `${{ str: "力量", agi: "敏捷", int: "智力", con: "体质" }[k]} +${(P.attrs[k] * q.lv * (S.realm >= 7 ? 10 : 1)).toFixed(1)}`).join("、") || "—";
+    showInfo(`${P.tierName} · ${P.name}（${q.lv} 级 ${PROF_LV_NAMES[q.lv]}）`, `<span style="color:var(--gold-dim)">${P.grey ? "灰色职业 · 不占副职名额，但占因果" : q.primary ? "主职业" : "副职业"}</span>`,
+      `${P.trait}<br>当前加成：${bonus}（品阶基数 × 等级 × 境界系数；天花板条款：不得突破当前境界单项天花板）<br>晋升进度：${q.lv >= cap ? "已至" + P.tierName + "之巅" : `经验 ${Math.floor(q.exp)} / ${need}（2/4/8/16/32 晋一级，须考核）`}`,
+      `经验来源（3.3）：从业时长（每 3 日 +1）｜ 技艺印证（「${P.skill}」每满 10 熟练 +1）｜ 行业事件（完成任务 +2，主线 +3）｜ 口碑。<br>${Object.keys(S.professions).length > 1 ? "多职业并存：全部活跃职业经验 -30%（精力有限，天道公允）。" : ""}${q.lv >= cap && P.next ? "<br>【转轨】凡品封顶——须行当升品转轨（" + (profDef(P.next) ? "「" + profDef(P.next).name + "」" : "更高品阶") + "），修为境界与行业深度双到位。" : ""}`);
+  });
   const lv = sysLv();
   $("#pity").innerHTML =
     `<span>十抽保底 ${Math.floor(S.pity10)}/10（${lv >= 4 ? "紫" : "青"}↑）</span><span>百抽保底 ${Math.floor(S.pity100)}/100（${lv >= 6 ? "金" : "紫"}↑）</span>${lv >= 8 ? `<span>千抽 ${Math.floor(S.pity1000 || 0)}/${lv >= 10 ? 500 : 1000}（红）</span>` : ""}<span>累计 ${S.pulls} 抽 · 轮盘 Lv${lv}</span>`;
@@ -937,6 +1058,7 @@ function night() {
   }
   S.day++;
   S.slot = 0;
+  profDailyTick(); // 职业经验：从业时长 + 技艺印证（第三章 3.3）
   S.weather = ["大雪", "阴晦", "风雪", "晴冷", "冻雨"][Math.floor(Math.random() * 5)];
   if (S.day === 9 || S.day === 28) S.flags.coldSnap = true;
   if (S.day === 11 || S.day === 30) S.flags.coldSnap = false;
@@ -945,7 +1067,7 @@ function night() {
   log(`—— 冬 · 第 ${S.day} 日 · ${S.weather} ——`, "daybreak");
   lines.forEach(l => log(l, "dim"));
   if (S.hp <= 0) { die("冻饿而死。破庙的角落里，你安静地蜷缩成了一尊冰雕。", "冻毙"); return; }
-  if (S.day >= 31) { ending(); return; }
+  if (S.day >= 31 && !S.flags.freeRoam) { ending(); return; }
   autoSave(); // 每天清晨自动落笔
   const foes = Object.entries(S.npc || {}).filter(([n, v]) => v <= -70); // 记恨以上：暗处等你失足
   if (foes.length && Math.random() < 0.06) {
@@ -994,6 +1116,8 @@ async function gmTurn() {
   if (checkBreakthrough()) {
     choices.unshift({ label: "【破境】积累已圆满", hint: "临门一脚。失败会元气大伤。", free: true, fn: () => askBreakthrough() });
   }
+  // 三日历练：无论剧情来自 AI 还是离线引擎，每三天必有一次提升实力的机缘（AI 编排 + 引擎兜底双保险）
+  if (trainDue()) injectTraining(choices);
   // 任务选项注入（主线行动 + 支线邀约）
   for (const o of QU.offers()) {
     if (o.kind === "act") {
@@ -1117,6 +1241,60 @@ async function resolveFx(fx, label) {
   if (fx.combat) { const m = /^(.+):(\d+)$/.exec(fx.combat); if (m) { combat({ name: m[1], power: +m[2], canBeg: true }, () => { if (!S.over) advanceSlot(); }); return; } }
   if (fx.danger) { await runDanger(fx.danger); return; }
   advanceSlot();
+}
+
+/* ---------- 三日历练：每三天必触发一次实力机缘 ----------
+   玩家设定：剧情不推进、实力不涨不行——每 3 天必须出现一次可提升
+   五维 / 功法 / 武技的剧情机缘。AI 模式由提示词要求它编排历练剧情，
+   此处为引擎兜底：到期回合无论剧情来源，置顶注入历练选项。 */
+const TRAIN_GAP = 3;
+function trainDue() { return !S.over && S.day - (S.lastTrainDay || 0) >= TRAIN_GAP; }
+function injectTraining(choices) {
+  const gap = S.day - (S.lastTrainDay || 0);
+  sys(`【三日之期】距上次砥砺已 ${gap} 日。风雪深处，有一次变强的机缘在等你——这一次，别错过。`);
+  choices.unshift({ label: `【历练】抓住变强的机缘（已搁置 ${gap} 日）`, hint: "三日之期已至：五维、功法、武技，必有所得。", cls: "quest", free: true,
+    fn: () => { S._choiceSet = false; trainingEvent(); } });
+}
+function trainingEvent() {
+  S.lastTrainDay = S.day;
+  S.sta = Math.max(0, S.sta - 2);
+  const hasGongfa = (S.inv.yinqi || 0) > 0 || (S.inv.quanpu || 0) > 0;
+  const sk = S.inv.yinqi ? "引气诀" : S.inv.quanpu ? "锻骨拳谱" : "乱拳";
+  const cap = TECH_CAPS[sk] || 100;
+  const roll = Math.random() * 100;
+  if (hasGongfa && roll < 40) {
+    /* 功法精研 */
+    const wxm = wxTrainMult(sk);
+    const inc = Math.round((4 + Math.random() * 4) * (1 + (S.mods.trainP || 0) / 100) * wxm * 10) / 10;
+    S.skills[sk] = Math.min(cap, (S.skills[sk] || 0) + inc);
+    gainCult(6 * wxm); gainAttr("str", 0.05);
+    log(`【历练 · 功法精研】你寻了处背风的石窝，把「${sk}」一式一式拆开重练。雪沫被劲气卷起，又纷纷落下。`, "dim");
+    sys(`【功法精研】「${sk}」熟练度 +${inc}（${Math.round(S.skills[sk])}/${cap}），修为 +${Math.round(6 * wxm)}，力量 +0.05。`);
+    checkSkillMilestone(sk);
+  } else if (roll < (hasGongfa ? 80 : 70)) {
+    /* 五维打熬 */
+    const pickAttr = [["str", "力量"], ["agi", "敏捷"], ["int", "智力"], ["con", "体质"]][Math.floor(Math.random() * 4)];
+    const amt = Math.round((0.1 + Math.random() * 0.1) * 100) / 100;
+    const scenes = {
+      str: `【历练 · 熬力】你替卖炭婆把整车炭推过石桥，又抡了半个时辰的石锁。掌心火辣辣地疼——但臂膀里，力气在长。`,
+      agi: `【历练 · 腾挪】你在覆雪的屋脊间腾挪起落，追着一道灰影穿过半座城。落地时膝弯一软，随即站稳——身法快了一丝。`,
+      int: `【历练 · 明悟】你在茶楼外立了整整一个时辰，把柳先生那段「仙陨之战」从头到尾记下，回去对着雪光默诵三遍。心里透亮了一块。`,
+      con: `【历练 · 淬体】你凿开冰面，把身子埋进刺骨的河水数息再冲出。牙齿打着颤，血脉却像被打通了——寒气再侵不进半分。`,
+    };
+    gainAttr(pickAttr[0], amt); gainCult(2);
+    log(scenes[pickAttr[0]], "dim");
+    sys(`【五维打熬】${pickAttr[1]} +${amt}，修为 +2。`);
+  } else {
+    /* 武技磨砺 */
+    const inc = 3 + Math.floor(Math.random() * 4);
+    S.skills["乱拳"] = Math.min(TECH_CAPS["乱拳"] || 100, (S.skills["乱拳"] || 0) + inc);
+    gainAttr("str", 0.08); gainCult(2);
+    log(`【历练 · 武技】你对着庙后老槐树出拳一千次。树皮上的霜震落又凝上，拳面渗血，拳路却越来越直。`, "dim");
+    sys(`【武技磨砺】「乱拳」熟练度 +${inc}（${Math.round(S.skills["乱拳"])}/${TECH_CAPS["乱拳"] || 100}），力量 +0.08，修为 +2。`);
+    checkSkillMilestone("乱拳");
+  }
+  S.stats.trains = (S.stats.trains || 0) + 1;
+  computeMods(); renderPanel(); advanceSlot();
 }
 
 /* ---------- special 动作 ---------- */
@@ -1646,6 +1824,8 @@ function closeEnd() { $("#endModal").classList.remove("open"); }
 
 /* ================= 存档 / 读档 ================= */
 const SAVE_KEYS = { auto: "cangxuan_save_auto", 1: "cangxuan_save_1", 2: "cangxuan_save_2", 3: "cangxuan_save_3" };
+/* 存档结构版本：改动 S/META 字段结构时 +1，并在 migrateSave 里补对应迁移步骤 */
+const SAVE_VER = 3;
 const SLOT_WORDS = ["晨", "午", "昏", "夜"];
 function saveSummary(s) { return `第${s.world}世 · ${s.name} · 冬第${s.day}日${SLOT_WORDS[s.slot] || ""} · ${REALM_NAMES[s.realm]}`; }
 function canSave() { return !!(S && !S.over && !gmBusy && !window.__inCombat); }
@@ -1653,7 +1833,7 @@ function writeSave(key, quiet) {
   if (!canSave()) { if (!quiet) toast("此刻天道未稳（战斗或结算中），稍候再存。"); return false; }
   const logHtml = [...document.querySelectorAll("#log .logline")].slice(-120).map(d => d.outerHTML).join("");
   try {
-    localStorage.setItem(key, JSON.stringify({ v: 1, at: Date.now(), S, META, log: logHtml }));
+    localStorage.setItem(key, JSON.stringify({ v: SAVE_VER, at: Date.now(), S, META, log: logHtml }));
     if (!quiet) toast("已写入存档：" + saveSummary(S));
     return true;
   } catch (e) { if (!quiet) toast("存档失败：浏览器存储不可用或已满。"); return false; }
@@ -1662,14 +1842,25 @@ function autoSave() { writeSave(SAVE_KEYS.auto, true); }
 function readSave(key) {
   try { const d = JSON.parse(localStorage.getItem(key)); return d && d.S ? d : null; } catch (e) { return null; }
 }
+/* 存档版本迁移：从 fromV 逐版补字段/调结构，每步幂等。返回 null 表示无法迁移。 */
+function migrateSave(d) {
+  let v = d.v || 0;
+  if (v > SAVE_VER) return null; // 来自更新版本的存档，旧客户端不认
+  if (v < 2) { d.S.lastTrainDay = d.S.lastTrainDay || 0; v = 2; } // v1 → v2：新增三日历练计时
+  if (v < 3) { d.S.professions = d.S.professions || {}; v = 3; } // v2 → v3：新增职业系统（第三章）
+  d.v = SAVE_VER;
+  return d;
+}
 function loadSaveData(d) {
-  S = d.S; META = d.META; saveMeta();
+  const m = migrateSave(d);
+  if (!m) { toast("这份存档来自更新的游戏版本，请先刷新页面再读档。"); return; }
+  S = m.S; META = m.META; saveMeta();
   gmBusy = false; window.__inCombat = false;
   closeEnd();
   $("#settings").classList.remove("open");
   $("#gacha").classList.remove("open");
   $("#saveModal").classList.remove("open");
-  $("#log").innerHTML = d.log || "";
+  $("#log").innerHTML = m.log || "";
   computeMods(); renderPanel(); renderTab();
   log(`—— 读档归来：${saveSummary(S)} ——`, "daybreak");
   toast("读档完成，故事继续");
@@ -1825,6 +2016,36 @@ async function testAiKey() {
   }
 }
 
+/* ================= 重开第一世 =================
+   清空一切轮回进度（META、所有存档槽、当前人生），回到仙陨历三万年的雪夜破庙。
+   AI 天道配置（Key 等）属于玩家设置，保留不动。 */
+function askReset() {
+  if (!S) return;
+  const w = META.world, d = (META.deaths || 0), ach = (META.ach || []).length;
+  showInfo("重开第一世", `<span style="color:var(--blood-hi)">不可逆 · 请三思</span>`,
+    `将抹除：第 ${w} 世的当前人生${d ? `、${d} 次死亡轮回` : ""}、千秋录 ${ach} 项成就、全部称号与历世评语、四个存档槽——一切回到最初，你仍是那个高烧三天、怀里揣着半个黑馍的阿七。`,
+    "「万象轮盘剥落，坠入虚空。雪，重新落了下来。」<br>AI 天道配置（Key / 模型）会保留。",
+    [
+      { label: "确认重开，万事归零", fn: () => { $("#infoModal").classList.remove("open"); resetToFirstLife(); } },
+      { label: "再想想", fn: () => $("#infoModal").classList.remove("open") },
+    ]);
+}
+function resetToFirstLife() {
+  try {
+    for (const k of Object.values(SAVE_KEYS)) localStorage.removeItem(k); // 所有存档槽
+    localStorage.removeItem(META_KEY);
+  } catch (e) {}
+  META = { world: 1, deaths: 0, ach: [], rebirth: null, sysLv: 1, totalPulls: 0 };
+  saveMeta();
+  gmBusy = false; window.__inCombat = false;
+  closeEnd();
+  ["settings", "gacha", "saveModal", "infoModal"].forEach(id => $("#" + id).classList.remove("open"));
+  newLife();
+  startLife();
+  sys(`【万象轮盘剥落，坠入虚空。雪，重新落了下来。】`);
+  sys(`【宿主，你真的要再来一次？】`);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".tabrow button").forEach((b, i) => b.onclick = () => { curTab = i; renderTab(); });
   $("#btnGacha").onclick = openGacha;
@@ -1841,6 +2062,7 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#btnSettings").onclick = openSettings;
   $("#settingsClose").onclick = () => $("#settings").classList.remove("open");
   $("#btnSave").onclick = () => { renderSaveModal(); $("#saveModal").classList.add("open"); };
+  $("#btnReset").onclick = askReset;
   $("#saveClose").onclick = () => $("#saveModal").classList.remove("open");
   $("#btnImportSave").onclick = () => $("#importSaveFile").click();
   $("#importSaveFile").onchange = e => { if (e.target.files && e.target.files[0]) importSaveFile(e.target.files[0]); e.target.value = ""; };

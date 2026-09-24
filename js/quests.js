@@ -105,6 +105,30 @@ const QU = (() => {
     },
   };
 
+  /* ===== 副职业入行支线（设定补丁 v5 · 第三章 职业系统） =====
+     遇到生活职业者（行当 NPC 缘分 ≥20「好感」）→ 邀约入行支线 →
+     得师傅认可（缘分 ≥40「贵人」）+ 跟随见习 2 日 → 拜师入册，解锁该职业。
+     转轨职业（灵品）另需原职业满级 + 更高缘分；账房先生需智力 ≥5。
+     定义由 PROFESSIONS（data.js）生成，奖励即「解锁副职业」。 */
+  if (typeof PROFESSIONS !== "undefined") {
+    for (const pid in PROFESSIONS) {
+      const P = PROFESSIONS[pid];
+      DEFS["pq_" + pid] = {
+        name: `支线：入行 · ${P.name}`, type: "side", giver: P.master,
+        desc: P.questDesc,
+        offer: () => profReqMet(P) && !hasProfession(pid),
+        offerText: P.offerText,
+        objectives: [
+          { text: () => `${P.master}的认可（缘分 ${S.npc[P.master] || 0} / 40）`, done: () => (S.npc[P.master] || 0) >= 40 },
+          { text: () => { const st = (((S.quests || {}).acceptDay) || {})["pq_" + pid]; return `跟随见习（${st == null ? 0 : Math.min(2, S.day - st)} / 2 日）`; }, done: () => { const st = (((S.quests || {}).acceptDay) || {})["pq_" + pid]; return st != null && S.day - st >= 2; } },
+        ],
+        reward: {},
+        rewardFn: () => { const n = unlockProfession(pid); return n ? `解锁${P.tierName}职业「${n}」` : ""; },
+        doneText: "", // 解锁文案由 unlockProfession 播报
+      };
+    }
+  }
+
   /* ---------- 状态 ---------- */
   function ensure() {
     if (!S.quests) S.quests = { active: [], done: [], failed: [], refused: {} };
@@ -112,6 +136,7 @@ const QU = (() => {
     if (!q.stamp) q.stamp = {};        // 激活/最近一次推进的日子
     if (!q.offerStamp) q.offerStamp = {}; // 支线邀约条件首次成立的日子
     if (!q.prog) q.prog = {};          // 目标完成数快照（用于识别「推进」）
+    if (!q.acceptDay) q.acceptDay = {}; // 接取日子（见习类目标用它计时，不被推进刷新干扰）
     return q;
   }
   const isActive = id => ensure().active.includes(id);
@@ -129,7 +154,7 @@ const QU = (() => {
     if (touched(id)) return;
     const q = ensure();
     q.active.push(id);
-    q.stamp[id] = S.day; q.prog[id] = progOf(id);
+    q.stamp[id] = S.day; q.acceptDay[id] = S.day; q.prog[id] = progOf(id);
     const d = DEFS[id];
     sys(`【任务·${d.type === "main" ? "主线" : "支线"}】「${d.name}」已录入天道卷宗。`);
     log(d.desc, "dim");
@@ -147,6 +172,7 @@ const QU = (() => {
     try { chronicle(`完成「${d.name}」`, "quest"); } catch (e) {}
     toast(`任务完成 · ${d.name}`);
     gainAch("quest1");
+    try { for (const pid in (S.professions || {})) profExpGain(pid, d.type === "main" ? 3 : 2); } catch (e) {} // 行业事件：关键经历涨职业经验（3.3）
     renderPanel();
   }
 
