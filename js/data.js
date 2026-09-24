@@ -120,18 +120,31 @@ const COMBO_CARDS = {
 };
 const COMBO_PAIRS = [["juanwang", "moyu", "zhangchi"], ["huachang", "ganfan", "zhichang"]];
 
-/* ============ 随机身份（再世） ============ */
+/* ============ 随机身份（再世 · 设定集 15.5 开局表，四档：吉/平/劣/狱） ============ */
 const IDENTITIES = [
+  /* ---- 吉档 ---- */
+  { grade:"吉", name:"小家族庶子",   desc:"有饭吃有书读，嫡母的猜忌比寒冬更长。", mods:{int:1}, money:400, note:"「灯下苦学」智力成长 +10%" },
+  { grade:"吉", name:"宗门记名弟子", desc:"月例三块灵石，外门倾轧月比淘汰。", mods:{con:1}, money:120, note:"「早课不辍」修炼效率 +5%" },
   { grade:"吉", name:"药王谷药童",   desc:"识药辨草的童子，月有薄俸。", mods:{int:1,con:0}, money:300, note:"「药圃岁月」丹道熟练度 +10%" },
+  { grade:"吉", name:"商队少东",     desc:"拨算盘的手比握剑稳，沙盗的眼睛盯着货。", mods:{int:1,luck:0}, money:800, note:"「算盘精」议价 +5%" },
   { grade:"吉", name:"将门遗孤",     desc:"军营里长大的骨头，仇家环伺。", mods:{con:1,str:1}, money:200, note:"「军营长大的骨头」体质成长 +10%" },
-  { grade:"吉", name:"商队少东",     desc:"拨算盘的手比握剑稳。", mods:{int:1,luck:0}, money:800, note:"「算盘精」议价 +5%" },
+  /* ---- 平档 ---- */
   { grade:"平", name:"市井孩童",     desc:"跑街串巷，帮派的保护费比年关难过。", mods:{agi:1}, money:60, note:"「跑街」敏捷成长 +5%" },
   { grade:"平", name:"猎户遗孤",     desc:"山里的鼻子，冬荒夺田的族亲。", mods:{agi:1,con:0}, money:80, note:"「山里的鼻子」野外生存 +10%" },
   { grade:"平", name:"私塾伴读",     desc:"旁听生，主仆名分随时被逐。", mods:{int:1}, money:40, note:"「旁听生」悟性 +5%" },
+  { grade:"平", name:"渔民之子",     desc:"海税、风暴、渔霸，一样比浪凶。", mods:{con:1}, money:50, note:"「浪里白条」水中战力 +20%" },
+  { grade:"平", name:"铁匠学徒",     desc:"酗酒的师父，催命的军械订单。", mods:{str:1}, money:70, note:"「千锤百炼」炼器熟练度 +5%" },
+  /* ---- 劣档 ---- */
+  { grade:"劣", name:"奴籍",         desc:"契书在身，赎身天价。", mods:{agi:1}, money:0, note:"「忍字诀」隐匿忍耐 +15%" },
   { grade:"劣", name:"疫村遗孤",     desc:"人人避你如瘟神；你的血对某种毒免疫。", mods:{con:-1,luck:0}, money:10, note:"「病骨」毒抗 +10%、体质成长 -10%" },
+  { grade:"劣", name:"弃婴·寺中长大", desc:"寺贫，武僧的拳头比经文硬。", mods:{int:1}, money:0, note:"「佛性」心魔抗性 +10%、道心成长 +10%" },
   { grade:"劣", name:"矿奴",         desc:"地底肺，黑暗中的感知异于常人。", mods:{con:1,int:0}, money:0, note:"「地底肺」黑暗中感知 +15%" },
-  { grade:"狱", name:"死囚之子",     desc:"烙印贱籍，见惯生死。", mods:{luck:-1,con:1}, money:0, note:"「见惯生死」恐惧判定 +15%" },
+  { grade:"劣", name:"死囚之子",     desc:"烙印贱籍，见惯生死。", mods:{luck:-1,con:1}, money:0, note:"「见惯生死」恐惧判定 +15%" },
+  /* ---- 狱档 ---- */
+  { grade:"狱", name:"死囚",         desc:"开局在牢里，秋后问斩，只剩百日。", mods:{con:1}, money:0, note:"「向死而生·伪」濒死战力 +15%（仅此一条，非词条）" },
   { grade:"狱", name:"祭品",         desc:"山村十年一祭，你是今年的「山神新娘」。", mods:{luck:-1}, money:0, note:"「祭品的镇定」疼痛忍耐 +20%" },
+  { grade:"狱", name:"炉鼎苗子",     desc:"被合欢宗外使挑中，已在押送路上。", mods:{agi:1}, money:0, note:"「锁情印」情感波动 -50%" },
+  { grade:"狱", name:"渊口守夜人",   desc:"北地界壁裂缝戍卒，上一任疯了。", mods:{con:1}, money:0, note:"「听过渊声」灵感 +20%、理智 -10%" },
 ];
 
 /* ============ 成就（千秋录） ============ */
@@ -182,7 +195,9 @@ const ACH_TITLE = { shengsi: "yibao", gacha100: "lunpan", renji: "renjiT", yueji
 
 /* ============ 商铺 · 云州杂货 ============
    品类依《苍玄界世界设定集》：南荒奇珍为筑基丹（二十三章·南荒篇），
-   方寸戒为储物法器（六十三章·咫尺物），青冥引气诀为二阶功法。 */
+   方寸戒为储物法器（六十三章·咫尺物）。
+   物价锚定第七章：凡俗品铜钱计价；修士货（丹药/功法/法器）一律灵石计价——
+   聚气丹 15 下品灵石、1 阶功法玉简 30~100 灵石、下品灵器 50~200 灵石。 */
 const SHOP_BASE = [
   { id: "heimu", name: "黑馍", price: 2, desc: "又冷又硬的黑面馍馍，顶饿。", kind: "食物" },
   { id: "hotnoodle", name: "热汤面", price: 5, desc: "一碗下肚，从舌尖暖到脚尖。立食，饱食 +40。", kind: "食物", use: "eat" },
@@ -190,21 +205,21 @@ const SHOP_BASE = [
   { id: "wood", name: "柴薪", price: 6, desc: "一捆干柴。夜里生火御寒，或囤着等雪天涨价。", kind: "日用" },
   { id: "medicine", name: "跌打药", price: 12, desc: "回春堂出品的金疮药。气血 +6。", kind: "药物", use: "heal" },
   { id: "huobun", name: "火把", price: 3, desc: "松脂火把。夜里赶路、探林深处都用得上。", kind: "日用" },
-  { id: "mianao", name: "老棉袄", price: 60, desc: "厚实的老棉袄。风雪与寒潮夜不再冻伤。", kind: "衣物" },
-  { id: "chaidao", name: "豁口柴刀", price: 45, desc: "砍柴效率 +1，关键时刻也能当兵器。", kind: "工具" },
+  { id: "mianao", name: "老棉袄", price: 300, desc: "厚实的老棉袄（第七章锚：棉袄 300 文）。风雪与寒潮夜不再冻伤。", kind: "衣物" },
+  { id: "chaidao", name: "豁口柴刀", price: 80, desc: "砍柴效率 +1，关键时刻也能当兵器（第七章锚：柴刀 80 文）。", kind: "工具" },
 ];
 const SHOP_UNLOCK = [
   { id: "gongfuTea", name: "凝神香片", price: 18, desc: "茶棚货。泡一盏，打坐吐纳效率倍增一次（修为 +12）。", kind: "丹茶", flag: "shop_tea",
     cond: () => !!(S && (S.npc["雪夜寡妇"] || 0) >= 20) },
-  { id: "zhuJidan", name: "筑基丹", price: 480, desc: "南荒奇珍，低阶散修梦寐以求。服之修为大涨（修为 +60）。", kind: "丹药", flag: "shop_zhuji", stones: 1,
+  { id: "zhuJidan", name: "筑基丹", price: 0, desc: "南荒奇珍，低阶散修梦寐以求。服之修为大涨（修为 +60）。", kind: "丹药", flag: "shop_zhuji", stones: 20,
     cond: () => S && S.realm >= 2 },
-  { id: "juqiDan", name: "聚气丹", price: 150, desc: "低阶丹药，服之助涨修为（修为 +30）。", kind: "丹药", flag: "shop_juqi",
+  { id: "juqiDan", name: "聚气丹", price: 0, desc: "低阶丹药，服之助涨修为（修为 +30）。第七章锚：15 下品灵石。", kind: "丹药", flag: "shop_juqi", stones: 15,
     cond: () => S && S.realm >= 1 },
-  { id: "yinqi", name: "《青冥引气诀》", price: 380, desc: "二阶功法残卷，吐纳效率倍增。凡俗市面上绝难一见。无功法者修为寸步难进——这是敲门砖。", kind: "功法", flag: "shop_yinqi",
-    cond: () => S && (S.stats.maxMoney || 0) >= 150 },
-  { id: "paiduDan", name: "排毒丹", price: 60, desc: "排解药蚀（药蚀 -15）。治标不治本——本身也含微量药蚀，以毒攻毒。", kind: "丹药", flag: "shop_paidu",
+  { id: "yinqi", name: "《引气诀》", price: 0, desc: "一阶功法玉简全卷（第七章锚：30~100 灵石）。无功法者修为寸步难进——这是敲门砖。", kind: "功法", flag: "shop_yinqi", stones: 50,
+    cond: () => S && ((S.stats.maxMoney || 0) >= 150 || S.stones >= 10) },
+  { id: "paiduDan", name: "排毒丹", price: 0, desc: "排解药蚀（药蚀 -15）。治标不治本——本身也含微量药蚀，以毒攻毒。", kind: "丹药", flag: "shop_paidu", stones: 1,
     cond: () => S && S.realm >= 1 },
-  { id: "fangcun", name: "方寸戒", price: 900, desc: "内蕴一方小空间的储物法器。行囊上限不再成忧（行囊各 +10）。", kind: "法器", flag: "shop_ring", stones: 2,
+  { id: "fangcun", name: "方寸戒", price: 0, desc: "内蕴一方小空间的储物法器。行囊上限不再成忧（行囊各 +10）。", kind: "法器", flag: "shop_ring", stones: 30,
     cond: () => S && S.realm >= 2 && S.day >= 15 },
 ];
 /* 药蚀（设定集）：凡品 3~5 ｜ 灵品 8~12 ｜ 玄品 15~25 ｜ 圣品 30+；排毒丹本身含微量药蚀 */
@@ -213,15 +228,6 @@ const DRUG_SHI = { medicine: 4, gongfuTea: 4, juqiDan: 10, zhuJidan: 20, paiduDa
 /* ============ 任务系统见 js/quests.js（天道卷宗） ============ */
 /* ============ 文案 ============ */
 const TXT = {
-  opening:[
-    { t:"sys", s:"【万象轮盘已激活。】" },
-    { t:"sys", s:"【开局赠礼：万象点 ×100（仅此一次，用完即止）。】" },
-    { t:"sys", s:"【检测到宿主命格：天绝之命（原注定冻死于今夜）。】" },
-    { t:"sys", s:"【检测到未知因果介入……命格已改写。】" },
-    { t:"dim", s:"你睁开眼时，正躺在青石城南的破庙里。高烧三天，浑身滚烫，怀里揣着半个冻硬的黑馍。" },
-    { t:"dim", s:"庙外有狼嚎。庙里有七个同样衣衫褴褛的乞丐，分食最后一点烤火余温——你是其中之一，排行最末，他们叫你「阿七」。" },
-    { t:"sys", s:"【凡品任务已发布：活过这个冬天。奖励：万象点 ×20。】" },
-  ],
   winters:["大雪","阴晦","风雪","晴冷","冻雨"],
 };
 

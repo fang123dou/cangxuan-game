@@ -45,7 +45,7 @@ function newLife() {
     hunger: 55, money, stones: 0, points,
     pity10: 0, pity100: 0, pity1000: 0, pulls: 0, stoneExch: 0,
     linggen: rollLinggen(first), // 灵根五行：首世阿七固定杂灵根（设定原文），再世按稀有度重 roll
-    gaimai: 0,
+    shutong: 0,
     cards: {}, cardOrder: [],
     inv: { heimu: 1, wood: 0 }, skills: {},
     mats: {}, // 材料账（第七九章）：妖兽内丹、灵药等硬通货，剧情中折算
@@ -520,8 +520,24 @@ function toast(t) {
   const el = $("#toast"); el.innerHTML = t; el.classList.add("show");
   clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove("show"), 2600);
 }
+/* 设定铁律：行囊中没有的物品，不得出现使用它的选项（选项文案引用即校验） */
+const ITEM_NEED_RES = [
+  { re: /黑馍/, id: "heimu" }, { re: /柴薪|捆柴/, id: "wood" },
+  { re: /聚气丹/, id: "juqiDan" }, { re: /洗髓丹/, id: "xisuiDan" },
+  { re: /排毒丹/, id: "paiduDan" }, { re: /回灵丹/, id: "huiLingDan" },
+  { re: /凝神香片/, id: "gongfuTea" }, { re: /烧刀子/, id: "shaojiu" },
+  { re: /筑基丹/, id: "zhuJidan" }, { re: /跌打药/, id: "medicine" },
+  { re: /火把/, id: "huobun" },
+];
 function setChoices(list) {
   if (S) S._choiceSet = true;
+  const raw = list || [];
+  const filtered = raw.filter(c => { // 使用类选项：无货不出（买/砍/拾/寻/换/借类除外）
+    const t = (c.label || "") + (c.hint || "");
+    if (/买|购|砍|拾|拣|寻|找|换|借|讨/.test(t)) return true;
+    return !ITEM_NEED_RES.some(n => n.re.test(t) && !(S && S.inv[n.id] > 0));
+  });
+  list = filtered.length || !raw.length ? filtered : raw; // 兜底：过滤后不能为空，防软锁
   const box = $("#choices"); box.innerHTML = "";
   const keys = ["A", "B", "C", "D", "E", "F", "G", "H"];
   list.forEach((c, i) => {
@@ -962,6 +978,40 @@ function renderTab() {
       const rec = RECIPES[kind].find(r => r.id === el.dataset.craft);
       if (rec) doCraft(kind, rec);
     });
+  } else if (curTab === 9) {
+    /* ---------- 技能栏（01:19 补丁）：功法与技艺尽聚于此，点击看详情 ---------- */
+    const TECH_LIST = [
+      { sk: "乱拳", tier: "凡俗武技", el: null, desc: "没师父的野路子拳。谈不上招式，胜在敢打——挨打出真章，磨出来的也是功夫。", src: "开局随身的保命把式；武技磨砺与实战中积攒熟练度。" },
+      { sk: "锻骨拳谱", tier: "0 阶功法", el: "jin", desc: "无名残卷，记载淬体拳路。演练可增长修为与力量，圆满后气感自生，可推演吐纳之法。", src: "传承事件或商铺购得。" },
+      { sk: "引气诀", tier: "1 阶功法", el: "shui", desc: "吐纳引气之法诀。修行效率大增，打坐收益远胜寻常吐纳。", src: "落魄武师一脉的传承；亦可于商铺购得。" },
+    ];
+    const techGot = t => t.sk === "乱拳" ? ("乱拳" in S.skills) : (S.inv[t.sk === "引气诀" ? "yinqi" : "quanpu"] || 0) > 0;
+    let html = `<div class="p-title"><b>功 法</b><span>修行根本 · 熟练度满反哺五维</span></div>`;
+    html += TECH_LIST.map(t => {
+      const got = techGot(t);
+      const cur = Math.round(S.skills[t.sk] || 0), cap = TECH_CAPS[t.sk];
+      return `<div class="p-row" ${got ? `data-skill="${t.sk}"` : `style="opacity:.45"`}><span>${got ? "" : "🔒 "}${t.sk === "乱拳" ? t.sk : "《" + t.sk + "》"}</span><b>${got ? `熟练 ${cur}/${cap}` : "未入手"}</b></div>`;
+    }).join("");
+    const life = Object.entries(S.skills).filter(([k]) => !(k in TECH_CAPS)).sort((a, b) => b[1] - a[1]);
+    html += `<div class="p-title" style="margin-top:14px"><b>技 艺</b><span>生活技能 · 从业历练积攒</span></div>`;
+    html += life.length ? life.map(([k, v]) => `<div class="p-row" data-skill="${esc(k)}"><span>${esc(k)}</span><b>熟练 ${Math.round(v)}/${TECH_CAPS[k] || 100}</b></div>`).join("")
+      : `<div class="empty">尚无傍身技艺。去谋生、去历练——手艺是饿不死的底气。</div>`;
+    body.innerHTML = html;
+    body.querySelectorAll("[data-skill]").forEach(el => el.onclick = () => {
+      const k = el.dataset.skill;
+      const t = TECH_LIST.find(x => x.sk === k);
+      const cap = TECH_CAPS[k] || 100, cur = Math.round(S.skills[k] || 0);
+      if (t) {
+        const fb = k === "引气诀" ? { an: "智力", half: 2, full: 5 } : k === "锻骨拳谱" ? { an: "力量", half: 0.3, full: 0.7 } : null;
+        showInfo(`「${k}」`, `<span style="color:var(--gold-dim)">${t.tier} · ${t.el ? WX_NAMES[t.el] + "行" : "无行"}</span>`, esc(t.desc),
+          `熟练度 ${cur}/${cap} ｜ ${fb ? `反哺：小成(${cap / 2}) ${fb.an} +${fb.half} · 圆满(${cap}) ${fb.an} +${fb.full}` : "圆满之时，野路子也能自推演出正经传承"} ｜ ${esc(t.src)}`);
+      } else {
+        const P = (typeof PROFESSIONS !== "undefined") ? Object.values(PROFESSIONS).find(p => p.skill === k) : null;
+        showInfo(`「${esc(k)}」`, `<span style="color:var(--gold-dim)">生活技艺</span>`,
+          "谋生的手艺，也是入世的路。从业、帮工、历练皆可积攒熟练度。",
+          `熟练度 ${cur}/${cap} ｜ 每满 10 熟练，相关职业经验 +1（技艺印证）${P ? ` ｜ 对应职业：${esc(P.tierName)}「${esc(P.name)}」` : ""}`);
+      }
+    });
   } else {
     const ns = Object.keys(S.npc);
     body.innerHTML = ns.length ? ns.map(n => {
@@ -1116,9 +1166,19 @@ function addNpc(name, v, opts) {
   if (v < 0 && pers === "记仇") mult *= 1.5;      // 记仇者对伤害加倍
   if (v > 0 && hasSpecial("meihuo")) mult *= 1.4; // 天生魅魔：善缘获取 ×1.4
   if (opts.public) mult *= 1.5;                   // 当众事加倍（见证者传播略）
-  v = Math.round(v * mult * 10) / 10;
   if (!(name in S.npc) && S.flags.yibao) S.npc[name] = 10; // 称号「义薄云天」：陌生人初始好感 +10
   const before = S.npc[name] || 0;
+  // 【边际递减 · 01:19】善缘越涨越难：性格/传播倍数结算后，再按当前缘分衰减（0 起步不打折；50→×0.625；80→×0.4）。仇恨不适用——怨只会发酵。
+  if (v > 0 && before > 0) mult *= 1 - (Math.min(Math.abs(before), 100) / 100) * 0.75;
+  // 【缘分天花板】±80 是凡俗手段的极致（生死之交）：再往上须 AI 生成「缘分突破」大剧情（共患难/托生死/解开心结），完成后以 fx.flag="bondbreak_名字" 解锁
+  if (v > 0 && before >= 80 && !S.flags["bondbreak_" + name]) {
+    mult *= 0.1;
+    if (!S.flags["bondhint_" + name]) {
+      S.flags["bondhint_" + name] = 1;
+      sys(`【缘分瓶颈】与「${name}」已是生死之交（${before}），寻常走动、请客送礼再难让这段缘分更进一步——须有一场共患难、托生死的「缘分突破」之事，方可再进。`);
+    }
+  }
+  v = Math.round(v * mult * 10) / 10;
   S.npc[name] = Math.max(-100, Math.min(100, Math.round((before + v) * 10) / 10));
   const after = S.npc[name];
   S.npcMin = S.npcMin || {};
@@ -1446,12 +1506,26 @@ async function gmTurn() {
   $("#log").appendChild(loading);
   loading.scrollIntoView({ behavior: "smooth", block: "end" });
   let turn;
-  try { turn = await AI.narrate(); } catch (e) { turn = GM.compose(); }
+  try { turn = await AI.narrate(); } catch (e) { turn = (AI.getCfg() && AI.getCfg().key) ? { _offline: true, _reason: e && e.message } : GM.compose(); }
   loading.remove();
   gmBusy = false;
   if (S.over) return;
-  // 填了 Key 但 AI 没接管：明确告知原因，不再静默降级
-  if (turn._src === "gm" && AI.getCfg() && AI.getCfg().key) {
+  // 天道失联：已配置 Key 但 AI 不可用——停止演算，弹窗由玩家决定，绝不静默降级（01:19 补丁）
+  if (turn._offline) {
+    showInfo("天道失联", `<span style="color:var(--blood-hi)">推演中断</span>`,
+      `原因：${esc(turn._reason || "未知")}。剧情演算已停止，本回合未发生任何变化。`,
+      "重试连接会再次请求 AI；「以离线模式继续」则本回合改由内置引擎推演（无 AI 创作的剧情，刷新页面后恢复在线尝试）。",
+      [{ label: "重试连接", fn: () => { $("#infoModal").classList.remove("open"); gmTurn(); } },
+       { label: "以离线模式继续", fn: () => {
+           window.__allowOffline = true;
+           $("#infoModal").classList.remove("open");
+           toast("已进入离线模式：本轮由内置引擎推演，刷新页面后恢复在线尝试。");
+           gmTurn();
+         } }]);
+    return;
+  }
+  // 填了 Key 但 AI 没接管：明确告知原因，不再静默降级（手动确认过离线的不再重复提示）
+  if (turn._src === "gm" && AI.getCfg() && AI.getCfg().key && !window.__allowOffline) {
     const why = AI.failInfo && AI.failInfo();
     toast("AI 未接管：" + (why ? esc(why) : "未知原因") + "，本回合由离线引擎推演");
   }
@@ -1461,10 +1535,12 @@ async function gmTurn() {
   const srcName = { ai: "Kimi 执笔", server: "服务端执笔", gm: "离线推演" }[srcKey];
   log(esc(turn.scene) + `<span class="src-tag src-${srcKey}" title="本场景剧情来源">${srcName}</span>`);
   chronicle(turn.scene.slice(0, 46), "scene");
-  S.gmRecent = (S.gmRecent || []).concat(["scene:" + turn.scene.slice(0, 12)]).slice(-8);
-  const choices = turn.choices.map(c => ({
+  S.gmRecent = (S.gmRecent || []).concat(["scene:" + turn.scene.slice(0, 48)]).slice(-8); // 脉络加长：连贯性记忆（01:42）
+  S.lastScene = turn.scene.slice(0, 160); // 上回合场景节选，喂给 AI 作承接锚点
+  const turnChoices = turn.choices.filter(c => !choiceBlocked(c.fx)); // 钱袋/物品门槛兜底：付不起的选项直接不出（规则19/21）
+  const choices = turnChoices.map(c => ({
     label: c.label, hint: c.hint, free: true,
-    fn: () => { S._choiceSet = false; resolveFx(c.fx || {}, c.label); },
+    fn: () => { S._choiceSet = false; S.lastPick = c.label; resolveFx(c.fx || {}, c.label); },
   }));
   if (checkBreakthrough()) {
     choices.unshift({ label: "【破境】积累已圆满", hint: "临门一脚。失败会元气大伤。", free: true, fn: () => askBreakthrough() });
@@ -1505,6 +1581,30 @@ function judgeState() {
     lg: linggenTestBonus() };
 }
 /* 数值/物品/缘分等核心应用（resolveFx 与任务奖励共用） */
+/* 选项门槛引擎兜底（01:42 补丁）：付不起的钱不花、没有的东西不用 */
+function choiceBlocked(fx) {
+  if (!fx) return false;
+  // 递归合计 fx 内的铜钱负值（跳过 check 分支，分支单独按最省路径计）
+  const sumNeg = (o) => {
+    if (!o || typeof o !== "object") return 0;
+    let s = 0;
+    for (const k in o) {
+      if (k === "success" || k === "fail") continue;
+      if (k === "money" && typeof o[k] === "number" && o[k] < 0) s += o[k];
+      else if (o[k] && typeof o[k] === "object") s += sumNeg(o[k]);
+    }
+    return s;
+  };
+  let need = sumNeg(fx);
+  if (fx.check && (fx.success || fx.fail)) need += Math.min(sumNeg(fx.success), sumNeg(fx.fail)); // 判定两分支取花费更省者
+  if (need < 0 && S.money + need < 0) return true;
+  // 物品门槛：fx.item 负数量=消耗，行囊不足则不给（呼应规则19）
+  if (fx.item) {
+    const m = /^([a-zA-Z]+):(-?\d+)$/.exec(fx.item);
+    if (m && +m[2] < 0 && (S.inv[m[1]] || 0) < -m[2]) return true;
+  }
+  return false;
+}
 function applyCore(fx) {
   fx = fx || {};
   const out = [];
@@ -1760,22 +1860,23 @@ function runSpecial(sp, fx) {
     log(`蛮牛把一条汗巾甩上你肩膀：「从明天起，你就是码头上的人。扛包的钱，给你加三成。」`, "good");
     sys(`【职业获得：码头脚夫（凡品）】职业管世界认不认你这个人。`);
     S.daoXin += 1; advanceSlot();
-  } else if (sp === "gaimai") {
+  } else if (sp === "shutong") { // 疏通经脉：点脉换修为感悟——灵根天定不可改（设定铁律三），改的是通畅，不是命
     const cost = tradePrice("瞎眼老者", 50); // 交易让利（第四章·2）：缘分定价格
     if (S.money < cost) { log(`你摸遍全身也凑不够 ${cost} 文。瞎眼老者叹了口气：「缘分不够，铜钱来凑。」`, "dim"); advanceSlot(); return; }
     S.money -= cost;
-    const n = S.gaimai || 0;
+    const n = S.shutong || 0;
     const rate = [10, 25, 40, 60][Math.min(n, 3)];
-    S.gaimai = n + 1;
+    S.shutong = n + 1;
     if (Math.random() * 100 < rate) {
-      if (n >= 2) { S.debuff = "weak"; S.debuffDays = 3; log(`<span style="color:var(--blood-hi)">改脉失败——道基震荡，经脉里像有火在烧。【元气大伤】静养三日。</span>`); }
-      else log(`老者枯指一颤，收手：「淤塞太沉，冲不开。」你白白疼出一身冷汗。`, "hurt");
-      chronicle("洗髓改脉失败，道基多一道改脉痕", "evt");
+      S.hp = Math.max(1, S.hp - 8); S.daoXin = Math.max(0, S.daoXin - 1);
+      log(`<span style="color:var(--blood-hi)">点脉失败——指尖真气走错经脉，胸口像挨了一锤。【气血 -8，道心 -1】</span>`);
+      chronicle("瞎眼老者点脉失败，经脉受创", "evt");
     } else {
-      S.linggen = { za: "san", san: "shuang" }[S.linggen] || S.linggen;
-      S.wx = genWx(S.linggen); // 提纯后亲和按新资质重排（总和仍恒 100）
-      sys(`【洗髓改脉 · 成】淤塞尽去，灵根提纯——你从此是【${linggen().name}】。${linggen().desc || ""}`);
-      chronicle(`改脉成功，灵根提纯为「${linggen().name}」`, "evt");
+      const el = dominantWxEl(), wx = wxOf();
+      wx[el] = Math.min(100, (wx[el] || 0) + 2); // 后天亲和微调（亲和可后天挪移，灵根资质不可动）
+      gainCult(15);
+      sys(`【疏通经脉 · 成】闭塞的支脉被一根根点开，${WX_NAMES[el]}行亲和 +2——灵根是天定的，路是自己走的。`);
+      chronicle("瞎眼老者点脉疏通经脉，修为有感", "evt");
       computeMods();
     }
     advanceSlot();
@@ -2259,7 +2360,9 @@ function ending() {
     title: win ? "第一卷 · 潜龙在渊" : "第一卷 · 苟活",
     grade: win ? "潜 龙" : "存 活", color: win ? "#d4af6e" : "#6fa8a0", score: "",
     quote: win
-      ? "青岩门的山门在春风里矗立。你握着身份木牌回头望了一眼青石城——破庙、雪夜，都只是序章。「现在，你的每一次选择，都在改写这个世界的剧本。」"
+      ? (S.flags.qingyan
+        ? "青岩门的山门在春风里矗立。你握着身份木牌回头望了一眼青石城——破庙、雪夜，都只是序章。「现在，你的每一次选择，都在改写这个世界的剧本。」"
+        : "青岩门的山门在春风里矗立——它没收你，你也凭一己之力走到了今天。无门无派，破庙、雪夜，都只是序章。「现在，你的每一次选择，都在改写这个世界的剧本。」")
       : "冬天过去了，你还活着。没有仙缘，没有奇遇，但命是自己的。下一个冬天到来之前，也许来得及变得更强。",
     stats: [["存活", S.day + " 日"], ["境界", REALM_NAMES[S.realm]], ["词条", S.cardOrder.length + " 条"], ["缘分", Object.keys(S.npc).length + " 人"], ["成就", META.ach.length + " 项"], ["周目", "第 " + S.world + " 世"]],
     note: "可继续在此世漫游（自由模式），或再入轮回开启下一世——身份随机，因果继承。",

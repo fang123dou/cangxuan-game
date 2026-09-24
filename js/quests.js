@@ -1,5 +1,8 @@
 /* 苍玄界 · 任务系统（天道卷宗）
    主线按世界设定推进：卷一「潜龙在渊」——活过冬天 → 青岩门应试 → 外门立足。
+   【设定集 · 灵根恒定（01:51 定稿）】主角首世恒为杂灵根（五行各 20，天定不得置换）——
+   青岩门测灵碑择根而取，杂灵根灵光不过尺，必遭拒收：「拜入青岩门」对杂灵根主角不可完成，
+   拒收后主线改道隐藏线「杂灵根的逆袭」（mq_sanxiu 散修之路）；再世 roll 出三灵根以上方可走仙门线。
    支线由 NPC 缘分与伏笔触发，GM 回合中作为「任务选项」出现。
    任务完成判定由引擎执行，AI 层只能呼应、不能替玩家宣告完成。 */
 "use strict";
@@ -64,6 +67,19 @@ const QU = (() => {
       reward: { points: 50, cult: 30, npc: { "青岩门外门弟子陆沉": 20 } },
       doneText: "青袍加身，木牌入手。从今往后，你是有宗门的人了。",
     },
+    /* 【杂灵根的逆袭】测灵碑拒收杂灵根后的主线改道（设定集：灵根恒定，仙门捷径不通则无门无派自证大道） */
+    mq_sanxiu: {
+      name: "主线：逆天改命", type: "main",
+      desc: "测灵碑前一寸微光，仙门的捷径就此断绝。但大道朝天，各走一边——杂灵根五份地基，前期慢，却无人可克。无门无派，便凿自己的井。",
+      auto: () => !!S.flags.qy_za_reject,
+      objectives: [
+        { text: () => `锻骨立足，无师自通（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 3 },
+        { text: () => `踏入聚气境，以五份地基证道（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 5 },
+        { text: () => `凡阶圆满，开元境（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 6 },
+      ],
+      reward: { points: 130, cult: 30, attr: { con: 0.3 } }, // 对齐仙门线两任务合计（青岩门 50 + 外门立足 80），不偏不倚
+      doneText: "无门无派，你一境一境凿上来。说书人拍案：「仙门不收的杂灵根，走到了凡阶圆满。」——杂灵根的逆袭，自此有了第一段实证。",
+    },
     mq_outer: {
       name: "主线：外门立足", type: "main",
       desc: "外门弟子三千，资源只向强者倾斜。锻骨境与同门之谊，是你立足的根本。",
@@ -78,7 +94,7 @@ const QU = (() => {
     mq_dengfeng: {
       name: "主线：问道之途", type: "main",
       get desc() { return "仙途没有尽头，只有一境更比一境难。破境、历练、寻缘——一步步向上走，直到有资格看见这世间真正的风景（以及风景背后那只手）。"; },
-      auto: () => (S.quests.done || []).includes("mq_outer"),
+      auto: () => (S.quests.done || []).includes("mq_outer") || (S.quests.done || []).includes("mq_sanxiu"),
       objectives: [
         { text: () => `踏入通脉境（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 4 },
         { text: () => `踏入聚气境（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 5 },
@@ -383,7 +399,9 @@ const QU = (() => {
     if (isActive("mq_qingyan") && !S.flags.qy_step1 && S.day >= 11) {
       list.push({
         kind: "act", type: "main", label: "前往青岩山，闯三关应试",
-        hint: "测灵碑、问心、演武。败则今年无缘。",
+        hint: S.linggen === "za"
+          ? "测灵碑择根而取——杂灵根灵光不过尺，此路多半不通。但不走这一趟，心不甘。"
+          : "测灵碑、问心、演武。败则今年无缘。",
         act: () => startTrials(),
       });
     }
@@ -425,6 +443,18 @@ const QU = (() => {
     await lingTest();
   }
   async function lingTest() {
+    // 【设定集 · 灵根恒定】杂灵根五行均分，测灵碑灵光不过尺——青岩门不予收录（01:51 定稿：此主线对杂灵根不可完成）
+    if (S.linggen === "za") {
+      S.flags.qy_za_reject = 1;
+      log("碑身只浮起一寸微光，五色杂驳，转瞬即散。执事看都懒得细看：「五行均分的杂灵根，碑灵不显——青岩门收不得。回吧。」", "hurt");
+      log("身后有人嗤笑，有人叹息。你攥紧拳头下了山——仙门的梯子抽走了，路，还得自己一镐一镐地凿。", "dim");
+      fail("mq_qingyan", "测灵碑前止步：杂灵根灵光不过尺，青岩门不予收录。仙门捷径，此世已断。");
+      sys("【仙途改道】大道朝天，各走一边。隐藏线「杂灵根的逆袭」开启——无门无派，以五份地基自证大道。");
+      activate("mq_sanxiu");
+      gainCult(5);
+      advanceSlot();
+      return;
+    }
     const r = await AI.judge("luck*8+realm*25+lg+d40>50", judgeState());
     try { console.debug("[判定] 测灵碑", r && r.detail); } catch (e) {}
     if (!r.success) {

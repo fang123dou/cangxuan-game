@@ -310,7 +310,7 @@ const GM = (() => {
       id: "qingyan_rumor", cond: c => S.day >= 10 && !c.flag("qingyanRumor"), w: () => 2,
       build() {
         return {
-          scene: `城门口新贴了榜文，里三层外三层——三流小宗「青岩门」大开山门收徒。涨潮之初，连小宗门都在抢人。有人说这是大世将启的征兆。`,
+          scene: `城门口新贴了榜文，里三层外三层——三流小宗「青岩门」大开山门收徒。涨潮之初，连小宗门都在抢人。有人说这是大世将启的征兆。也有老人撇嘴：测灵碑择根，杂灵根的娃娃连门槛都摸不着——年年贴榜，年年有人白跑一趟。`,
           choices: [
             { label: "去凑近看看榜文", hint: "记下规矩：测灵碑、问心、演武。", fx: { flag: "qingyanRumor", cult: 2, attr: { int: 0.03 } } },
             { label: "宗门与我何干", hint: "散修也有散修的路。", fx: { flag: "qingyanRumor", dao: 0.5 } },
@@ -393,14 +393,14 @@ const GM = (() => {
       },
     },
     {
-      id: "gaimai", cond: c => S.flags.metBlind && S.realm >= 1 && ["za", "san"].includes(S.linggen) && (S.gaimai || 0) < 4, w: () => 2,
+      id: "shutong", cond: c => S.flags.metBlind && S.realm >= 1 && (S.shutong || 0) < 4, w: () => 2,
       build(r) {
-        const n = S.gaimai || 0;
+        const n = S.shutong || 0;
         const rate = [10, 25, 40, 60][Math.min(n, 3)];
         return {
-          scene: `城隍庙前，瞎眼老者拦下你：「你这灵根，淤塞得厉害。」他枯指隔空一搭你的脉门，「老夫替你洗一洗——五十文。洗脉如改命，这是你第 ${["一", "二", "三", "四"][Math.min(n, 3)]} 回改脉，失败率 ${rate}%。敢么？」`,
+          scene: `城隍庙前，瞎眼老者拦下你：「你这经脉，淤堵得厉害。」他枯指隔空一搭你的脉门，「灵根是天生的，老夫改不了，也不该改——但替你通一通闭塞的支脉，五十文。这是你第 ${["一", "二", "三", "四"][Math.min(n, 3)]} 回点脉，失手率 ${rate}%。敢么？」`,
           choices: [
-            { label: "洗髓改脉（50 文）", hint: `改脉痕：失败率 ${rate}%。成则灵根提纯一档。`, disabled: S.money < 50, fx: { special: "gaimai" } },
+            { label: "疏通经脉（50 文）", hint: `失手率 ${rate}%。成则修为有感、主行亲和 +2。`, disabled: S.money < 50, fx: { special: "shutong" } },
             { label: "告辞", hint: "灵根是天定的，命是自己的。", fx: { dao: 0.3 } },
           ],
         };
