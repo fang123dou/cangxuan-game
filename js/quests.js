@@ -41,6 +41,8 @@ const QU = (() => {
   const regionOfSafe = () => (typeof regionOf === "function") ? regionOf(S.place) : null;
   const curSect = () => { const r = regionOfSafe() || REGIONS.yunzhou; return r.sect || REGIONS.yunzhou.sect; }; // 出生地所属小宗门（五域各一），主线宗门名与引路弟子随之变化
   const elderName = () => `${curSect().name}内门长老`; // 卷一后半段的关键引路人（上宗眼线，角色不可知）
+  const storyStage = () => { const m = (typeof META !== "undefined") ? META : null; return (m && m.story) ? (m.story.stage || 0) : -1; }; // 卷二跨世进度（灭门之夜里写入 META.story）
+  const burntSect = () => { const m = (typeof META !== "undefined") ? META : null; return (REGIONS[(m && m.story && m.story.sectBurnt) || "yunzhou"] || REGIONS.yunzhou).sect; }; // 上一世被灭的宗门
   const DEFS = {
     /* ===== 主线 · 卷一 潜龙在渊 ===== */
     mq_survive: {
@@ -147,6 +149,47 @@ const QU = (() => {
       ],
       reward: { points: 100, dao: 3, luckCharm: 1 },
       get doneText() { return `${curSect().name}成了焦土。你站在渡口，怀里是半块不该存在的玉佩——从今往后，你没有宗门，只有债。`; },
+    },
+
+    /* ===== 主线 · 卷二 风起（跨世链：进度记 META.story.stage，死亡不清零，下一世接着查）=====
+       焦土立誓（0）→ 循线查踪：多宝阁销赃册 + 天机楼消息（1）→ 了断夺信（战/交易/嫁祸；信物被夺则循线夺回或放手）（2）
+       → 听雨楼旧档拼出真相第一层：世间有一只看不见的手（3）。终点锁定、过程自由、分支入 META.story.l2Choice。 */
+    mq_ruins: {
+      name: "主线：焦土", type: "main",
+      get desc() { return `上一世，${burntSect().name}在一夜之间成了焦土。这一世你以新的名字长大，可有些火，隔着一世也烫。回去看看——然后，查。`; },
+      auto: () => storyStage() === 0 && (typeof META !== "undefined") && META.world >= 2,
+      objectives: [{ text: () => "重访灭门宗门的焦土", done: () => !!S.flags.l2Ruins }],
+      rewardFn: () => { if (typeof META !== "undefined") { META.story.stage = 1; saveMeta(); } return applyReward({ points: 40, dao: 2 }); },
+      doneText: "焦土无言。你在断碑前站到天黑——从这一刻起，你查的不是一案，是一世。",
+    },
+    mq_chaxian: {
+      name: "主线：看不见的买家", type: "main",
+      desc: "灭门者不伤山下凡人、不劫库房灵石，专杀人、专烧殿——这不是仇杀，是灭口。顺着信物的线查：多宝阁的销赃册、天机楼的消息网，总有人经手过「不该出世的东西」。",
+      auto: () => storyStage() === 1,
+      objectives: [
+        { text: () => "多宝阁：查灭门当夜的销赃记录（300 文）", done: () => !!S.flags.l2Duobao },
+        { text: () => "天机楼：买一条消息（500 文）", done: () => !!S.flags.l2Tianji },
+      ],
+      rewardFn: () => { if (typeof META !== "undefined") { META.story.stage = 2; saveMeta(); } return applyReward({ points: 60, cult: 20 }); },
+      doneText: "两条线在同一处断了——经手人的代号「灰鹭」，不属于魔道六宗的任何一宗。买主，是个不存在的人。",
+    },
+    mq_duoxin: {
+      name: "主线：了断夺信", type: "main",
+      get desc() { return (typeof META !== "undefined" && META.story && META.story.relic === "taken")
+        ? "斗笠人拿走玉佩之后，它出现在了魔道的暗市里。去夺回来——或者，让它去吧。"
+        : "你怀里的半块玉佩，灭门者隔了一世还在惦记。他们不会一直客气。"; },
+      auto: () => storyStage() === 2,
+      objectives: [{ text: () => (typeof META !== "undefined" && META.story && META.story.relic === "taken") ? "循线夺回信物，或亲手放弃" : "了断魔道夺信这桩因果", done: () => !!S.flags.l2Resolve }],
+      rewardFn: () => { if (typeof META !== "undefined") { META.story.stage = 3; saveMeta(); } return applyReward({ points: 80, dao: 2 }); },
+      doneText: "这桩因果翻篇了。怎么翻的，江湖会替你记住。",
+    },
+    mq_zhenxiang: {
+      name: "主线：拼图", type: "main",
+      desc: "听雨楼收天下消息。把你两世的遭遇拼在一起——掐着时辰的灭门、不存在的买主、上古信物——楼里的老执事听完，沉默了很久，然后翻出了一册百年前的旧档。",
+      auto: () => storyStage() === 3,
+      objectives: [{ text: () => "听雨楼：听完那册旧档", done: () => !!S.flags.l2Truth }],
+      rewardFn: () => { if (typeof META !== "undefined") { META.story.stage = 4; saveMeta(); } return applyReward({ points: 120, dao: 3 }); },
+      doneText: "旧档合上的那一刻，拼图成了：世间有一只看不见的手，在安排强者相杀，在喂养这场三万年不止的乱。再往上走——灵阶、玄阶、圣域。站得够高，才看得见那只手的胳膊。",
     },
 
     /* ===== 仙品任务（第十一章 · 隐藏设定） =====
@@ -608,6 +651,41 @@ const QU = (() => {
         act: () => startMie(),
       });
     }
+    // 主线行动：卷二 风起（跨世链，进度在 META.story.stage）
+    if (isActive("mq_ruins") && !S.flags.l2Ruins) {
+      list.push({
+        kind: "act", type: "main", label: `重访${burntSect().name}焦土`,
+        hint: "上一世的火，隔着一世也烫。",
+        act: () => startRuins(),
+      });
+    }
+    if (isActive("mq_chaxian")) {
+      if (!S.flags.l2Duobao) list.push({
+        kind: "act", type: "main", label: "多宝阁：查销赃旧账（300 文）",
+        hint: "灭门当夜的货，总要有人经手。",
+        act: () => startDuobao(),
+      });
+      if (!S.flags.l2Tianji) list.push({
+        kind: "act", type: "main", label: "天机楼：买一条消息（500 文）",
+        hint: "买消息去天机楼，买命去多宝阁。",
+        act: () => startTianji(),
+      });
+    }
+    if (isActive("mq_duoxin") && !S.flags.l2Resolve) {
+      const taken = (typeof META !== "undefined") && META.story && META.story.relic === "taken";
+      list.push({
+        kind: "act", type: "main", label: taken ? "暗市线报：夺回信物" : "血河教拜帖：了断夺信",
+        hint: taken ? "半块古玉三日后在血河教分舵过手。" : "「贵客怀璧，借观三日。」——有些因果，躲不过，就了断。",
+        act: () => startDuoxin(),
+      });
+    }
+    if (isActive("mq_zhenxiang") && !S.flags.l2Truth) {
+      list.push({
+        kind: "act", type: "main", label: "听雨楼：听完那册旧档",
+        hint: "楼里的旧档，比说书人的话本厚，也比它们真。",
+        act: () => startZhenxiang(),
+      });
+    }
     // 支线邀约：情境合适才出现——间隔两日、优先与方才剧情相关者
     if (S.day - (ensure().lastOfferDay || -9) >= 2) {
       const recent = ((S.gmRecent || []).join(">")) + (S.echoLine || "");
@@ -946,6 +1024,146 @@ const QU = (() => {
     chronicle(`渡口了断：信物${how === "kept" ? "仍在怀" : "易主"}`, "quest");
     check(); // 当场结算 mq_mie（及联动的 xian_henji）
     if (!S.over) advanceSlot();
+  }
+
+  /* ---------- 卷二 · 风起（跨世主线，进度 META.story.stage：焦土→查线→夺信→真相第一层） ---------- */
+  function l2RuinsDone(text, cls) {
+    S.flags.l2Ruins = 1;
+    log(text, cls || "good");
+    chronicle(`重访${burntSect().name}焦土，立誓追查`, "quest");
+    check(); // 当场结算 mq_ruins（rewardFn 推进 stage）
+    if (!S.over) advanceSlot();
+  }
+  function startRuins() {
+    const sect = burntSect().name;
+    sys(`【你循着前世模糊的记忆寻回去——${sect}的山门，如今只剩一片焦土。】`);
+    log("九百级石阶还在，石阶尽头什么都没有。断碑斜插在灰里，你抹开碑上的焦痕，认出半道褪色的朱笔——那是外门名册的方向。", "dim");
+    log("前世的同门，死的死，散的散。一场说不清的火一夜之间烧掉了一座宗门，世人早已淡忘，连说书人都不肯编这段——没头没尾，编不成书。", "dim");
+    setChoices([
+      { label: "在断碑前立誓：查到底", hint: "执念成形：道心与心魔，同涨。", fn: () => {
+        applyCore({ dao: 2, xinmo: 5 });
+        l2RuinsDone("你对着断碑一字一句立誓，声音不大，灰里的风却静了一瞬。这一世的名字、身份、前程，从此都要排在这桩誓后面。");
+      } },
+      { label: "三叩首，不发誓", hint: "有些誓不必出口。道心更稳，恨意更深。", fn: () => {
+        applyCore({ dao: 3, xinmo: 3 });
+        l2RuinsDone("你恭恭敬敬磕了三个头，什么也没说。起身时，你把碑前的一块碎石揣进了怀里——没什么用，但你就是想带走一点。");
+      } },
+    ]);
+  }
+  function startDuobao() {
+    if (S.money < 300) { log("多宝阁掌柜眼皮都没抬：「查旧账，三百文，不赊。」——先去攒点钱。", "dim"); if (!S.over) advanceSlot(); return; }
+    applyCore({ money: -300 });
+    log("你被引进后堂。掌柜抱出一册销赃旧档，翻到灭门当夜那一页，指尖停在一行小字上：「当夜过手的货里，有一件『不该出世的东西』——经手人代号，灰鹭。」", "dim");
+    log("「灰鹭这号人，」掌柜慢悠悠合上册子，「阁里查了十年，没查到根脚。客官，你这条线，烫手。」", "hurt");
+    S.flags.l2Duobao = 1;
+    applyCore({ coincidence: 1 }); // 伏笔：查无根脚的经手人
+    addNpc("多宝阁掌柜", 10, { special: true });
+    chronicle("多宝阁旧档：经手人代号「灰鹭」", "quest");
+    check(); // 当场结算 mq_chaxian 目标
+    if (!S.over) advanceSlot();
+  }
+  function startTianji() {
+    if (S.money < 500) { log("天机楼的柜台只认钱：「一条消息，五百文，童叟无欺。」——先去攒点钱。", "dim"); if (!S.over) advanceSlot(); return; }
+    applyCore({ money: -500 });
+    log("天机楼的信纸只有一行字：「灰鹭，不属于魔道六宗任何一宗；灭门当夜在场，事后即焚了落脚处。另：近百年，每逢天下大乱，必有人收『上古之物』。」", "dim");
+    log("字很少，你的后背很凉。买主是个不存在的人——不存在的人，最难杀。", "hurt");
+    S.flags.l2Tianji = 1;
+    applyCore({ coincidence: 1 }); // 伏笔：不存在的买主
+    chronicle("天机楼消息：灰鹭不属于任何一宗", "quest");
+    check();
+    if (!S.over) advanceSlot();
+  }
+  function startDuoxin() {
+    const taken = (typeof META !== "undefined") && META.story && META.story.relic === "taken";
+    if (!taken) l2VisitKeepers();
+    else l2HuntRelic();
+  }
+  /* 信物在手：血河教「借观」——战 / 交易 / 嫁祸三择（首个影响终局阵营的重大抉择） */
+  function l2VisitKeepers() {
+    sys("【夜半，一叠拜帖送到你门口——血河教使者，一袭红衣，笑得客气：「贵客怀璧，借观三日。」】");
+    log("你知道这不是借。魔道六宗并非人人该杀，但最好绕着走——可惜，是他们找上了你。", "dim");
+    setChoices([
+      { label: "战：「东西在我命里，来拿」", hint: "血河教使者（战力随你修为而涨，九死一生）。", fn: () => {
+        combat({ name: "血河教使者", power: Math.max(16, Math.round(8 + S.realm * 3)), el: "huo", canBeg: false, desc: "（魔道六宗，手段狠辣）" }, res => {
+          if (S.over) return;
+          if (res === "win" || res === "cheated") l2Resolve("war", "红衣使者躺在你脚边，血把雪浸成了黑泥。你擦了擦刀，知道从今夜起，血河教的账簿上有了你的名字。");
+          else { log("你且战且退，使者也不深追，只留下一句笑：「三日，慢慢想。」", "hurt"); if (!S.over) advanceSlot(); }
+        });
+      } },
+      { label: "交易：出钱买断这桩「借观」", hint: "800 文或 5 灵石。魔道也认钱。", fn: () => {
+        if (S.stones >= 5) { applyCore({ stones: -5 }); l2Resolve("deal", "使者掂了掂灵石，笑容真诚了几分：「痛快人。」血河教从此认钱不认玉——这买卖说不上体面，但命保住了。"); }
+        else if (S.money >= 800) { applyCore({ money: -800 }); l2Resolve("deal", "使者数完铜钱，把拜帖撕了：「痛快人。」血河教从此认钱不认玉——这买卖说不上体面，但命保住了。"); }
+        else {
+          log("使者听完你的报价，笑出了声：「穷鬼的命，不值这个价。」——谈崩了。", "hurt");
+          combat({ name: "血河教使者", power: Math.max(16, Math.round(8 + S.realm * 3)), el: "huo", canBeg: false, desc: "（谈判破裂）" }, res => {
+            if (S.over) return;
+            if (res === "win" || res === "cheated") l2Resolve("war", "红衣使者躺在你脚边。谈崩了的买卖，最后都这个结局。");
+            else { log("你且战且退，使者也不深追，只留下一句笑：「三日，慢慢想。」", "hurt"); if (!S.over) advanceSlot(); }
+          });
+        }
+      } },
+      { label: "嫁祸：供出「灰鹭」这根线", hint: "智力判定：把水搅浑，让狼咬狼。", fn: async () => {
+        const r = await AI.judge("int*8+d25>45", judgeState());
+        if (r.success) {
+          log("你把多宝阁旧档里的「灰鹭」和盘托出，半真半假。使者眯起眼睛听完，红衣一展，没入夜色——他们去找更值钱的东西了。", "good");
+          applyCore({ coincidence: 1 }); // 伏笔：嫁出去的祸，也是账
+          l2Resolve("frame", "你借魔道的手，去捅那只看不见的手的影子。这步棋险到极处——但从今夜起，棋盘上有两拨人互相提防了。");
+        } else {
+          log("使者听完，笑容冷下去：「耍我？」——谈崩了。", "hurt");
+          combat({ name: "血河教使者", power: Math.max(16, Math.round(8 + S.realm * 3)), el: "huo", canBeg: false, desc: "（弄巧成拙）" }, res => {
+            if (S.over) return;
+            if (res === "win" || res === "cheated") l2Resolve("war", "红衣使者躺在你脚边。弄巧成拙的局，最后用拳头收了个尾。");
+            else { log("你且战且退，使者也不深追，只留下一句笑：「三日，慢慢想。」", "hurt"); if (!S.over) advanceSlot(); }
+          });
+        }
+      } },
+    ]);
+  }
+  /* 信物被夺：暗市循线——强夺 / 以物易物 / 放手三择 */
+  function l2HuntRelic() {
+    sys("【暗市的线报：半块古玉，三日后在血河教分舵过手。斗笠人把它卖了个好价钱。】");
+    log("前世渡口的雾仿佛还在你怀里。那半块玉佩离你只有一座分舵的距离——也隔着一整座分舵的刀。", "dim");
+    setChoices([
+      { label: "强夺", hint: "血河教分舵（战力随你修为而涨，九死一生）。", fn: () => {
+        combat({ name: "血河教分舵主", power: Math.max(18, Math.round(10 + S.realm * 3)), el: "huo", canBeg: false, desc: "（魔道分舵，刀口舔血）" }, res => {
+          if (S.over) return;
+          if (res === "win" || res === "cheated") { S.inv.guxin = 1; l2Resolve("war", "你从分舵的暗格里取回了那半块玉佩。它还是凉的，和前世一模一样。只是这一次，你握得更紧了。"); }
+          else { log("你折在分舵的刀阵里，拼死才退出来。线还在，命先留着。", "hurt"); if (!S.over) advanceSlot(); }
+        });
+      } },
+      { label: "以物易物", hint: "10 灵石，或 1500 文。魔道也认钱。", fn: () => {
+        if (S.stones >= 10) { applyCore({ stones: -10 }); S.inv.guxin = 1; l2Resolve("deal", "分舵主把玉佩抛还给你，像抛一块烫手的炭：「买主说了，它认你。拿走，别再来。」"); }
+        else if (S.money >= 1500) { applyCore({ money: -1500 }); S.inv.guxin = 1; l2Resolve("deal", "分舵主把玉佩抛还给你，像抛一块烫手的炭：「买主说了，它认你。拿走，别再来。」"); }
+        else { log("分舵主听完你的报价，嗤笑一声：「打发要饭的？」——被轰了出来。", "hurt"); if (!S.over) advanceSlot(); }
+      } },
+      { label: "放手", hint: "前世你没能守住它，这一世……也许它本就不该在你手里。", fn: () => {
+        applyCore({ dao: 2, xinmo: -5 });
+        l2Resolve("giveup", "你在暗市对面站了一夜，天亮时转身走了。怀里的位置空着，心里某处也空着——但奇怪的是，脚步轻了。");
+      } },
+    ]);
+  }
+  function l2Resolve(how, text) {
+    S.flags.l2Resolve = 1;
+    if (typeof META !== "undefined") { META.story.l2Choice = how; saveMeta(); } // 卷三伏笔：了断的方式，终局站队的引子
+    log(text, "good");
+    chronicle(`了断夺信（${{ war: "以战", deal: "以钱", frame: "嫁祸", giveup: "放手" }[how]}）`, "quest");
+    check(); // 当场结算 mq_duoxin
+    if (!S.over) advanceSlot();
+  }
+  function startZhenxiang() {
+    sys("【听雨楼，后堂。老执事听完你两世的遭遇，沉默了很久，然后翻出一册落灰的旧档。】");
+    log("「百年间，每次天下大乱之前，都有人在收这类『上古信物』。」他的手指点着档上一行小字，「灭门、掘墓、血祭开秘境——手法不同，胃口相同。经手的，都不长命。」", "dim");
+    log("碎片在你心里拼到了一起：掐着时辰的灭门、不存在的买主、喂给大劫的信物——有一只看不见的手，在安排强者相杀，在喂养这场三万年不止的乱。", "hurt");
+    setChoices([
+      { label: "接受这个真相", hint: "道心受冲击，但从此你的眼睛不一样了。", fn: () => {
+        applyCore({ dao: 3, xinmo: 5, coincidence: 1 }); // 伏笔：真相本身就是最大的巧合
+        S.flags.l2Truth = 1;
+        addNpc("听雨楼老执事", 20, { special: true });
+        chronicle("卷二·真相第一层：世间有一只看不见的手", "quest");
+        check(); // 当场结算 mq_zhenxiang（stage 4：卷二完）
+        if (!S.over) advanceSlot();
+      } },
+    ]);
   }
 
   return { DEFS, check, offers, refuse, activate, isActive, isDone, isFailed, staleList, nudge, nudgeAct, questAct };
