@@ -103,6 +103,7 @@ const AI = (() => {
    newcard("词条名|品级0~5|效果|mod键:值,…") fabao("法宝名|品级0~5|效果|mod键:值,…") wuqi("兵器名|攻伐%|品阶")
    quest("accept:任务id 或 act:任务id"，id 见输入「可接支线/搁置任务」)
    special("beg|chop|rest|fire|eat|meditate|train|escort|gamble|yaopu|hotmeal")
+   job("主职业称呼，≤12字") —— 主角拜入宗门、得授功法、或凭营生在世人眼中立起名分时，为他取一个贴合身份的称号（如「青岩门采药弟子」「枯泉寺沙弥」「福源商会供奉」「云游丹师」）；取名须依设定集（宗门/功法/行当皆有名录可循），不得凭空捏造；凡人期的营生主职业由引擎按其工作自动显示，无需 job。
    check("判定表达式") + success({fx}) + fail({fx}) + successText/failText("结果叙述一句话")
    —— 判定表达式语法：属性名 str/agi/int/con/luck/realm/day/sta/hunger/esc/lg（灵根资质加成）、数字、加减乘除括号、骰子 d20、一个比较符。
    例："agi*8+d40>38"。凡是要碰运气的选项，用 check 来表达，成功失败都要有代价或收获。
@@ -143,7 +144,7 @@ const AI = (() => {
     } catch (e) { return "无"; }
   }
   function statePrompt() {
-    const cardNames = S.cardOrder.map(id => { const c = findCard(id); return c ? c.name : id; });
+    const cardNames = S.cardOrder.map(id => { const c = findCard(id); return c ? `${c.name}（${c.eff}）` : id; }); // 词条连效果一并注入：特性向词条（情怨×2/使唤你/横祸一类）由 GM 在剧情中执行
     const npcAll = Object.entries(S.npc);
     const npcTop = npcAll.sort((a, b) => Math.abs(b[1]) - Math.abs(a[1])).slice(0, 16); // 状态瘦身（提速）：缘分簿只列前 16 位，记忆不受影响——深交深仇必在其列
     const npcs = npcTop.map(([n, v]) => `${n}:${v}${typeof relText === "function" ? "(" + relText(v) + ")" : ""}·性格:${typeof npcPersonality === "function" ? npcPersonality(n) : "?"}`).join("，")
@@ -162,7 +163,7 @@ const AI = (() => {
       药石: "对症药品（商铺有售，行囊可用）：驱寒汤→风寒、藿香正气散→中暑、解毒散→丹毒侵脉、金疮药/跌打药→外伤回血、生姜→风寒病程-1日、甘草→调和（药蚀-2）；寻医诊治 fx.special=\"seeDoctor\"（30文，病除+气血+8）",
       钱财: `${S.money}文/${S.stones}灵石/${S.points}万象点`,
       词条: cardNames.join("、") || "无", 物品: JSON.stringify(S.inv),
-      职业: S.job || "无", 灵根: linggen().name, 称号: (META.titles || []).map(t => TITLES[t].name + (S.wornTitle === t ? "(佩戴中)" : "")).join("、") || "无", 系统等级: "Lv" + ((typeof META !== "undefined" && META.sysLv) || 1), 缘分: npcs, 伏笔标记: flags, 近期剧情脉络: recent,
+      职业: S.job || "无", 主职业: (typeof mainJobTitle === "function") ? mainJobTitle() : (S.job || "无"), 灵根: linggen().name, 称号: (META.titles || []).map(t => TITLES[t].name + (S.wornTitle === t ? "(佩戴中)" : "")).join("、") || "无", 系统等级: "Lv" + ((typeof META !== "undefined" && META.sysLv) || 1), 缘分: npcs, 伏笔标记: flags, 近期剧情脉络: recent,
       近日大事: chronicleSummary(),
       历世轮回: livesSummary(),
       可破境: checkBreakthrough(),
@@ -271,6 +272,7 @@ const AI = (() => {
       if (k === "combat") { const m = /^([^:：]{1,10})[:：](\d{1,3})$/.exec(v); if (m) fx.combat = m[1] + ":" + m[2]; continue; }
       if (k === "danger" && ["pickpocket","trace","deep","caught","fleeDog","catchThief"].includes(v)) { fx.danger = v; continue; }
       if (k === "special" && /^[a-zA-Z:]+/.test(v)) { fx.special = String(v).slice(0, 30); continue; }
+      if (k === "job" && typeof v === "string" && /^[^|｜"{}[\]]{1,12}$/.test(v.trim())) { fx.job = v.trim(); continue; } // 主职业名分（第三章）：AI 依功法/宗门/营生取名
       if (["card","luckCharm","coincidence"].includes(k)) { fx[k] = Math.max(1, Math.min(2, +v || 1)); continue; }
       if (typeof v === "number" || /^-?\d+(\.\d+)?$/.test(String(v))) fx[k] = +v;
     }

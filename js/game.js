@@ -142,6 +142,7 @@ function attr(k) {
   const pb = profAttrBonus(k); // 职业每级属性加成（3.4）：品阶基数 × 境界系数
   if (pb > 0) { const ceil = attrCeiling(); v += Math.min(pb, Math.max(0, ceil - v)); } // 天花板条款：不得突破当前境界的单项属性天花板
   if (S.debuff === "weak" && k !== "luck") v *= 0.8;
+  if (k === "int" && S.flags.hangoverDay === S.day) v *= 0.5; // 酒剑仙：宿醉次日智力减半
   return Math.round(v * 10) / 10;
 }
 /* 职业属性加成合计：Σ(品阶基数[k] × 等级) × 境界系数（凡 ×1 ｜ 灵 ×10 ｜ 玄 ×100 ｜ 圣 ×1000，设定·品阶与加成） */
@@ -166,6 +167,7 @@ function combatPower() {
   if (S.hunger > 70) p *= 0.9; // 饥饿 -10%（设定·状态浮动）
   if (S.hunger > 85) p *= 0.78; // 极度饥饿再扣（累计约 -30%）：眼冒金星，手脚发软
   p *= 1 - injuryTier().pen / 100; // 设定：伤病四级压常态战力
+  if ((S.flags.drunkSlots || 0) > 0 && hasSpecial("jiujian")) p *= 1.15; // 酒剑仙：酒意酣畅，战力 +15%
   return Math.round(p * 10) / 10;
 }
 /* 康健 · 伤病四级（设定集）：轻伤 -10% ｜ 中伤 -30% ｜ 重伤 -50% ｜ 濒死 -80%（判定表演算） */
@@ -238,6 +240,7 @@ function powerBreakdown() {
   else if (S.hunger > 70) lines.push(`饥饿缠身：-10%（饱食不足三成）`);
   if (inj.pen) lines.push(`${inj.name}：-${inj.pen}%（伤病四级）`);
   if (S.debuff === "weak") lines.push(`元气大伤：五维 ×0.8（修养 ${S.debuffDays || 0} 日）`);
+  if ((S.flags.drunkSlots || 0) > 0 && hasSpecial("jiujian")) lines.push(`酒剑仙 · 酒意酣畅：战力 +15%（余 ${S.flags.drunkSlots} 时辰；明日宿醉智力减半）`);
   lines.push(`——常态战力（满状态）：${(Math.round(normal * 10) / 10)}`);
   const dw = Object.keys(S.darkWounds || {}).filter(k => S.darkWounds[k] > 0);
   if (dw.length) lines.push(`暗伤压体：${dw.map(k => `${DARK_WOUND_NAMES[k]} -${S.darkWounds[k]}`).join("、")}（永久损伤，圣药/医道圣手可解）`);
@@ -350,6 +353,8 @@ function xinmoStage() {
 function addXinmo(n, why) {
   if (!S || S.over) return;
   if (n > 0 && hasTitle("panshiT")) n = Math.max(1, Math.round(n * 0.7)); // 称号「磐石道心」：心魔抗性 +30%
+  if (n > 0 && hasSpecial("daoxin")) n = Math.max(1, Math.round(n * 0.7)); // 磐石道心（词条）：心魔增速 -30%
+  if (n > 0 && hasSpecial("mindshield")) n = Math.max(1, Math.ceil(n * 0.5)); // 如何呢又能怎：心魔类侵扰效果 -50%
   const before = xinmoStage().name;
   S.xinmo = Math.min(100, Math.max(0, (S.xinmo || 0) + n));
   const after = xinmoStage().name;
@@ -549,17 +554,63 @@ function profDailyTick() {
     if (n > 0) profExpGain(pid, n);
   }
 }
-/* 面板职业行：主职/副职一览，点击看详情 */
+/* 主职业名分（第三章 · 职业管世界认不认你这个人）：
+   修士期由 GM 依功法/宗门取名（fx.job 落盘，如「青岩门采药弟子」「枯泉寺沙弥」）；
+   AI 未取名时引擎回退：拜入宗门 → 「宗名+内/外门弟子」；无门无派 → 依功法称散修。
+   凡人期（凡阶）不看功法宗门——主职业就是手头活计（工作/本职行当）。 */
+function mainJobTitle() {
+  if (S.realm <= 0) return S.job || primaryProfName() || (S.iden ? S.iden.name : "市井流民");
+  if (S.mainJob) return S.mainJob;
+  const sect = S.sect || ((regionOf(S.place) || {}).sect || {}).name;
+  if (S.flags.qingyan && sect) return sect + (S.realm >= 7 ? "内门弟子" : "外门弟子");
+  const yi = (S.inv.yinqi || 0) > 0, quan = (S.inv.quanpu || 0) > 0;
+  if (yi && quan) return "散修 · 引气锻骨兼修";
+  if (yi) return "练气散修";
+  if (quan) return "武修散人";
+  return "无门散修";
+}
+function mainJobSource() {
+  if (S.realm <= 0) return "凡人期：主职业随营生而定——做什么活计，就是什么人。";
+  if (S.mainJob) return `此名分由天道推演所录（AI 依你的功法/宗门所取）：「${S.mainJob}」。名分随身，旁人眼里你就是个${S.mainJob}。`;
+  const sect = S.sect || ((regionOf(S.place) || {}).sect || {}).name;
+  if (S.flags.qingyan && sect) return `未得专人赐名，世人依山门称呼你——${sect}${S.realm >= 7 ? "内门" : "外门"}弟子。剧情中拜得师承、立下名号时，天道推演会为你取一个更贴切的名分（fx.job）。`;
+  return "无门无派，世人以功法称你。剧情中若投得宗门或立下名号，天道推演会为你取名（fx.job）。";
+}
+function primaryProfName() {
+  for (const pid in (S.professions || {})) if (S.professions[pid].primary) { const P = profDef(pid); return P ? P.name : null; }
+  return null;
+}
+/* 面板职业行：主职业（工作/名分）＋ 主副职业特性一览，点击看详情 */
 function profRowsHTML() {
-  if (!S.professions || !Object.keys(S.professions).length)
-    return S.job ? `<div class="p-row"><span>职业</span><b>${S.job}</b></div>` : "";
-  return Object.keys(S.professions).map(pid => {
-    const P = profDef(pid), q = S.professions[pid];
-    if (!P) return "";
-    const cap = profTierCap(P.tier), need = PROF_NEED[q.lv + 1];
-    const prog = q.lv >= cap ? "已封顶" : `经验 ${Math.floor(q.exp)}/${need}`;
-    return `<div class="p-row prof-row" data-prof="${pid}"><span>${q.primary ? "主职业" : "副职业"}</span><b>${P.tierName} · ${P.name} ${q.lv} 级（${prog}）</b></div>`;
-  }).join("");
+  const q = S.professions || {};
+  const ids = Object.keys(q);
+  const mortal = S.realm <= 0;
+  let html = "";
+  if (mortal) { // 凡人期：主职业 = 手头活计；行当本职与之一体
+    const pn = primaryProfName();
+    const mainLabel = S.job || pn || (S.iden ? S.iden.name : "市井流民");
+    html += `<div class="p-row prof-row" data-prof="__main"><span>主职业</span><b>${esc(mainLabel)}</b></div>`;
+    let sub = 0;
+    for (const pid of ids) {
+      const P = profDef(pid), qq = q[pid];
+      if (!P) continue;
+      if (P.name === mainLabel) continue; // 本职已与主职业行合一
+      html += profRowHTML(pid, "副职业"); sub++;
+    }
+    if (!sub) html += `<div class="p-row"><span>副职业</span><b>未入门——市井处处是生计</b></div>`;
+  } else { // 修士期：主职业 = 功法/宗门名分（AI 取名或引擎回退），凡品行当皆为副职业
+    html += `<div class="p-row prof-row" data-prof="__main"><span>主职业</span><b>${esc(mainJobTitle())}</b></div>`;
+    for (const pid of ids) html += profRowHTML(pid, "副职业");
+    if (!ids.length) html += `<div class="p-row"><span>副职业</span><b>未入门——市井处处是生计</b></div>`;
+  }
+  return html;
+}
+function profRowHTML(pid, label) {
+  const P = profDef(pid), q = S.professions[pid];
+  if (!P) return "";
+  const cap = profTierCap(P.tier), need = PROF_NEED[q.lv + 1];
+  const prog = q.lv >= cap ? "已封顶" : `经验 ${Math.floor(q.exp)}/${need}`;
+  return `<div class="p-row prof-row" data-prof="${pid}"><span>${label}</span><b>${P.tierName} · ${P.name} ${q.lv} 级（${prog}）</b></div>`;
 }
 
 const $ = s => document.querySelector(s);
@@ -768,11 +819,18 @@ function renderPersonTab(body) {
     `道心 ${Math.round(S.daoXin)}/100 · ${daoText()} ｜ 心魔 ${Math.round(S.xinmo || 0)}/100 · ${xinmoStage().name}`,
     `${xinmoStage().desc}。<br>心魔的养料：执念、愧疚、恐惧（濒死与前世死亡记忆）、欲望、心境与修为不匹配（词条让你战力一夜暴涨，道心一步没走）、天地异动。道心的涨跌：红尘历练、问心无愧则涨；违心背信、临阵脱逃则跌。<br>四阶段：杂念（修炼 -5%）→ 执念成形（梦中低语）→ 心魔劫（破境时具现，斩/渡/笑三种过法）→ 化魔（神智沦丧）。<br>化解：打坐静心、道心 60+ 自净、渡劫直面。`);
   body.querySelectorAll(".prof-row").forEach(row => row.onclick = () => { // 职业详情（第三章 3.3~3.6）
-    const pid = row.getAttribute("data-prof"), P = profDef(pid), q = S.professions[pid];
+    const pid = row.getAttribute("data-prof");
+    if (pid === "__main") { // 主职业名分：凡人看活计，修士看功法/宗门
+      showInfo(`主职业 · ${esc(mainJobTitle())}`, `<span style="color:var(--gold-dim)">职业管世界认不认你这个人（设定集 · 第三章）</span>`,
+        esc(mainJobSource()),
+        "主职业的名分由天道推演在剧情中为你所取（依功法、宗门、营生），会随身份变迁而更新；副职业是凡品行当（药庐、码头、账房……），各行当带一条特性，特性随级成长。");
+      return;
+    }
+    const P = profDef(pid), q = S.professions[pid];
     if (!P || !q) return;
     const cap = profTierCap(P.tier), need = PROF_NEED[q.lv + 1];
     const bonus = Object.keys(P.attrs || {}).map(k => `${{ str: "力量", agi: "敏捷", int: "智力", con: "体质" }[k]} +${(P.attrs[k] * q.lv * (S.realm >= 7 ? 10 : 1)).toFixed(1)}`).join("、") || "—";
-    showInfo(`${P.tierName} · ${P.name}（${q.lv} 级 ${PROF_LV_NAMES[q.lv]}）`, `<span style="color:var(--gold-dim)">${P.grey ? "灰色职业 · 不占副职名额，但占因果" : q.primary ? "主职业" : "副职业"}</span>`,
+    showInfo(`${P.tierName} · ${P.name}（${q.lv} 级 ${PROF_LV_NAMES[q.lv]}）`, `<span style="color:var(--gold-dim)">${P.grey ? "灰色职业 · 不占副职名额，但占因果" : (S.realm <= 0 && q.primary) ? "主职业 · 本职行当" : "副职业"}</span>`,
       `${P.trait}<br>当前加成：${bonus}（品阶基数 × 等级 × 境界系数；天花板条款：不得突破当前境界单项天花板）<br>晋升进度：${q.lv >= cap ? "已至" + P.tierName + "之巅" : `经验 ${Math.floor(q.exp)} / ${need}（2/4/8/16/32 晋一级，须考核）`}`,
       `经验来源（3.3）：从业时长（每 3 日 +1）｜ 技艺印证（「${P.skill}」每满 10 熟练 +1）｜ 行业事件（完成任务 +2，主线 +3）｜ 口碑。<br>${Object.keys(S.professions).length > 1 ? "多职业并存：全部活跃职业经验 -30%（精力有限，天道公允）。" : ""}${q.lv >= cap && P.next ? "<br>【转轨】凡品封顶——须行当升品转轨（" + (profDef(P.next) ? "「" + profDef(P.next).name + "」" : "更高品阶") + "），修为境界与行业深度双到位。" : ""}`);
   });
@@ -934,7 +992,8 @@ function renderTab() {
         S.hunger = Math.max(0, S.hunger - 10);
         S.hp = Math.min(hpMax(), S.hp + 1);
         S.daoXin = Math.min(100, S.daoXin + 0.3);
-        log("烈酒穿喉，一股火线落进胃里。雪夜似乎没那么冷了。", "good");
+        if (hasSpecial("jiujian")) { S.flags.drunkSlots = 2; log("烈酒穿喉，一股火线落进胃里。雪夜似乎没那么冷了——【酒剑仙】酒意上头：两时辰内战意如火（战力 +15%），明日宿醉。", "good"); }
+        else log("烈酒穿喉，一股火线落进胃里。雪夜似乎没那么冷了。", "good");
       })});
       if (id === "medicine" && (S.inv.medicine || 0) > 0) acts.push({ label: "敷药（气血 +6）", fn: closeAnd(() => {
         S.inv.medicine--;
@@ -1344,6 +1403,7 @@ function addNpc(name, v, opts) {
   if (v > 0 && hasSpecial("meihuo")) {
     if (npcGender(name) !== S.gender) mult *= 1.4; // 天生魅魔：只对异性 NPC 生效（同性面前魅力平常）
   }
+  if (v < 0 && hasSpecial("pofang")) mult *= 1.2;   // 破防了：嘴上没把门，结怨深两成（结仇 +20%）
   if (opts.public) mult *= 1.5;                   // 当众事加倍（见证者传播略）
   if (!(name in S.npc) && S.flags.yibao) S.npc[name] = 10; // 称号「义薄云天」：陌生人初始好感 +10
   const before = S.npc[name] || 0;
@@ -1511,6 +1571,10 @@ function addCard(card, t) {
     S.points += 300;
     setTimeout(() => sys(`【因果赊账】万象点 ×300 已到账。天道记账，概不退换——它总会在你最不想还债的时候来敲门。`), 500);
   }
+  if (card.id === "leiyi" && S.cards[card.id] === 1) { // 一缕雷意：金行亲和 +10（雷为金之异）
+    const wx = wxOf(); wx.jin = Math.min(100, (wx.jin || 0) + 10);
+    setTimeout(() => sys(`【一缕雷意】一缕紫雷没入眉心，经久不散——金行亲和 +10（现 ${wx.jin}）。`), 600);
+  }
   for (const [a, b, rid] of COMBO_PAIRS) { // 彩蛋组合：撞对即自动合成，系统从不提示
     if (S.cards[a] > 0 && S.cards[b] > 0) {
       S.cards[a]--; if (!S.cards[a]) { delete S.cards[a]; S.cardOrder = S.cardOrder.filter(x => x !== a); }
@@ -1533,7 +1597,7 @@ function openGacha() {
   info += `<br>概率：${TIERS.map((t, i) => `${t.name} ${probs[i]}%`).join(" · ")}`;
   info += lv >= 4 ? ` ｜ 十抽必出紫↑` : ` ｜ 十抽必出青↑`;
   info += lv >= 6 ? ` ｜ 五十抽必出金↑` : ` ｜ 五十抽必出紫↑`;
-  if (lv >= 8) info += ` ｜ ${lv >= 10 ? "五百" : "千"}抽必出红`;
+  if (lv >= 8) info += ` ｜ ${lv >= 10 ? "五十" : "百"}抽必出红`;
   if (lv >= 2) info += `<br>本月卡池倾向：「${META.poolTheme || "？"}」——青品以上大概率偏向`;
   $("#sysInfo").innerHTML = info;
   const ex = $("#stoneExch");
@@ -1585,6 +1649,7 @@ function advanceSlot() {
   if (S.over) return;
   try { QU.check(); } catch (e) {}
   S.slot++;
+  if (S.flags.drunkSlots > 0) S.flags.drunkSlots--; // 酒剑仙：酒意两时辰
   if (S.hunger < 100 && !hasSpecial("bigu")) S.hunger = Math.min(100, S.hunger + 6 * (S.mods.hungerR || 1));
   if (S.slot >= 4) { night(); return; }
   renderPanel(); gmTurn();
@@ -1597,11 +1662,12 @@ function night() {
   }
   if (S.tempLuckDays > 0) S.tempLuckDays--;
   if (!hasSpecial("bigu")) S.hunger = Math.min(100, S.hunger + 4 * (S.mods.hungerR || 1));
+  const ssCut = hasSpecial("shuishen") ? 0.7 : 1; // 睡神附体：眠中自警，夜间寒气/暑热之苦 -30%
   const cold = S.weather === "大雪" || S.weather === "风雪" || S.flags.coldSnap;
   if (cold && !S.inv.mianao && !S.flags.fireTonight) {
     const chk = attr("con") * 10 + attr("luck") * 4;
     if (chk < 45 + (S.flags.coldSnap ? 15 : 0)) {
-      const dmg = Math.max(1, Math.round((2 + Math.floor(Math.random() * 2)) * (hasTitle("xiaoqiang") ? 0.9 : 1))); // 称号「小强」：环境伤害 -10%
+      const dmg = Math.max(1, Math.round((2 + Math.floor(Math.random() * 2)) * (hasTitle("xiaoqiang") ? 0.9 : 1) * ssCut)); // 称号「小强」：环境伤害 -10%
       S.hp -= dmg; S.daoXin -= 0.5;
       lines.push(`<span style="color:var(--blood-hi)">寒气钻进骨头缝，你蜷缩着熬过一夜。气血 -${dmg}。</span>`);
       if (Math.random() < 0.3 && (!S.ill || S.ill.name !== "风寒")) setIll("风寒", 3, "寒气入体，夜间气血回复减半"); // 受寒成疾
@@ -1613,7 +1679,7 @@ function night() {
   if (hot && !S.inv.shuinang && !S.flags.fireTonight) {
     const chk = attr("con") * 10 + attr("luck") * 4;
     if (chk < 50) {
-      const dmg = Math.max(1, Math.round((2 + Math.floor(Math.random() * 2)) * (hasTitle("xiaoqiang") ? 0.9 : 1)));
+      const dmg = Math.max(1, Math.round((2 + Math.floor(Math.random() * 2)) * (hasTitle("xiaoqiang") ? 0.9 : 1) * ssCut));
       S.hp -= dmg; S.daoXin -= 0.5;
       lines.push(`<span style="color:var(--blood-hi)">暑气整夜烙在身上，帐篷里闷得像口锅。你干熬到天亮，嘴唇裂了缝。气血 -${dmg}。</span>`);
       if (Math.random() < 0.3 && (!S.ill || S.ill.name !== "中暑")) setIll("中暑", 2, "酷热伤津，夜间气血回复减半"); // 受热成疾
@@ -1645,6 +1711,36 @@ function night() {
     const g = 3 + Math.floor(Math.random() * 13); S.money += g;
     lines.push(`<span style="color:var(--gold-dim)">【气运之子】墙角一只鼓囊囊的钱袋在等人认领——你等了三息，没人来。铜钱 +${g}。</span>`);
   }
+  /* 吉星高照：每日 5% 天降小机缘 */
+  if (hasSpecial("jixing") && Math.random() < 0.05) {
+    const rollG = Math.random();
+    if (rollG < 0.45) { const g = 5 + Math.floor(Math.random() * 11); S.money += g;
+      lines.push(`<span style="color:var(--gold-dim)">【吉星高照】夜半一颗流星坠在庙外——你循光寻去，雪窝里躺着一只冻硬的钱袋。铜钱 +${g}。</span>`); }
+    else if (rollG < 0.8) {
+      if (gainCult(3)) lines.push(`<span style="color:var(--gold-dim)">【吉星高照】梦里一位白须老者朝你眉心一点——醒来时灵气仍在经脉里打转。修为 +3。</span>`);
+      else { S.money += 8; lines.push(`<span style="color:var(--gold-dim)">【吉星高照】梦里一位白须老者朝你眉心一点——你虽无功法留不住灵气，枕边却多了 8 文买功法的本。铜钱 +8。</span>`); }
+    } else {
+      const ks = Object.keys(S.npc || {}).filter(n => typeof S.npc[n] === "number" && S.npc[n] > -80);
+      if (ks.length) { const n = ks[Math.floor(Math.random() * ks.length)]; addNpc(n, 3, { special: true });
+        lines.push(`<span style="color:var(--gold-dim)">【吉星高照】清晨${n}差人给你捎来一句问候、一包吃食——缘故你摸不着头脑，情分是真落下了。（缘分 +3）</span>`); }
+      else { S.money += 6; lines.push(`<span style="color:var(--gold-dim)">【吉星高照】雪地里一脚踢出个鼓囊的旧香囊。铜钱 +6。</span>`); }
+    }
+  }
+  /* 梦中悟道：气运 6+ 者偶有预警之梦（每夜 4%） */
+  if (hasSpecial("mengwu") && attr("luck") >= 6 && Math.random() < 0.04) {
+    S.tempLuckDays = Math.max(S.tempLuckDays, 3);
+    lines.push(`<span style="color:var(--gold-dim)">【梦中悟道】你梦见明日要走的桥上断了一根索——惊醒后心有余悸，却莫名觉得来日会顺些。气运临时 +1（三日）。</span>`);
+  }
+  /* 来财/小聚财库：露富招贼（身携 300 文以上） */
+  const thiefP = hasSpecial("jucai") ? 0.06 : hasSpecial("laicai") ? 0.04 : 0;
+  if (thiefP && S.money >= 300 && Math.random() < thiefP) {
+    const stolen = Math.max(1, Math.round(S.money * 0.05)); S.money -= stolen;
+    lines.push(`<span style="color:var(--blood-hi)">【露富招贼】你财名在外，夜里便有了惦记你的人——荷包里少了 ${stolen} 文。财不外露，古人不欺你。</span>`);
+  }
+  /* 酒剑仙：醉意随夜散去，次日宿醉（智力减半） */
+  if (S.flags.hangoverDay && S.flags.hangoverDay <= S.day) delete S.flags.hangoverDay;
+  if ((S.flags.drunkSlots || 0) > 0) { S.flags.drunkSlots = 0; S.flags.hangoverDay = S.day + 1;
+    lines.push(`<span style="color:var(--paper-70,#cbb)">酒意上头，你睡得很沉。明早怕是不好受。（宿醉：明日智力减半）</span>`); }
   /* 真香定律：醒来恰逢月末（30 日）必然当众真香一次——气运临时 +1（三日），道心 -1 */
   if (hasSpecial("zhenxiang") && (S.day + 1) % 30 === 0) {
     S.tempLuckDays = 3; S.daoXin = Math.max(0, S.daoXin - 1);
@@ -1914,6 +2010,7 @@ function applyCore(fx) {
     loss(`道心 -2——剑上沾了通灵之血；与「${fx.slay}」一族结下不死不休之死仇，寻仇或在来日`);
   }
   if (fx.flag) S.flags[fx.flag] = 1;
+  if (fx.job) { S.mainJob = String(fx.job).replace(/[|｜]/g, "").trim().slice(0, 12); sys(`【名分】自今日起，世人提起你，有了新的称呼——「${S.mainJob}」。（人物页 · 主职业已更新）`); } // 主职业由 GM 依功法/宗门取名（引擎回退见 mainJobTitle）
   if (fx.ach) { if (typeof fx.ach === "string" && ACHIEVEMENTS[fx.ach]) gainAch(fx.ach); else if (typeof fx.ach === "object" && fx.ach && fx.ach.name) { gainDynAch(fx.ach); gain(`千秋录新刻「${fx.ach.name}」`); } }
   if (fx.newcard) { const c = gainDynCard(fx.newcard); if (c) gain(`新词条「${c.name}」入手（${TIERS[c.tier].name}）——${c.eff}`); }
   if (fx.fabao) { const d = Object.assign({}, fx.fabao, { name: String(fx.fabao.name || "").slice(0, 6) + "·法宝", eff: "【法宝·已认主入体】" + fx.fabao.eff }); const c = gainDynCard(d); if (c) gain(`法宝「${fx.fabao.name}」认主（${TIERS[c.tier].name}）——系统将其效力折算入命格（天机独闻，旁人之眼只见你气息微变）`); }
@@ -2004,14 +2101,16 @@ function trainingEvent() {
   const cap = TECH_CAPS[sk] || 100;
   const roll = Math.random() * 100;
   if (hasGongfa && roll < 40) {
-    /* 功法精研 */
+    /* 功法精研（多线同修：兼修两门时各得 ÷n，摸鱼圣手减罚为 ÷√n） */
     const wxm = wxTrainMult(sk);
-    const inc = Math.round((4 + Math.random() * 4) * (1 + (S.mods.trainP || 0) / 100) * wxm * 10) / 10;
-    S.skills[sk] = Math.min(cap, (S.skills[sk] || 0) + inc);
+    const bothTech = (S.inv.yinqi || 0) > 0 && (S.inv.quanpu || 0) > 0;
+    const split = bothTech ? (hasSpecial("moyu") ? 1 / Math.SQRT2 : 0.5) : 1;
+    const inc = Math.round((4 + Math.random() * 4) * (1 + (S.mods.trainP || 0) / 100) * wxm * split * 10) / 10;
+    const tTechs = bothTech ? ["引气诀", "锻骨拳谱"] : [sk];
+    for (const t of tTechs) { S.skills[t] = Math.min(TECH_CAPS[t] || 100, (S.skills[t] || 0) + inc); checkSkillMilestone(t); }
     gainCult(6 * wxm); gainAttr("str", 0.05);
-    log(`【历练 · 功法精研】你寻了处背风的石窝，把「${sk}」一式一式拆开重练。雪沫被劲气卷起，又纷纷落下。`, "dim");
-    sys(`【功法精研】「${sk}」熟练度 +${inc}（${Math.round(S.skills[sk])}/${cap}），修为 +${Math.round(6 * wxm)}，力量 +0.05。`);
-    checkSkillMilestone(sk);
+    log(`【历练 · 功法精研】你寻了处背风的石窝，把「${bothTech ? "引气诀与锻骨拳谱" : sk}」一式一式拆开重练。雪沫被劲气卷起，又纷纷落下。`, "dim");
+    sys(`【功法精研】${bothTech ? "双功同修（" + (hasSpecial("moyu") ? "摸鱼减罚 ÷√2" : "多线分心 ÷2") + "），各" : "「" + sk + "」"}熟练度 +${inc}（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}），修为 +${Math.round(6 * wxm)}，力量 +0.05。`);
   } else if (roll < (hasGongfa ? 80 : 70)) {
     /* 五维打熬 */
     const pickAttr = [["str", "力量"], ["agi", "敏捷"], ["int", "智力"], ["con", "体质"]][Math.floor(Math.random() * 4)];
@@ -2022,16 +2121,18 @@ function trainingEvent() {
       int: `【历练 · 明悟】你在茶楼外立了整整一个时辰，把柳先生那段「仙陨之战」从头到尾记下，回去对着雪光默诵三遍。心里透亮了一块。`,
       con: `【历练 · 淬体】你凿开冰面，把身子埋进刺骨的河水数息再冲出。牙齿打着颤，血脉却像被打通了——寒气再侵不进半分。`,
     };
-    gainAttr(pickAttr[0], amt); gainCult(2);
+    gainAttr(pickAttr[0], amt);
+    if (hasGongfa) gainCult(2); // 未修功法者不懂吐纳炼化——打熬只长筋骨，不长修为
     log(scenes[pickAttr[0]], "dim");
-    sys(`【五维打熬】${pickAttr[1]} +${amt}，修为 +2。`);
+    sys(`【五维打熬】${pickAttr[1]} +${amt}${hasGongfa ? "，修为 +2" : ""}。`);
   } else {
     /* 武技磨砺 */
     const inc = 3 + Math.floor(Math.random() * 4);
     S.skills["乱拳"] = Math.min(TECH_CAPS["乱拳"] || 100, (S.skills["乱拳"] || 0) + inc);
-    gainAttr("str", 0.08); gainCult(2);
+    gainAttr("str", 0.08);
+    if (hasGongfa) gainCult(2); // 未修功法者不懂吐纳炼化——磨砺只长拳路与力气，不长修为
     log(`【历练 · 武技】你对着庙后老槐树出拳一千次。树皮上的霜震落又凝上，拳面渗血，拳路却越来越直。`, "dim");
-    sys(`【武技磨砺】「乱拳」熟练度 +${inc}（${Math.round(S.skills["乱拳"])}/${TECH_CAPS["乱拳"] || 100}），力量 +0.08，修为 +2。`);
+    sys(`【武技磨砺】「乱拳」熟练度 +${inc}（${Math.round(S.skills["乱拳"])}/${TECH_CAPS["乱拳"] || 100}），力量 +0.08${hasGongfa ? "，修为 +2" : ""}。`);
     checkSkillMilestone("乱拳");
   }
   S.stats.trains = (S.stats.trains || 0) + 1;
@@ -2052,8 +2153,9 @@ function runSpecial(sp, fx) {
   } else if (sp === "chop") {
     S.stats.chops++;
     S.skills["伐木"] = Math.min(100, (S.skills["伐木"] || 0) + 3); // 生活技能：磨炼自然积累熟练度
-    const w = 1 + (attr("str") >= 4 ? 1 : 0) + (S.inv.chaidao ? 1 : 0) + ((S.skills["伐木"] || 0) >= 50 ? 1 : 0);
-    S.inv.wood += w; gainAttr("str", 0.09); gainCult(2.5); S.sta = Math.max(0, S.sta - 3);
+    const laborM = hasSpecial("niuma") ? 1.5 : 1; // 先天牛马圣体：劳作磨炼收益 +50%
+    const w = Math.round((1 + (attr("str") >= 4 ? 1 : 0) + (S.inv.chaidao ? 1 : 0) + ((S.skills["伐木"] || 0) >= 50 ? 1 : 0)) * laborM);
+    S.inv.wood += w; gainAttr("str", Math.round(0.09 * laborM * 100) / 100); gainCult(2.5); S.sta = Math.max(0, S.sta - 3);
     log(`你在矮林里忙了一个${["晨", "午", "昏", "夜"][S.slot]}，柴薪 +${w}。臂膀酸胀——【力量】在缓慢增长。`, "dim");
     advanceSlot();
   } else if (sp === "rest") {
@@ -2087,10 +2189,13 @@ function runSpecial(sp, fx) {
   } else if (sp === "train") {    const sk = S.inv.yinqi ? "引气诀" : S.inv.quanpu ? "锻骨拳谱" : "乱拳";
     const cap = TECH_CAPS[sk] || 100;
     const wxm = wxTrainMult(sk); // 功法五行修炼速度 = 1 + 亲和×0.005；亲和 <10 强行修炼减半
-    S.skills[sk] = Math.min(cap, (S.skills[sk] || 0) + 8 * (1 + (S.mods.trainP || 0) / 100) * wxm);
+    const bothTech = (S.inv.yinqi || 0) > 0 && (S.inv.quanpu || 0) > 0;
+    const split = bothTech ? (hasSpecial("moyu") ? 1 / Math.SQRT2 : 0.5) : 1; // 摸鱼圣手：多线惩罚 ÷n 变 ÷√n
+    const inc = Math.round(8 * (1 + (S.mods.trainP || 0) / 100) * wxm * split * 10) / 10;
+    const tTechs = bothTech ? ["引气诀", "锻骨拳谱"] : [sk];
+    for (const t of tTechs) { S.skills[t] = Math.min(TECH_CAPS[t] || 100, (S.skills[t] || 0) + inc); checkSkillMilestone(t); }
     gainCult((S.inv.yinqi ? 7 : 4) * wxm); gainAttr("str", 0.05); S.sta = Math.max(0, S.sta - 2);
-    log(`你依着口诀演练「${sk}」（熟练度 ${Math.round(S.skills[sk])}/${cap}）。${TECH_EL[sk] ? `此功法属${WX_NAMES[TECH_EL[sk]]}行，你的亲和 ${wxOf()[TECH_EL[sk]] || 0}${wxm < 1 ? "——亲和不足，事倍功半。" : wxm > 1 ? "——亲和加持，修行顺势。" : "。"}` : "气血随招式流转。"}`, "dim");
-    checkSkillMilestone(sk);
+    log(`你依着口诀演练「${bothTech ? "引气锻骨合击" : sk}」（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}）${bothTech ? "——多线分心，各得半份" + (hasSpecial("moyu") ? "（摸鱼减罚 ÷√2）" : "") : ""}。${TECH_EL[sk] ? `此功法属${WX_NAMES[TECH_EL[sk]]}行，你的亲和 ${wxOf()[TECH_EL[sk]] || 0}${wxm < 1 ? "——亲和不足，事倍功半。" : wxm > 1 ? "——亲和加持，修行顺势。" : "。"}` : "气血随招式流转。"}`, "dim");
     advanceSlot();
   } else if (sp === "gamble") {
     S.stats.gambles++;
@@ -2170,7 +2275,7 @@ function eatFood(amount, text, hot) {
 async function runDanger(d) {
   if (d === "pickpocket") {
     const r = await AI.judge("agi*8+d40>38", judgeState());
-    if (r.success) { const g = 5 + Math.floor(Math.random() * 8); S.money += g; log(`你指尖一勾，对方的荷包到了你手里（+${g} 文）。三只手的行当，三只手的因果。`, "dim"); S.daoXin -= 1; }
+    if (r.success) { const g = Math.round((5 + Math.floor(Math.random() * 8)) * (hasSpecial("xiexiu") ? 1.5 : 1)); S.money += g; log(`你指尖一勾，对方的荷包到了你手里（+${g} 文${hasSpecial("xiexiu") ? "，【邪修】甜也 ×1.5" : ""}）。三只手的行当，三只手的因果。`, "dim"); S.daoXin -= 1; }
     else { const lose = Math.min(S.money, 4); S.money -= lose; log(`手生，被对方察觉，反丢了 ${lose} 文。`, "hurt"); }
     advanceSlot();
   } else if (d === "trace") {
@@ -2232,6 +2337,10 @@ function combat(enemy, onEnd) {
     delete S.flags.laosouBounty;
     enemy = Object.assign({}, enemy, { power: Math.round(enemy.power * 1.15) });
     sys(`【老叟戏顽童 · 报应】你欺凌弱小的名声传了出去——有位真正的强者，循声寻来了。（对方战力 +15%）`);
+  }
+  if (hasSpecial("pofang") && enemy.power > 1) { // 破防了：开战前戳中痛处，对方战力 -8%
+    enemy = Object.assign({}, enemy, { power: Math.max(1, Math.round(enemy.power * 0.92)) });
+    sys(`【破防了】兵刃未交，你先一句话戳中了它的痛处——对方气息一乱，方寸尽失。（战力 -8%）`);
   }
   const done = res => { window.__inCombat = false; onEnd && onEnd(res); };
   const eEl = enemy.el || ENEMY_EL[enemy.name] || "tu";
@@ -2307,7 +2416,7 @@ function resolveCombat(enemy, mode, onEnd) {
   const pt = TABLES.COMBAT.powerTiers;
   const enemyTier = enemy.power >= pt[4] ? 4 : enemy.power >= pt[3] ? 3 : enemy.power >= pt[2] ? 2 : enemy.power >= pt[1] ? 1 : 0;
   const eStr = est[0], eAgi = est[1], eInt = est[2], eCon = est[3];
-  const eLuck = Math.max(1, Math.round(enemy.power * 0.12)); // 气运不入战力（设定）：单独推演，改概率不改数值
+  const eLuck = Math.max(1, Math.round(enemy.power * 0.12) - (hasSpecial("lucky") ? 5 : 0)); // 气运不入战力（设定）：单独推演；气运之子：高运压场，敌方气运 -5（强敌也会降智）
   const eHpMax = Math.max(5, Math.round(eCon * TABLES.COMBAT.hpPerCon * (1 + enemyTier * TABLES.COMBAT.tierHpScale))); // 与玩家同式：体质×10×境界放缩
   const myStr = attr("str"), myAgi = attr("agi"), myInt = attr("int"), myLuck = attr("luck");
   const atkP = attackPower(); // 攻击力（=战力）：不运功法时，每记普攻皆此数之伤
