@@ -1839,10 +1839,24 @@ function applyCore(fx) {
   const gain = s => { out.push(s); G.push(s); };
   const loss = s => { out.push(s); L.push(s); };
   const note = s => { out.push(s); NT.push(s); };
+  const fmt1 = v => Math.round(v * 10) / 10; // 结算栏一律显示实到账差值（钳制/折算不再显示虚值）
   const num = (k, name, unit) => {
     if (!fx[k]) return;
-    if (k === "cult") { if (gainCult(fx[k])) gain(`修为 +${fx[k]}`); return; } // 无功法时修为机缘流失（gainCult 内有提示）
-    applyNum(k, fx[k]); const s = `${name} ${fx[k] > 0 ? "+" : ""}${fx[k]}${unit || ""}`; out.push(s); (fx[k] > 0 ? G : L).push(s);
+    if (k === "cult") { // 无功法时修为机缘流失（gainCult 内有提示）
+      const prev = S.cult;
+      if (gainCult(fx[k])) { const d = fmt1(S.cult - prev);
+        if (d > 0) { gain(`修为 +${d}`); if (d !== fx[k]) note(`修为 账面 +${fx[k]}，经灵根/药蚀/心魔折算实得 +${d}`); }
+        else note(`修为无实际变动（本境修为已圆满，只待突破）`); }
+      return;
+    }
+    const prev = k === "dao" ? S.daoXin : S[k];
+    applyNum(k, fx[k]);
+    let d = (k === "dao" ? S.daoXin : S[k]) - prev;
+    if (k === "hunger") d = -d; // fx 饱食为正值 = 饿度下降
+    d = fmt1(d);
+    if (d === 0) { note(`${name} 无实际变动（${k === "hunger" && hasSpecial("bigu") ? "辟谷之躯不纳五谷" : "已达上限/存量不足"}）`); return; }
+    const s = `${name} ${d > 0 ? "+" : ""}${d}${unit || ""}`; out.push(s); (d > 0 ? G : L).push(s);
+    if (d !== fx[k]) note(`${name} 账面 ${fx[k] > 0 ? "+" : ""}${fx[k]}，实得 ${d > 0 ? "+" : ""}${d}（上限/存量钳制）`);
   };
   function applyNum(k, v) {
     if (k === "money") { S.money = Math.max(0, S.money + v); if (v <= -10 && hasSpecial("yuanchang")) { S.flags.yuanchangDay = S.day; } } // 大冤种：被坑 ≥10 文，三日内必有补偿机缘
@@ -1856,14 +1870,32 @@ function applyCore(fx) {
   }
   num("money", "铜钱", " 文"); num("stones", "灵石", " 枚"); num("hp", "气血"); num("sta", "体力");
   num("mp", "法力"); num("hunger", "饱食"); num("cult", "修为"); num("dao", "道心"); num("points", "万象点");
-  if (fx.attr) for (const k in fx.attr) { gainAttr(k, fx.attr[k]); const s = `${{str:"力量",agi:"敏捷",int:"智力",con:"体质"}[k]} ${fx.attr[k] > 0 ? "+" : ""}${fx.attr[k]}`; out.push(s); (fx.attr[k] > 0 ? G : L).push(s); } // 途径一·日常磨炼：日常成长有效
+  if (fx.attr) for (const k in fx.attr) { // 途径一·日常磨炼：日常成长有效
+    const prev = S.base[k]; gainAttr(k, fx.attr[k]); const d = fmt1(S.base[k] - prev);
+    const nm = { str: "力量", agi: "敏捷", int: "智力", con: "体质" }[k];
+    if (d === 0) { note(`${nm} 无实际变动（已至本境磨炼上限）`); continue; }
+    const s = `${nm} +${d}`; out.push(s); G.push(s);
+    if (d !== fx.attr[k]) note(`${nm} 账面 +${fx.attr[k]}，高基数磨砺递减/加成折算实得 +${d}`);
+  }
   if (fx.item) { const m = /^([a-zA-Z]+):(-?\d+)$/.exec(fx.item); if (m) { const id = m[1], n = +m[2];
     if (n > 0 && (id === "yinqi" || id === "quanpu") && !(S.inv[id] > 0)) techniqueUnlockFx(id); // 首次获得功法：解锁反哺
-    S.inv[id] = Math.max(0, (S.inv[id] || 0) + n); const s = `${{wood:"柴薪",heimu:"黑馍",mianao:"棉袄",shuinang:"水囊",quhanTang:"驱寒汤",huoxiangSan:"藿香正气散",jieduSan:"解毒散",jinchuangYao:"金疮药",shengjiang:"生姜",gancao:"甘草",chaidao:"柴刀",jiansui:"玄铁剑穗",quanpu:"《锻骨拳谱》",yinqi:"《引气诀》",juqiDan:"聚气丹"}[id] || id} ${n > 0 ? "+" : ""}${n}`; out.push(s); (n > 0 ? G : L).push(s); } }
+    const prev = S.inv[id] || 0; S.inv[id] = Math.max(0, prev + n); const d = S.inv[id] - prev;
+    const nm = {wood:"柴薪",heimu:"黑馍",mianao:"棉袄",shuinang:"水囊",quhanTang:"驱寒汤",huoxiangSan:"藿香正气散",jieduSan:"解毒散",jinchuangYao:"金疮药",shengjiang:"生姜",gancao:"甘草",chaidao:"柴刀",jiansui:"玄铁剑穗",quanpu:"《锻骨拳谱》",yinqi:"《引气诀》",juqiDan:"聚气丹"}[id] || id;
+    if (d === 0 && n !== 0) { note(`${nm} 无实际变动（行囊中没有可扣的存量）`); }
+    else { const s = `${nm} ${d > 0 ? "+" : ""}${d}`; out.push(s); (d > 0 ? G : L).push(s); } } }
   if (fx.clearWood) { S.inv.wood = 0; }
-  if (fx.skill) { const m = /^(.+):(-?\d+)$/.exec(fx.skill); if (m) { const cap = TECH_CAPS[m[1]] || 100; S.skills[m[1]] = Math.min(cap, (S.skills[m[1]] || 0) + (+m[2])); checkSkillMilestone(m[1]); const s = `技艺「${m[1]}」 ${+m[2] > 0 ? "+" : ""}${m[2]}`; out.push(s); (+m[2] > 0 ? G : L).push(s); } }
-  if (fx.wx) { const m = /^(jin|mu|shui|huo|tu):(-?\d+)$/.exec(fx.wx); if (m) { const wx = wxOf(); wx[m[1]] = Math.min(100, Math.max(0, wx[m[1]] + (+m[2]))); const s = `${WX_NAMES[m[1]]}行亲和 ${+m[2] > 0 ? "+" : ""}${m[2]}`; out.push(s); (+m[2] > 0 ? G : L).push(s); } } // 后天亲和，可破先天总和
-  if (fx.npc) for (const n in fx.npc) { addNpc(n, fx.npc[n], { daily: fx.npc[n] > 0 }); const s = `${n} 缘分 ${fx.npc[n] > 0 ? "+" : ""}${fx.npc[n]}`; out.push(s); (fx.npc[n] > 0 ? G : L).push(s); } // 剧情选项中的善缘属「日常行为」：同一 NPC 每日只入账一次（任务酬谢等特殊剧情走 special 通道）
+  if (fx.skill) { const m = /^(.+):(-?\d+)$/.exec(fx.skill); if (m) { const cap = TECH_CAPS[m[1]] || 100; const prev = S.skills[m[1]] || 0; S.skills[m[1]] = Math.min(cap, prev + (+m[2])); checkSkillMilestone(m[1]); const d = S.skills[m[1]] - prev;
+    if (d === 0 && +m[2] !== 0) note(`技艺「${m[1]}」无实际变动（已至技艺上限）`);
+    else { const s = `技艺「${m[1]}」 ${d > 0 ? "+" : ""}${d}`; out.push(s); (d > 0 ? G : L).push(s); } } }
+  if (fx.wx) { const m = /^(jin|mu|shui|huo|tu):(-?\d+)$/.exec(fx.wx); if (m) { const wx = wxOf(); const prev = wx[m[1]]; wx[m[1]] = Math.min(100, Math.max(0, prev + (+m[2]))); const d = wx[m[1]] - prev;
+    if (d === 0 && +m[2] !== 0) note(`${WX_NAMES[m[1]]}行亲和无实际变动（已达 0/100 边界）`);
+    else { const s = `${WX_NAMES[m[1]]}行亲和 ${d > 0 ? "+" : ""}${d}`; out.push(s); (d > 0 ? G : L).push(s); } } } // 后天亲和，可破先天总和
+  if (fx.npc) for (const n in fx.npc) { // 剧情选项中的善缘属「日常行为」：同一 NPC 每日只入账一次（任务酬谢等特殊剧情走 special 通道）
+    const prev = S.npc[n] || 0; addNpc(n, fx.npc[n], { daily: fx.npc[n] > 0 }); const d = fmt1((S.npc[n] || 0) - prev);
+    if (d === 0 && fx.npc[n] !== 0) { note(`与「${n}」缘分无实际变动（今日已记账/已达瓶颈）`); continue; }
+    const s = `${n} 缘分 ${d > 0 ? "+" : ""}${d}`; out.push(s); (d > 0 ? G : L).push(s);
+    if (d !== fx.npc[n]) note(`${n} 缘分 账面 ${fx.npc[n] > 0 ? "+" : ""}${fx.npc[n]}，性格/传播/递减折算实得 ${d > 0 ? "+" : ""}${d}`);
+  }
   if (fx.pet) { S.flags["pet_" + fx.pet] = 1; gain(`「${fx.pet}」缔结灵宠之缘（认魂不认人，缘分至生死之交可跨世等候）`); }
   if (fx.drop) { S.mats = S.mats || {}; S.mats[fx.drop] = (S.mats[fx.drop] || 0) + 1; gain(`获得材料「${fx.drop}」（一身是宝，硬通货——可在收购/炼丹/炼器剧情中折算）`); }
   if (fx.slay) { // 猎杀有灵众生：道心受损、死仇钉死、认魂断绝
