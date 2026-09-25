@@ -1476,7 +1476,7 @@ function renderTab() {
     const techGot = t => t.sk === "乱拳" ? ("乱拳" in S.skills) : (S.inv[t.id] || 0) > 0;
     const owned = TECH_LIST.filter(techGot); // 未入手的功法不占栏位：没有就是没有，不预告
     let html = `<div class="p-title"><b>功 法</b><span>修行根本 · 熟练度满反哺五维</span></div>`;
-    html += `<div class="p-row" data-meditate="1" style="cursor:pointer;color:var(--gold-dim)"><span>🧘 打坐参悟</span><b>耗一时辰 · 涨主修熟练</b></div>`; // 战斗外修炼入口（设定：打坐参悟/向 NPC 讨教）
+    html += `<div class="p-row" data-meditate="1" style="cursor:pointer;color:var(--gold-dim)"><span>🧘 打坐参悟</span><b>每时辰一次 · 不占抉择</b></div>`; // 战斗外修炼入口（设定：打坐参悟/向 NPC 讨教）
     html += owned.length ? owned.map(t => {
       const cur = Math.round(S.skills[t.sk] || 0), cap = TECH_CAPS[t.sk];
       return `<div class="p-row" data-skill="${t.sk}"><span>${t.sk === "乱拳" ? t.sk : "《" + t.sk + "》"}</span><b>熟练 ${cur}/${cap}</b></div>`;
@@ -1500,6 +1500,8 @@ function renderTab() {
       if (S.over) return;
       if (window.__inCombat) { toast("生死相搏，无暇打坐。"); return; }
       if (typeof gmBusy !== "undefined" && gmBusy) { toast("天道推演未歇，稍候再打坐。"); return; }
+      if (S.lastFreeMed === S.day * 10 + S.slot) { toast("此时辰已打坐过——修行贵恒，不贵骤。"); return; } // 每时辰限一次
+      if (S.sta < 3) { toast("体力不济，打坐也是空坐。"); return; }
       const mt = mainTechnique(); const sk = mt ? mt.name : "乱拳"; const ak = mt ? mt.fb.a : "str";
       const wxm = sk === "乱拳" ? 1 : wxTrainMult(sk);
       const coef = medStateCoef();
@@ -1510,8 +1512,8 @@ function renderTab() {
       const bondTop = Object.entries(S.npc || {}).filter(([n, v]) => typeof v === "number" && v >= 30).sort((a, b) => b[1] - a[1])[0];
       teacher = masters[0] || (bondTop ? bondTop[0] : null);
       const opts = [];
-      if (teacher) opts.push({ label: `向「${teacher}」讨教「${sk}」关隘`, hint: `耗一时辰 · 讨教加成 ×1.5，约 +${Math.round(base * 1.5 * 10) / 10} 熟练 · 缘分 +2`, fn: () => runSpecial("meditate", { coef, teacher, focus: sk }) });
-      opts.push({ label: `独坐参悟「${sk}」`, hint: `耗一时辰 · 熟练 +${est}（状态系数 ${coef}）· 体力 -3`, fn: () => runSpecial("meditate", { coef, focus: sk }) });
+      if (teacher) opts.push({ label: `向「${teacher}」讨教「${sk}」关隘`, hint: `每时辰一次 · 不占抉择 · 讨教加成 ×1.5，约 +${Math.round(base * 1.5 * 10) / 10} 熟练 · 缘分 +2`, fn: () => runSpecial("meditate", { coef, teacher, focus: sk, free: true }) });
+      opts.push({ label: `独坐参悟「${sk}」`, hint: `每时辰一次 · 不占抉择 · 熟练 +${est}（状态系数 ${coef}）· 体力 -3`, fn: () => runSpecial("meditate", { coef, focus: sk, free: true }) });
       opts.push({ label: "罢了", hint: "修行不急在一时。", fn: () => {} });
       setChoices(opts);
     });
@@ -1751,7 +1753,8 @@ function stagedStoryTurn(entry) { // 缘分剧情线回合：优先于 AI/离线
   const n = (typeof STAGED_BY_ID !== "undefined") && STAGED_BY_ID[entry.id];
   const line = n && n.story && n.story[entry.tier];
   if (!line) return { _src: "gm", _staged: true, scene: "……风过无痕，缘悭一面。", choices: [{ label: "继续赶路", hint: "", fx: {} }] };
-  return { _src: "gm", _staged: true, scene: `【${n.name} · ${n.title}】${line.scene}`, choices: line.choices.map(c => {
+  const t0 = `【${S.day >= 31 ? "春" : "冬"}第${S.day}日 · ${["晨", "午", "昏", "夜"][S.slot] || ""}${S.slot === 3 ? "（即将入夜）" : ""} · ${S.weather}】`; // 剧情线推送带时间
+  return { _src: "gm", _staged: true, scene: t0 + `【${n.name} · ${n.title}】${line.scene}`, choices: line.choices.map(c => {
     if (c.fight) return { label: c.label, hint: c.hint || "", fn: () => { // 迎战选项：真实战斗演出（赢则仇怨钉死，输则重伤脱身）
       S._choiceSet = false; S.lastPick = c.label;
       combat({ name: c.fight.name, power: c.fight.power, canBeg: false, el: n.el }, (res) => {
@@ -2768,6 +2771,7 @@ function runSpecial(sp, fx) {
     if (S.realm >= 5 && !(S.jinshuWeak > 0)) S.mp = Math.min(mpMax(), S.mp + mpMax() * 0.2 * (S.linggen === "za" ? 1.5 : 1)); // 杂灵根：回蓝 ×1.5；禁术虚弱期间蓝锁 0
     if (Math.random() < attr("luck") * 0.015) { gainCult(20); sys(`【顿悟】灵光毫无预兆地炸开，修为大涨一截！`); }
     S.sta = Math.max(0, S.sta - (focus ? 3 : 0)); // 参悟耗神三分；纯吐纳不耗
+    if (fx && fx.free) { S.lastFreeMed = S.day * 10 + S.slot; renderPanel(); gmTurn(); return; } // 面板打坐：不占抉择次数——时段不推进，同辰再演一幕（修行记事钩子由本幕承接）
     advanceSlot();
   } else if (sp === "seeDoctor") {
     /* 寻医诊治（AI 剧情可给出的治病路径；30 文，药到病除） */
