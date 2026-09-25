@@ -395,7 +395,7 @@ const AI = (() => {
     return { success: v, detail: e.replace(/\s+/g, ""), src: "local" };
   }
   async function judge(expr, st) {
-    if (!judgeAbsent) {
+    if (!judgeAbsent && !(cfg && cfg.off)) { // 断开 API 链接时：跳过同源判定服务，直接本地演算
       try {
         const resp = await fetchWithTimeout("/api/judge", {
           method: "POST", headers: { "Content-Type": "application/json" },
@@ -457,6 +457,13 @@ const AI = (() => {
     const prompt = statePrompt();
     lastCtx = prompt;
     lastFail = null;
+    // 0) 手动断开 API 链接（天道设置）：不发起任何网络请求，静默交回内置推演引擎——这是玩家的主动选择，不弹「天道失联」
+    if (cfg && cfg.off) {
+      const g0 = GM.compose();
+      g0._src = "gm";
+      g0._reason = "API 链接已手动关闭——剧情与判定全部由内置推演引擎演算";
+      return g0;
+    }
     const SYS = (typeof regionOf === "function" && typeof S !== "undefined" && S) ? buildSystem() + "\n【出生地地域风物 · 定稿】\n" + regionOf(S.place).aiHint + "\n（当前地点：" + (S.place || "未知") + "。本世剧情必须符合上述当地风物：环境、物价、NPC 类型、生存压力皆依此地，不得写成云州青石城的雪夜。）" : buildSystem();
     // 1) BYOK 真 AI
     if (cfg && cfg.key) {

@@ -96,6 +96,7 @@
     <div class="set-row"><label>API Base</label><input id="aiBase" value="https://api.moonshot.cn/v1" spellcheck="false"/><span class="set-tip">以 /v1 结尾</span></div>
     <div class="set-row"><label>API Key</label><input id="aiKey" type="password" placeholder="sk-…（可选，仅存入本机浏览器）" spellcheck="false"/></div>
     <div class="set-row"><label>Model</label><input id="aiModel" value="kimi-k2-0711-preview" spellcheck="false"/><span class="set-tip">需 Key 有权限</span></div>
+    <div class="set-row"><label>API 链接</label><input id="aiOff" type="checkbox" style="width:auto"/><span class="set-tip">断开 API 链接（纯离线）：勾选后不发起任何网络请求——你的 Key 与同源服务端都不调用，剧情、判定全部由内置推演引擎演算</span></div>
     <p class="set-status" id="aiStatus"></p>
     <pre class="set-debug" id="aiDebug"></pre>
     <div class="model-list" id="modelList"></div>
