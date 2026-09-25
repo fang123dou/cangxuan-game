@@ -1570,9 +1570,50 @@ function renderTab() {
     }).join("") : `<div class="empty">缘分簿空白。你遇到的每个人，都会被记下。</div>`;
     body.querySelectorAll("[data-npc]").forEach(el => el.onclick = () => {
       const n = el.dataset.npc, v = S.npc[n];
+      const st = stagedByName(n);
+      const acts = [];
+      const visitKey = `visit_${S.day}_${n}`;
+      const freeDo = fn => () => { // 互动不占当日抉择：随手可为的人情往来
+        $("#infoModal").classList.remove("open");
+        if (gmBusy || window.__inCombat) { toast("此刻无暇他顾。"); return; }
+        fn(); computeMods(); renderPanel();
+      };
+      if (v >= 0 && !S.flags[visitKey]) acts.push({ label: "登门拜访（缘分 +1）", fn: freeDo(() => {
+        S.flags[visitKey] = 1;
+        addNpc(n, 1, { special: true });
+        log(`【拜访】你去见了${n}。${st ? `${st.pers}性子的${st.title}` : "一盏粗茶"}，几句闲话——人情就是这么一点点焐热的。（缘分 +1）`, "good");
+      }) });
+      if (v >= 0) { // 赠礼：食物与特产都可表心意
+        const gifts = FOOD_DEFS.filter(f => (S.inv[f.id] || 0) > 0).map(f => ({ id: f.id, name: ITEM_INFO[f.id].name, bonus: 4 }));
+        if (typeof TRADE_GOODS !== "undefined") for (const tg of TRADE_GOODS) if ((S.inv[tg.id] || 0) > 0) gifts.push({ id: tg.id, name: tg.name, bonus: 5 });
+        gifts.slice(0, 3).forEach(gf => acts.push({ label: `赠「${gf.name}」（缘分 +${gf.bonus}）`, fn: freeDo(() => {
+          S.inv[gf.id]--; addNpc(n, gf.bonus, { special: true });
+          log(`【赠礼】你把「${gf.name}」递到${n}手里。对方推辞两句，终是收下了。（缘分 +${gf.bonus}）`, "good");
+          chronicle(`赠「${gf.name}」与「${n}」`, "npc");
+        }) }));
+      }
+      if (v >= 20 && !S.flags[visitKey + "_spar"]) acts.push({ label: "切磋一场（胜负皆有进益）", fn: freeDo(async () => {
+        S.flags[visitKey + "_spar"] = 1;
+        const r = await AI.judge("str*6+agi*4+d40>50", judgeState());
+        if (r.success) { gainCult(6); addNpc(n, 2, { special: true }); log(`【切磋】你与${n}过了三十招，于刀光拳影里觅得一线灵机。（修为 +6，缘分 +2）`, "good"); }
+        else { S.hp = Math.max(1, S.hp - 3); gainCult(3); addNpc(n, 1, { special: true }); log(`【切磋】你输了一招，肋下挨了一记。痛，但长记性。（修为 +3，气血 -3，缘分 +1）`, "dim"); }
+      }) });
+      if (v <= -20 && v > -90) acts.push({ label: "登门赔罪（50 文 · 缘分 +12）", fn: freeDo(() => {
+        if (S.money < 50) { toast("铜钱不够，赔罪无门。"); return; }
+        S.money -= 50; addNpc(n, 12, { special: true });
+        log(`【赔罪】你备了五十文的重礼，亲自登门向${n}赔了个不是。伸手不打笑脸人——这梁子解了一半。（缘分 +12）`, "good");
+        chronicle(`向「${n}」登门赔罪`, "npc");
+      }) });
+      if (v <= -40) acts.push({ label: "寻仇了断（一战泯恩仇）", fn: freeDo(() => {
+        combat({ name: n, power: Math.max(15, Math.round(20 + S.realm * 6 + Math.abs(v) / 3)), canBeg: false, el: st ? st.el : null }, (res) => {
+          if (res === "win") { addNpc(n, 30, { special: true }); log(`【了断】你胜了。${n}输了气势也输了仇——恩怨两清，反倒生出几分敬重。（缘分 +30）`, "good"); chronicle(`与「${n}」一战泯恩仇`, "npc"); }
+          else if (res !== "dead") { addNpc(n, -5, { special: true }); log(`【了断】你技不如人，讨回来的只有一身新伤。${n}的冷笑比刀更冷。（缘分 -5）`, "hurt"); }
+          if (!S.over) advanceSlot();
+        });
+      }) });
       showInfo(n, `<span style="color:${v >= 0 ? "var(--gold-dim)" : "var(--blood-hi)"}">${relText(v)}（${v > 0 ? "+" : ""}${v}）</span>`,
         el.nextElementSibling.textContent,
-        "缘分由你的抉择增减，随此生而终，不随轮回。生死之交（+80）：每世一次，他会在你必死时赶来（人情是债，缘分 -20）；死仇（-70 以下）会雇人寻上门，-90 以下不死不休、亲自前来——但若能把死仇走回正缘，便是「化干戈」，气运 +1。");
+        "缘分由你的抉择增减，随此生而终，不随轮回。生死之交（+80）：每世一次，他会在你必死时赶来（人情是债，缘分 -20）；死仇（-70 以下）会雇人寻上门，-90 以下不死不休、亲自前来——但若能把死仇走回正缘，便是「化干戈」，气运 +1。登门拜访、赠礼、切磋、赔罪、了断——人情可以一处一处做出来。", acts);
     });
   }
 }
