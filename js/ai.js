@@ -96,13 +96,13 @@ const AI = (() => {
 2. choices 给 3~5 个，其中一个可以是修炼/谋生类的日常选项。不要给「查看面板」类元选项。
 3. fx 字段只允许这些键（都是可选，数值要克制）：
    money(铜钱±≤80) stones(灵石±≤2) hp(气血±) sta(体力±≤5) mp(法力±) hunger(饱食度，正=进食≤45) cult(修为±≤25，玩家无功法时无效)
-   dao(道心±≤3) points(万象点±≤50) attr({str|agi|int|con: ±≤0.15}) item("id:数量"，id∈wood,heimu,mianao,chaidao,jiansui,quanpu,yinqi,juqiDan,ludian,lianchui)
+   dao(道心±≤3) points(万象点±≤50) attr({str|agi|int|con: ±≤0.15}) item("id:数量"，id∈wood,heimu,mianao,chaidao,jiansui,quanpu,yinqi,juqiDan,ludian,lianchui；功法授予用「可求功法」字段给出的功法 id）
    npc({"名字":缘分±≤12}) flag("字符串") ach(成就id，或"名|品级0~4|描述|奖励"生成新成就) card(1=天降随机词条) luckCharm(1~2) wx("jin|mu|shui|huo|tu:1~3"，五行亲和，仅天材地宝/洞天机缘可给)
    combat("敌人名:战力数字") danger("pickpocket|trace|deep|caught|fleeDog|catchThief")
    pet("名字") drop("材料名") slay("名字")
    newcard("词条名|品级0~5|效果|mod键:值,…") fabao("法宝名|品级0~5|效果|mod键:值,…") wuqi("兵器名|攻伐%|品阶")
    quest("accept:任务id 或 act:任务id"，id 见输入「可接支线/搁置任务」)
-   special("beg|chop|rest|fire|eat|meditate|train|escort|gamble|yaopu|hotmeal")
+   special("beg|chop|rest|fire|eat|meditate|train|escort|gamble|yaopu|hotmeal") —— train=演练主修功法（熟练+修为）：白天剧情中遇静室、院落、安全落脚处时可自然给出；夜间引擎固定提供「夜里打坐修炼」选项，无需你重复给
    job("主职业称呼，≤12字") —— 主角拜入宗门、得授功法、或凭营生在世人眼中立起名分时，为他取一个贴合身份的称号（如「青岩门采药弟子」「枯泉寺沙弥」「福源商会供奉」「云游丹师」）；取名须依设定集（宗门/功法/行当皆有名录可循），不得凭空捏造；凡人期的营生主职业由引擎按其工作自动显示，无需 job。
    check("判定表达式") + success({fx}) + fail({fx}) + successText/failText("结果叙述一句话")
    —— 判定表达式语法：属性名 str/agi/int/con/luck/realm/day/sta/hunger/esc/lg（灵根资质加成）、数字、加减乘除括号、骰子 d20、一个比较符。
@@ -126,7 +126,8 @@ const AI = (() => {
 20. 【结算一致 · 铁律】选项 fx 里的每个收获/损失都必须能在剧情里找到来路：scene（或 successText/failText）写明了这份得失的缘由，结算栏里才会出现它——禁止剧情里什么都没给、结算却 +铜钱/修为/物品；反过来，剧情里写了得了赏钱、受了伤、吃了东西、得了物件，选项 fx 就要给出对应的 money/hp/hunger/item（数值与剧情一致：赏钱说二十文就 money:20，说捡了捆柴就 item="wood:1"）。判定分支的得失写进 success/fail 内，并用 successText/failText 点明。
 21. 【钱袋门槛 · 铁律】涉及花钱的选项（购买、请客、行贿、下注、雇车、打点什么），hint 里注明花费，fx.money 写对应负值；玩家铜钱不足以支付时，不得给出该选项，也不要给「钱不够」的废选项——直接不给。引擎会自动拦截付不起的选项（含判定成败两个分支的花费）。
 22. 【承接 · 铁律】本回合 scene 必须直接承接输入的「上回合」：先用一两句话交代玩家上一手选择的直接后果（去了何处、得失如何、对方作何反应），再展开新事件；场景、在场人物、时辰与地点默认延续上回合，唯有 scene 里明确写出动身、换装、时间流逝，才可切换地点或跳时段；同一 NPC 的态度按其缘分值与上轮互动延续。不得每回合另起炉灶、场景跳切。
-23. 【伤病 · 铁律】输入「伤病」字段中疾病或伤势/暗伤非「无」时，本回合剧情必须给出至少一条治病疗伤的路径选项——按「药石」字段对症开方（买药用 money+item 负值、服丹、寻医 special:"seeDoctor"、采药草煎服均可），hint 注明花费与对症；伤势沉重（中伤以上）时给「寻医/敷药/静养」选项。伤病皆无时不许硬塞吃药剧情。疾病痊愈的叙事须与药石字段中的对症药品一致（风寒用驱寒汤/生姜、中暑用藿香正气散、丹毒侵脉用解毒散），不可张冠李戴。`;
+23. 【伤病 · 铁律】输入「伤病」字段中疾病或伤势/暗伤非「无」时，本回合剧情必须给出至少一条治病疗伤的路径选项——按「药石」字段对症开方（买药用 money+item 负值、服丹、寻医 special:"seeDoctor"、采药草煎服均可），hint 注明花费与对症；伤势沉重（中伤以上）时给「寻医/敷药/静养」选项。伤病皆无时不许硬塞吃药剧情。疾病痊愈的叙事须与药石字段中的对症药品一致（风寒用驱寒汤/生姜、中暑用藿香正气散、丹毒侵脉用解毒散），不可张冠李戴。
+24. 【功法求法 · 铁律】输入「可求功法」非空时：该功法是玩家当前境界/身份下确凿可求的传承。请检索其获取路径（宗门传功/内门考核/散修求法），在场景中自然引出机缘（传功执事召见、内门考核开台、古籍摊残卷、高人指点等），并在 choices 中给出获取选项：fx.item 用字段给出的功法 id（如 "gfqingyan:1"），可搭配 money 花费或 check 判定；选项文案贴合场景，不生硬报功法名。功法圆满或境界瓶颈时绝不能让玩家无路可求；3 阶圣品以上功法此界难至，只可作「求法风闻」伏笔，绝不可直接授予。`;
 
   function chronicleSummary() {
     try {
@@ -156,6 +157,8 @@ const AI = (() => {
       时间: `冬第${S.day}日/${["晨", "午", "昏", "夜"][S.slot]}(${S.slot === 3 ? "即将入夜" : ""})`, 天气: S.weather,
       境界: REALM_NAMES[S.realm] + `(修为${Math.round(S.cult)}/${REALM_NEED[S.realm + 1] || "圆满"}·${TABLES.REALMS.tierNames[S.realm]})`,
       云游师傅名册: (S.masters && Object.keys(S.masters).length) ? Object.entries(S.masters).map(([pid, m]) => `${profDef(pid) ? profDef(pid).name : pid}:${m}(${S.npc[m] || 0})`).join("、") : "尚无（丹师/器火一脉师傅于瓶颈期现身）",
+      求法之路: (typeof gongfuLead === "function") ? (gongfuLead().map(l => `《${l.g.name}》(${l.g.tierName})：${l.path}`).join("；") || "暂无可求功法（境界未至门槛）") : "未知",
+      主修功法: (typeof mainTechnique === "function") ? (mainTechnique() ? `${mainTechnique().name}(${mainTechnique().tierName})` : "无（野路乱拳）") : "未知",
       五维: `力${attr("str")}敏${attr("agi")}智${attr("int")}体${attr("con")}运${attr("luck")}`,
       五行亲和: WX_ELS.map(e => WX_NAMES[e] + (wxOf()[e] || 0)).join("/") + `（主行:${WX_NAMES[dominantWxEl()]}）`,
       状态: `气血${Math.round(S.hp)}/${hpMax()} 体力${Math.round(S.sta)} 饱食${Math.round(100 - S.hunger)} 道心${Math.round(S.daoXin)} 心魔${Math.round(S.xinmo || 0)}/100(${xinmoStage().name}) 战力${combatPower()} 康健${injuryTier().name} 药蚀${Math.round(S.yaoshi || 0)}/100`,
@@ -167,6 +170,8 @@ const AI = (() => {
       近日大事: chronicleSummary(),
       历世轮回: livesSummary(),
       可破境: checkBreakthrough(),
+      功法: gongfuPrompt(),
+      可求功法: gongfuLeadPrompt(),
       历练日: (S.day - (S.lastTrainDay || 0)) >= 3 ? "是（三日之期已至：本回合必须安排一次提升实力的机缘，见规则14）" : "否",
       已有职业: (() => { const q = S.professions || {}; const ks = Object.keys(q); return ks.length ? ks.map(pid => { const P = (typeof PROFESSIONS !== "undefined") && PROFESSIONS[pid]; return P ? `${P.name}${q[pid].primary ? "(主)" : "(副)"}Lv${q[pid].lv}` : pid; }).join("、") : "无"; })(),
       伏笔计数: (S.flags.coincidence || 0) + "（幕后阴谋的碎屑：刻意巧合/古怪贵人/上古信物；够数时系统自现仙品任务）",
@@ -175,6 +180,23 @@ const AI = (() => {
       前情引子: (typeof S.echoLine === "string" && S.echoLine) || "无",
       上回合: (S.lastScene ? "剧情:" + S.lastScene + " ｜ 玩家选择:「" + (S.lastPick || "？") + "」" : "无（本回合为开局）"),
     });
+  }
+  function gongfuPrompt() { // 已持功法与熟练度（功法谱系见 data.js GONGFU）
+    try {
+      if (typeof GONGFU === "undefined") return "无";
+      const owned = GONGFU.filter(g => (S.inv[g.id] || 0) > 0);
+      if (!owned.length) return "无（尚未习得任何功法，修为无从增长——可经传承事件/商铺/宗门求得入门功法）";
+      return owned.map(g => `《${g.name}》(${g.tierName}·${WX_NAMES[g.el]}行·熟练${Math.round(S.skills[g.name] || 0)}/${g.cap}${(S.skills[g.name] || 0) >= g.cap ? "·已圆满，推演至尽头" : ""})`).join("、");
+    } catch (e) { return "无"; }
+  }
+  function gongfuLeadPrompt() { // 当前可求功法（境界/宗门/灵根主行检索，供规则24 取用；空=暂无确凿可求者）
+    try {
+      if (typeof gongfuLead !== "function") return "无";
+      const leads = gongfuLead();
+      const out = leads.map(l => `《${l.g.name}》(id:${l.g.id}，${l.g.tierName}·${WX_NAMES[l.g.el]}行)：${l.path}`);
+      if ((S.flags.seekGongfu || 0) >= 3) out.push("风闻：" + (typeof GONGFU_RUMORS !== "undefined" ? GONGFU_RUMORS[0] : "圣品功法只闻其名。") + "（仅作伏笔，不可授予）");
+      return out.join(" ｜ ") || "无";
+    } catch (e) { return "无"; }
   }
   function questPrompt() {
     try {
@@ -201,7 +223,7 @@ const AI = (() => {
   }
 
   /* ---------- 校验 AI 输出 ---------- */
-  const FX_KEYS = ["money","stones","hp","sta","mp","hunger","cult","dao","points","attr","item","npc","flag","ach","card","luckCharm","combat","danger","special","coincidence","clearWood","skill","wx","check","success","fail","successText","failText","checkText","pet","drop","slay","newcard","fabao","wuqi"];
+  const FX_KEYS = ["money","stones","hp","sta","mp","hunger","cult","dao","points","attr","item","npc","flag","ach","card","luckCharm","combat","danger","special","coincidence","clearWood","skill","wx","check","success","fail","successText","failText","checkText","pet","drop","slay","newcard","fabao","wuqi","job"];
   const CHECK_RE = /^[a-zA-Z0-9+\-*/().<>=!\s]{1,80}$/;
   function clampFx(src, depth) {
     const fx = {};
@@ -485,6 +507,7 @@ const AI = (() => {
   }
 
   return { narrate, getCfg, saveCfg, testKey, listModels, judge, failInfo: () => lastFail,
+    __statePrompt: statePrompt, // 测试探针：状态提示词快照
     debugInfo: () => ({ system: SYSTEM, prompt: lastCtx, fail: lastFail }),
     __clamp: (o) => clampFx(o || {}, 0) };
 })();

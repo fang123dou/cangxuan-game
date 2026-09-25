@@ -143,6 +143,7 @@ function attr(k) {
   if (pb > 0) { const ceil = attrCeiling(); v += Math.min(pb, Math.max(0, ceil - v)); } // 天花板条款：不得突破当前境界的单项属性天花板
   if (S.debuff === "weak" && k !== "luck") v *= 0.8;
   if (k === "int" && S.flags.hangoverDay === S.day) v *= 0.5; // 酒剑仙：宿醉次日智力减半
+  if ((k === "int" || k === "agi") && S.flags.sleepDebtDay === S.day) v *= 0.9; // 睡眠不足：智力敏捷先掉（设定·凡俗生存）
   return Math.round(v * 10) / 10;
 }
 /* 职业属性加成合计：Σ(品阶基数[k] × 等级) × 境界系数（凡 ×1 ｜ 灵 ×10 ｜ 玄 ×100 ｜ 圣 ×1000，设定·品阶与加成） */
@@ -260,7 +261,7 @@ function gainAttr(k, amt) {
   return eff;
 }
 /* 修为须有功法托底：无功法时灵气穿体而过，修为不增（每日提示一次） */
-function hasTechnique() { return (S.inv.yinqi || 0) > 0 || (S.inv.quanpu || 0) > 0; }
+function hasTechnique() { return GONGFU.some(g => (S.inv[g.id] || 0) > 0); }
 function noteNoTechnique() {
   if (S.noTechDay === S.day) return;
   S.noTechDay = S.day;
@@ -363,28 +364,64 @@ function addXinmo(n, why) {
     die("心魔噬主。你眼底最后一点清明熄灭时，识海里那声音笑了——用你的嗓音。魔道又多了一具兵源。", "化魔");
   }
 }
-/* 功法解锁反哺：第一次握到功法的那一刻，门就开了 */
-function techniqueUnlockFx(id) {
-  if (id === "yinqi") { gainAttr("int", 0.3); sys(`【功法解锁】《引气诀》入心——吐纳从此有门，智力 +0.3。修为之道，自今日始。`); }
-  else if (id === "quanpu") { gainAttr("str", 0.3); sys(`【功法解锁】《锻骨拳谱》入心——筋骨从此有路，力量 +0.3。修为之道，自今日始。`); }
-  else return;
-  chronicle(`习得功法「${id === "yinqi" ? "引气诀" : "锻骨拳谱"}」`, "evt");
+/* 已入手功法（品阶降序）与当前主修功法：高阶功法入手即为主修，修炼/战斗皆以其为纲（谱系表锁定，不空转） */
+function ownedTechs() {
+  const out = [];
+  for (const g of GONGFU) if ((S.inv[g.id] || 0) > 0) out.push(g);
+  return out.sort((a, b) => b.tier - a.tier || b.cap - a.cap);
 }
-/* 功法里程碑：小成（熟练度过半）与圆满两档反哺——0 阶功法 +0.3/+0.7，1 阶引气诀 +2/+5（对齐设定集「功法反哺」） */
-const TECH_CAPS = { 乱拳: 100, 锻骨拳谱: 100, 引气诀: 200 };
+function mainTechnique() { const o = ownedTechs(); return o.length ? o[0] : null; }
+/* 功法解锁反哺：第一次握到功法的那一刻，门就开了（谱系见 data.js GONGFU 表） */
+function techniqueUnlockFx(id) {
+  const g = GONGFU_BY_ID[id];
+  if (!g) return;
+  const unlock = g.tier >= 3 ? 20 : g.tier === 2 ? 2 : 0.3; // 高阶功法入手即开一重门（对齐反哺档的约 1/10）
+  gainAttr(g.fb.a, unlock);
+  sys(`【功法解锁】《${g.name}》入心——${g.tier >= 1 ? "吐纳从此有门" : "筋骨从此有路"}，${g.fb.an} +${unlock}。修为之道，自今日始。`);
+  chronicle(`习得功法「${g.name}」`, "evt");
+}
+/* 功法里程碑：小成（熟练度过半）与圆满两档反哺——数值按谱系品阶（0阶 +0.3/+0.7，1阶 +2/+5，2阶 +20/+50，对齐设定集「功法反哺」） */
 function checkSkillMilestone(sk) {
   if (!(sk in TECH_CAPS)) return;
   const cap = TECH_CAPS[sk];
-  const fb = sk === "引气诀" ? { a: "int", an: "智力", half: 2, full: 5 } : { a: "str", an: "力量", half: 0.3, full: 0.7 };
+  const g = GONGFU_BY_NAME[sk];
+  const fb = g ? g.fb : { a: "str", an: "力量", half: 0.3, full: 0.7 }; // 乱拳等谱外野路子
+  const tierName = g ? g.tierName : "凡俗武技";
   if ((S.skills[sk] || 0) >= cap / 2 && !S.flags["fb50" + sk]) { S.flags["fb50" + sk] = 1; gainAttr(fb.a, fb.half); sys(`【功法小成】「${sk}」反哺：${fb.an} +${fb.half}。`); }
   if ((S.skills[sk] || 0) >= cap && !S.flags["fb100" + sk]) { S.flags["fb100" + sk] = 1; gainAttr(fb.a, fb.full); sys(`【功法圆满】「${sk}」反哺：${fb.an} +${fb.full}。后续功法灰显封存，待修为突破。`); }
   // 功法自动进阶（设定 v5：连续推演下一阶段功法）——野路子也能磨出正经传承
   if ((S.skills[sk] || 0) >= cap && !S.flags["adv" + sk]) {
     S.flags["adv" + sk] = 1;
-    if (sk === "乱拳" && !S.inv.quanpu) { techniqueUnlockFx("quanpu"); S.inv.quanpu = 1; sys(`【连续推演】野路子走到头，你竟自「乱拳」中推演出正经拳路——《锻骨拳谱》入手。`); }
-    else if (sk === "锻骨拳谱" && !S.inv.yinqi) { techniqueUnlockFx("yinqi"); S.inv.yinqi = 1; sys(`【连续推演】拳谱圆满，气感自生——你从中推演出吐纳之法，《引气诀》入手。`); }
-    else if (sk === "引气诀") sys(`【「引气诀」已推演至尽头——此卷只到此处。更高的传承，要去更高的地方找。】`);
+    if (sk === "乱拳" && !(S.inv.quanpu > 0)) { techniqueUnlockFx("quanpu"); S.inv.quanpu = 1; sys(`【连续推演】野路子走到头，你竟自「乱拳」中推演出正经拳路——《锻骨拳谱》入手。`); }
+    else if (sk === "锻骨拳谱" && !(S.inv.yinqi > 0)) { techniqueUnlockFx("yinqi"); S.inv.yinqi = 1; sys(`【连续推演】拳谱圆满，气感自生——你从中推演出吐纳之法，《引气诀》入手。`); }
+    else if (g && g.tier === 1) { // 灵品功法圆满：此卷已至尽头，求法有路（宗门内门 / 散修按主行求玄品）
+      S.flags.seekGongfu = Math.max(S.flags.seekGongfu || 0, 2);
+      const lead = gongfuLead();
+      sys(`【「${sk}」已推演至尽头——此卷只到此处。】`);
+      if (lead.length) log(`【求法之路】${lead.map(l => `「${l.g.name}」：${l.path}`).join("；")}。`, "dim");
+      else log("【求法之路】玄品功法门槛在灵阶——境界未到，先把修为垒上去。", "dim");
+    } else if (g && g.tier === 2) { // 玄品功法圆满：圣品此界难至，只作风闻伏笔
+      S.flags.seekGongfu = Math.max(S.flags.seekGongfu || 0, 3);
+      sys(`【「${sk}」已推演至尽头。】${GONGFU_RUMORS[Math.floor(Math.random() * GONGFU_RUMORS.length)]}`);
+    }
   }
+}
+/* 求法线索（AI 提示词与离线引擎共用，保证「不空转」）：按境界/宗门/灵根主行检索当前可求的功法与获取路径 */
+function gongfuLead() {
+  const out = [];
+  const has = id => (S.inv[id] || 0) > 0;
+  // 宗门线：外门 1 阶（锻骨境起）与内门 2 阶（灵阶起），随地域宗门而名
+  if (S.sect) {
+    const g1 = GONGFU.find(g => g.line === "sect" && g.tier === 1 && g.sect === S.sect && !has(g.id));
+    if (g1 && S.realm >= g1.gate) out.push({ g: g1, path: `宗门传功：回${S.sect}传功殿（或寻外门教习/执事），请传本门功法` });
+    const g2 = GONGFU.find(g => g.line === "sect" && g.tier === 2 && g.sect === S.sect && !has(g.id));
+    if (g2 && S.realm >= g2.gate) out.push({ g: g2, path: `内门考核：境界已入灵阶，可求${S.sect}内门真传（须宗门缘分打底、经考核剧情）` });
+  }
+  // 散修线：2 阶玄品按灵根主行求得（灵阶门槛）
+  const el = dominantWxEl();
+  const sg = GONGFU.find(g => g.line === "sanxiu" && g.el === el && !has(g.id));
+  if (sg && S.realm >= sg.gate) out.push({ g: sg, path: `散修求法：你的主行为${WX_NAMES[el]}——古籍残卷、遗迹探险、高人指点（城隍庙瞎眼老者一脉），可求得玄品功法` });
+  return out;
 }
 
 /* ================= 界面工具 ================= */
@@ -644,6 +681,13 @@ function setChoices(list) {
     return !ITEM_NEED_RES.some(n => n.re.test(t) && !(S && S.inv[n.id] > 0));
   });
   list = filtered.length || !raw.length ? filtered : raw; // 兜底：过滤后不能为空，防软锁
+  /* 夜间固定选项：无论 AI 给什么，夜里总有「是否修炼」这一问（设定：凡俗睡眠是破绽，灵阶起打坐代眠） */
+  if (S && !S.over && S.slot === 3 && !window.__inCombat && !S._suppressNightTrain
+      && !list.some(c => /破境|斩！|^渡|^笑（|^退避/.test(c.label || ""))
+      && !list.some(c => /打坐|修炼/.test((c.label || "") + (c.hint || "")))) { // 已有修炼类选项则不重复注入；「是否修炼」固定与就寝并列
+    const mt0 = mainTechnique(); const sk0 = mt0 ? mt0.name : "乱拳";
+    list = list.concat({ label: "夜里打坐修炼", hint: S.realm >= 7 ? `${sk0} 熟练+修为，打坐代眠` : `${sk0} 熟练+修为，代价：睡不安稳`, fn: () => runSpecial("nighttrain") });
+  }
   const box = $("#choices"); box.innerHTML = "";
   const keys = ["A", "B", "C", "D", "E", "F", "G", "H"];
   list.forEach((c, i) => {
@@ -1143,7 +1187,7 @@ function renderTab() {
       S.money -= price;
       const had = (S.inv[it.id] || 0) > 0;
       S.inv[it.id] = (S.inv[it.id] || 0) + 1;
-      if (!had && (it.id === "yinqi" || it.id === "quanpu")) techniqueUnlockFx(it.id); // 功法解锁反哺
+      if (!had && (typeof GONGFU_BY_ID !== "undefined") && GONGFU_BY_ID[it.id]) techniqueUnlockFx(it.id); // 功法解锁反哺
       sys(`【购得】${it.name}（-${it.stones ? it.stones + " 灵石" : ""}${price ? price + " 文" : ""}）`);
       chronicle(`购得「${it.name}」`, "evt");
       S.stats.maxMoney = Math.max(S.stats.maxMoney || 0, S.money);
@@ -1203,16 +1247,18 @@ function renderTab() {
     /* ---------- 技能栏（01:19 补丁）：功法与技艺尽聚于此，点击看详情 ---------- */
     const TECH_LIST = [
       { sk: "乱拳", tier: "凡俗武技", el: null, desc: "没师父的野路子拳。谈不上招式，胜在敢打——挨打出真章，磨出来的也是功夫。", src: "开局随身的保命把式；武技磨砺与实战中积攒熟练度。" },
-      { sk: "锻骨拳谱", tier: "0 阶功法", el: "jin", desc: "无名残卷，记载淬体拳路。演练可增长修为与力量，圆满后气感自生，可推演吐纳之法。", src: "传承事件或商铺购得。" },
-      { sk: "引气诀", tier: "1 阶功法", el: "shui", desc: "吐纳引气之法诀。修行效率大增，打坐收益远胜寻常吐纳。", src: "落魄武师一脉的传承；亦可于商铺购得。" },
-    ];
-    const techGot = t => t.sk === "乱拳" ? ("乱拳" in S.skills) : (S.inv[t.sk === "引气诀" ? "yinqi" : "quanpu"] || 0) > 0;
+    ].concat(GONGFU.map(g => ({ sk: g.name, id: g.id, tier: g.tierName, el: g.el, desc: g.desc, src: g.src })));
+    const techGot = t => t.sk === "乱拳" ? ("乱拳" in S.skills) : (S.inv[t.id] || 0) > 0;
     const owned = TECH_LIST.filter(techGot); // 未入手的功法不占栏位：没有就是没有，不预告
     let html = `<div class="p-title"><b>功 法</b><span>修行根本 · 熟练度满反哺五维</span></div>`;
     html += owned.length ? owned.map(t => {
       const cur = Math.round(S.skills[t.sk] || 0), cap = TECH_CAPS[t.sk];
       return `<div class="p-row" data-skill="${t.sk}"><span>${t.sk === "乱拳" ? t.sk : "《" + t.sk + "》"}</span><b>熟练 ${cur}/${cap}</b></div>`;
     }).join("") : `<div class="empty">尚无傍身功法。市井中的落魄武师、古籍摊的残卷、宗门的山门——求武之路，处处可起。</div>`;
+    // 求法之路：有明确线索时给出指引（不空转——玩家知道下一步去哪求）
+    const leads = (typeof gongfuLead === "function") ? gongfuLead() : [];
+    if (leads.length) html += `<div class="pityline" style="margin-top:6px"><span>求法之路：${leads.map(l => `《${l.g.name}》${l.path}`).join(" ｜ ")}</span></div>`;
+    else if (owned.some(t => t.id && Math.round(S.skills[t.sk] || 0) >= TECH_CAPS[t.sk])) html += `<div class="pityline" style="margin-top:6px"><span>功法已至尽头——玄品门槛在灵阶，先把修为垒上去。</span></div>`;
     const life = Object.entries(S.skills).filter(([k]) => !(k in TECH_CAPS)).sort((a, b) => b[1] - a[1]);
     html += `<div class="p-title" style="margin-top:14px"><b>技 艺</b><span>生活技能 · 从业历练积攒</span></div>`;
     html += life.length ? life.map(([k, v]) => `<div class="p-row" data-skill="${esc(k)}"><span>${esc(k)}</span><b>熟练 ${Math.round(v)}/${TECH_CAPS[k] || 100}</b></div>`).join("")
@@ -1223,7 +1269,8 @@ function renderTab() {
       const t = TECH_LIST.find(x => x.sk === k);
       const cap = TECH_CAPS[k] || 100, cur = Math.round(S.skills[k] || 0);
       if (t) {
-        const fb = k === "引气诀" ? { an: "智力", half: 2, full: 5 } : k === "锻骨拳谱" ? { an: "力量", half: 0.3, full: 0.7 } : null;
+        const gd = (typeof GONGFU_BY_NAME !== "undefined") ? GONGFU_BY_NAME[k] : null;
+        const fb = gd ? gd.fb : null;
         showInfo(`「${k}」`, `<span style="color:var(--gold-dim)">${t.tier} · ${t.el ? WX_NAMES[t.el] + "行" : "无行"}</span>`, esc(t.desc),
           `熟练度 ${cur}/${cap} ｜ ${fb ? `反哺：小成(${cap / 2}) ${fb.an} +${fb.half} · 圆满(${cap}) ${fb.an} +${fb.full}` : "圆满之时，野路子也能自推演出正经传承"} ｜ ${esc(t.src)}`);
       } else {
@@ -1688,8 +1735,12 @@ function night() {
   if (hasSpecial("bigu")) { /* 辟谷 */ }
   else if (S.hunger >= 100) { S.hp -= 4; S.base.con = Math.max(1, Math.round((S.base.con - 0.05) * 100) / 100); computeMods(); lines.push(`<span style="color:var(--blood-hi)">胃里像有把钝刀在搅。气血 -4，长期饥饿啃食根本——体质 -0.05。</span>`); }
   else if (S.hunger > 85) { S.hp -= 2; lines.push(`【极度饥饿】啃噬着你。气血 -2。`); }
-  if (S.hunger < 70 && S.hp > 0) S.hp = Math.min(hpMax(), S.hp + attr("con") * 0.8 * (1 + (S.mods.hpRegenP || 0) / 100) * (S.ill && (S.ill.name === "风寒" || S.ill.name === "中暑") ? 0.5 : 1)); // 风寒/中暑：夜间气血回复减半
-  S.sta = staMax() * (S.mods.staRegen >= 2 ? 1 : 0.85);
+  if (S.hunger < 70 && S.hp > 0) S.hp = Math.min(hpMax(), S.hp + attr("con") * 0.8 * (1 + (S.mods.hpRegenP || 0) / 100) * (S.ill && (S.ill.name === "风寒" || S.ill.name === "中暑") ? 0.5 : 1) * ((S.flags.meditateTonight && S.realm < 7) ? 0.5 : 1)); // 风寒/中暑：夜间气血回复减半 ｜ 夜里修炼睡不安稳：再减半（灵阶起打坐代眠，无妨）
+  const sleepDebt = S.flags.meditateTonight && S.realm < 7;
+  if (sleepDebt) S.flags.sleepDebtDay = S.day + 1; // 睡眠不足：明日智力敏捷 -10%
+  delete S.flags.meditateTonight;
+  if (S.flags.sleepDebtDay && S.flags.sleepDebtDay <= S.day) delete S.flags.sleepDebtDay;
+  S.sta = staMax() * (S.mods.staRegen >= 2 ? 1 : sleepDebt ? 0.7 : 0.85);
   if (S.realm >= 5 && S.mp < mpMax()) S.mp = Math.min(mpMax(), S.mp + mpMax() * 0.3 * (S.linggen === "za" ? 1.5 : 1)); // 杂灵根：回蓝 ×1.5
   if (S.debuff === "weak") { S.debuffDays = (S.debuffDays || 0) - 1; if (S.debuffDays <= 0) { S.debuff = null; lines.push(`元气终于回转，手脚重新有了力气。`); } }
   if (S.flags.ateHot) { S.foodStreak++; S.flags.ateHot = false; if (S.foodStreak >= 100) gainAch("hotRice"); } // 设定集：连续百日热食
@@ -1974,9 +2025,9 @@ function applyCore(fx) {
     if (d !== fx.attr[k]) note(`${nm} 账面 +${fx.attr[k]}，高基数磨砺递减/加成折算实得 +${d}`);
   }
   if (fx.item) { const m = /^([a-zA-Z]+):(-?\d+)$/.exec(fx.item); if (m) { const id = m[1], n = +m[2];
-    if (n > 0 && (id === "yinqi" || id === "quanpu") && !(S.inv[id] > 0)) techniqueUnlockFx(id); // 首次获得功法：解锁反哺
+    if (n > 0 && GONGFU_BY_ID[id] && !(S.inv[id] > 0)) techniqueUnlockFx(id); // 首次获得功法：解锁反哺（谱系通用）
     const prev = S.inv[id] || 0; S.inv[id] = Math.max(0, prev + n); const d = S.inv[id] - prev;
-    const nm = {wood:"柴薪",heimu:"黑馍",mianao:"棉袄",shuinang:"水囊",quhanTang:"驱寒汤",huoxiangSan:"藿香正气散",jieduSan:"解毒散",jinchuangYao:"金疮药",shengjiang:"生姜",gancao:"甘草",chaidao:"柴刀",jiansui:"玄铁剑穗",quanpu:"《锻骨拳谱》",yinqi:"《引气诀》",juqiDan:"聚气丹"}[id] || id;
+    const nm = (GONGFU_BY_ID[id] ? `《${GONGFU_BY_ID[id].name}》` : null) || {wood:"柴薪",heimu:"黑馍",mianao:"棉袄",shuinang:"水囊",quhanTang:"驱寒汤",huoxiangSan:"藿香正气散",jieduSan:"解毒散",jinchuangYao:"金疮药",shengjiang:"生姜",gancao:"甘草",chaidao:"柴刀",jiansui:"玄铁剑穗",juqiDan:"聚气丹"}[id] || id;
     if (d === 0 && n !== 0) { note(`${nm} 无实际变动（行囊中没有可扣的存量）`); }
     else { const s = `${nm} ${d > 0 ? "+" : ""}${d}`; out.push(s); (d > 0 ? G : L).push(s); } } }
   if (fx.clearWood) { S.inv.wood = 0; }
@@ -2026,8 +2077,10 @@ function applyCore(fx) {
   if (!S.echoLine) {
     if (fx.item) {
       const id = (String(fx.item).split(":")[0]) || "";
-      if (["jiansui", "yinqi", "quanpu", "mianao", "chaidao"].includes(id) && S.inv[id] > 0)
-        S.echoLine = `怀里新得的${{ jiansui: "玄铁剑穗", yinqi: "《引气诀》", quanpu: "《锻骨拳谱》", mianao: "老棉袄", chaidao: "柴刀" }[id]}，你还不敢相信是真的。`;
+      const gf = GONGFU_BY_ID[id];
+      if (gf && S.inv[id] > 0) S.echoLine = `怀里新得的《${gf.name}》，你还不敢相信是真的。`;
+      else if (["jiansui", "mianao", "chaidao"].includes(id) && S.inv[id] > 0)
+        S.echoLine = `怀里新得的${{ jiansui: "玄铁剑穗", mianao: "老棉袄", chaidao: "柴刀" }[id]}，你还不敢相信是真的。`;
     }
     if (!S.echoLine && fx.npc) for (const n in fx.npc) {
       if (fx.npc[n] >= 15) { S.echoLine = `${n}的事，你还搁在心里。`; break; }
@@ -2096,21 +2149,23 @@ function injectTraining(choices) {
 function trainingEvent() {
   S.lastTrainDay = S.day;
   S.sta = Math.max(0, S.sta - 2);
-  const hasGongfa = (S.inv.yinqi || 0) > 0 || (S.inv.quanpu || 0) > 0;
-  const sk = S.inv.yinqi ? "引气诀" : S.inv.quanpu ? "锻骨拳谱" : "乱拳";
+  const ownedGf = GONGFU.filter(g => (S.inv[g.id] || 0) > 0).sort((a, b) => b.tier - a.tier);
+  const hasGongfa = ownedGf.length > 0;
+  const sk = hasGongfa ? ownedGf[0].name : "乱拳";
   const cap = TECH_CAPS[sk] || 100;
   const roll = Math.random() * 100;
   if (hasGongfa && roll < 40) {
     /* 功法精研（多线同修：兼修两门时各得 ÷n，摸鱼圣手减罚为 ÷√n） */
     const wxm = wxTrainMult(sk);
-    const bothTech = (S.inv.yinqi || 0) > 0 && (S.inv.quanpu || 0) > 0;
+    const bothTech = ownedGf.length >= 2;
     const split = bothTech ? (hasSpecial("moyu") ? 1 / Math.SQRT2 : 0.5) : 1;
     const inc = Math.round((4 + Math.random() * 4) * (1 + (S.mods.trainP || 0) / 100) * wxm * split * 10) / 10;
-    const tTechs = bothTech ? ["引气诀", "锻骨拳谱"] : [sk];
+    const tTechs = bothTech ? ownedGf.slice(0, 2).map(g => g.name) : [sk];
     for (const t of tTechs) { S.skills[t] = Math.min(TECH_CAPS[t] || 100, (S.skills[t] || 0) + inc); checkSkillMilestone(t); }
-    gainCult(6 * wxm); gainAttr("str", 0.05);
-    log(`【历练 · 功法精研】你寻了处背风的石窝，把「${bothTech ? "引气诀与锻骨拳谱" : sk}」一式一式拆开重练。雪沫被劲气卷起，又纷纷落下。`, "dim");
-    sys(`【功法精研】${bothTech ? "双功同修（" + (hasSpecial("moyu") ? "摸鱼减罚 ÷√2" : "多线分心 ÷2") + "），各" : "「" + sk + "」"}熟练度 +${inc}（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}），修为 +${Math.round(6 * wxm)}，力量 +0.05。`);
+    const cultBase = { 0: 4, 1: 6, 2: 10, 3: 18, 4: 36 }[ownedGf[0].tier] || 6; // 高阶功法吞吐灵气更盛
+    gainCult(cultBase * wxm); gainAttr("str", 0.05);
+    log(`【历练 · 功法精研】你寻了处背风的石窝，把「${bothTech ? tTechs.join("与") : sk}」一式一式拆开重练。雪沫被劲气卷起，又纷纷落下。`, "dim");
+    sys(`【功法精研】${bothTech ? "双功同修（" + (hasSpecial("moyu") ? "摸鱼减罚 ÷√2" : "多线分心 ÷2") + "），各" : "「" + sk + "」"}熟练度 +${inc}（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}），修为 +${Math.round(cultBase * wxm)}，力量 +0.05。`);
   } else if (roll < (hasGongfa ? 80 : 70)) {
     /* 五维打熬 */
     const pickAttr = [["str", "力量"], ["agi", "敏捷"], ["int", "智力"], ["con", "体质"]][Math.floor(Math.random() * 4)];
@@ -2186,16 +2241,55 @@ function runSpecial(sp, fx) {
     S.hp = Math.min(hpMax(), S.hp + 8);
     log("药香里，你长长舒了一口气。气血 +8。", "good");
     advanceSlot();
-  } else if (sp === "train") {    const sk = S.inv.yinqi ? "引气诀" : S.inv.quanpu ? "锻骨拳谱" : "乱拳";
-    const cap = TECH_CAPS[sk] || 100;
+  } else if (sp === "neimenKaohe") {
+    /* 宗门内门考核（功法谱系 · 宗门线 2 阶）：灵阶弟子演武较技，胜则授内门真传 */
+    const g2 = (typeof GONGFU !== "undefined") ? GONGFU.find(g => g.line === "sect" && g.tier === 2 && g.sect === S.sect && !(S.inv[g.id] > 0)) : null;
+    if (!g2) { advanceSlot(); return; }
+    combat({ name: `${S.sect}内门教习`, power: 60, canBeg: false, desc: "（内门考核，点到为止）" }, res => {
+      if (res === "win" || res === "cheated") {
+        S.inv[g2.id] = 1; techniqueUnlockFx(g2.id); computeMods();
+        sys(`【内门考核 · 过】你自此是${S.sect}内门弟子——传功长老亲授《${g2.name}》。`);
+        log("教习收势，拱手：「好俊的根基。内门有你一号。」", "good");
+        try { chronicle(`通过${S.sect}内门考核，得授《${g2.name}》`, "quest"); } catch (e) {}
+        gainAch("quest1");
+      } else {
+        log("教习摇摇头：「火候差一线。回去再练练——明年台子还在这。」", "hurt");
+      }
+      if (!S.over) advanceSlot();
+    });
+  } else if (sp === "train") {
+    /* 演练：以所持最高阶功法为主修；兼持多门则两功同修（多线分心各得半份）——谱系通用（data.js GONGFU） */
+    const owned = GONGFU.filter(g => (S.inv[g.id] || 0) > 0).sort((a, b) => b.tier - a.tier);
+    const tTechs = owned.length ? owned.slice(0, 2).map(g => g.name) : ["乱拳"];
+    const sk = tTechs[0];
+    const mainG = GONGFU_BY_NAME[sk];
     const wxm = wxTrainMult(sk); // 功法五行修炼速度 = 1 + 亲和×0.005；亲和 <10 强行修炼减半
-    const bothTech = (S.inv.yinqi || 0) > 0 && (S.inv.quanpu || 0) > 0;
+    const bothTech = tTechs.length >= 2;
     const split = bothTech ? (hasSpecial("moyu") ? 1 / Math.SQRT2 : 0.5) : 1; // 摸鱼圣手：多线惩罚 ÷n 变 ÷√n
     const inc = Math.round(8 * (1 + (S.mods.trainP || 0) / 100) * wxm * split * 10) / 10;
-    const tTechs = bothTech ? ["引气诀", "锻骨拳谱"] : [sk];
     for (const t of tTechs) { S.skills[t] = Math.min(TECH_CAPS[t] || 100, (S.skills[t] || 0) + inc); checkSkillMilestone(t); }
-    gainCult((S.inv.yinqi ? 7 : 4) * wxm); gainAttr("str", 0.05); S.sta = Math.max(0, S.sta - 2);
-    log(`你依着口诀演练「${bothTech ? "引气锻骨合击" : sk}」（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}）${bothTech ? "——多线分心，各得半份" + (hasSpecial("moyu") ? "（摸鱼减罚 ÷√2）" : "") : ""}。${TECH_EL[sk] ? `此功法属${WX_NAMES[TECH_EL[sk]]}行，你的亲和 ${wxOf()[TECH_EL[sk]] || 0}${wxm < 1 ? "——亲和不足，事倍功半。" : wxm > 1 ? "——亲和加持，修行顺势。" : "。"}` : "气血随招式流转。"}`, "dim");
+    const cultBase = mainG ? { 0: 4, 1: 7, 2: 12, 3: 20, 4: 40 }[mainG.tier] || 4 : 4; // 高阶功法吞吐灵气更盛
+    gainCult(cultBase * wxm); gainAttr("str", 0.05); S.sta = Math.max(0, S.sta - 2);
+    log(`你依着口诀演练「${bothTech ? tTechs.join("·") + "合参" : sk}」（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}）${bothTech ? "——多线分心，各得半份" + (hasSpecial("moyu") ? "（摸鱼减罚 ÷√2）" : "") : ""}。${TECH_EL[sk] ? `此功法属${WX_NAMES[TECH_EL[sk]]}行，你的亲和 ${wxOf()[TECH_EL[sk]] || 0}${wxm < 1 ? "——亲和不足，事倍功半。" : wxm > 1 ? "——亲和加持，修行顺势。" : "。"}` : "气血随招式流转。"}`, "dim");
+    advanceSlot();
+  } else if (sp === "nighttrain") { // 夜间固定选项：打坐修炼（设定：灵阶起打坐替代睡眠，故灵阶起无睡眠代价）
+    const owned = ownedTechs();
+    const tTechs = owned.length ? owned.slice(0, 2).map(g => g.name) : ["乱拳"];
+    const sk = tTechs[0];
+    const wxm = sk === "乱拳" ? 1 : wxTrainMult(sk);
+    const bothTech = tTechs.length >= 2;
+    const split = bothTech ? (hasSpecial("moyu") ? 1 / Math.SQRT2 : 0.5) : 1;
+    const inc = Math.round(6 * (1 + (S.mods.trainP || 0) / 100) * wxm * split * 10) / 10;
+    for (const t of tTechs) { S.skills[t] = Math.min(TECH_CAPS[t] || 100, (S.skills[t] || 0) + inc); checkSkillMilestone(t); }
+    const gd = GONGFU_BY_NAME[sk];
+    const cultBase = gd ? { 0: 2, 1: 5, 2: 9, 3: 15, 4: 30 }[gd.tier] || 2 : 2;
+    gainCult(cultBase * wxm);
+    gainAttr(gd ? gd.fb.a : "str", 0.03);
+    const ling = S.realm >= 7;
+    if (ling) S.mp = Math.min(mpMax(), S.mp + mpMax() * 0.2 * (S.linggen === "za" ? 1.5 : 1)); // 灵阶：打坐代眠，法力亦随吐纳回补
+    S.flags.meditateTonight = 1; // 睡不安稳（灵阶起无妨）
+    log(`万籁俱寂。你就着残雪月色行功，吐纳绵绵，直至东方泛白。`, "dim");
+    sys(`【夜修】${bothTech ? tTechs.join("·") + "合参（" + (hasSpecial("moyu") ? "摸鱼减罚 ÷√2" : "多线分心 ÷2") + "），各" : "「" + sk + "」"}熟练度 +${inc}（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}），修为 +${Math.round(cultBase * wxm)}${ling ? "。灵阶之躯，打坐即是睡眠——今夜无亏。" : "。代价：睡不安稳——今夜恢复减半，明日睡眠不足（智力敏捷 -10%、体力不满）。"}`);
     advanceSlot();
   } else if (sp === "gamble") {
     S.stats.gambles++;
@@ -2420,7 +2514,8 @@ function resolveCombat(enemy, mode, onEnd) {
   const eHpMax = Math.max(5, Math.round(eCon * TABLES.COMBAT.hpPerCon * (1 + enemyTier * TABLES.COMBAT.tierHpScale))); // 与玩家同式：体质×10×境界放缩
   const myStr = attr("str"), myAgi = attr("agi"), myInt = attr("int"), myLuck = attr("luck");
   const atkP = attackPower(); // 攻击力（=战力）：不运功法时，每记普攻皆此数之伤
-  const technique = (S.inv.yinqi > 0) && (S.inv.quanpu > 0) ? "引气锻骨合击" : (S.inv.yinqi > 0) ? "引气诀" : (S.inv.quanpu > 0) ? "锻骨拳" : null;
+  const mt = mainTechnique();
+  const technique = (S.inv.yinqi > 0) && (S.inv.quanpu > 0) ? "引气锻骨合击" : mt ? mt.name : null; // 主修功法随谱系（高阶入手即为战术核心）
   const skillMult = TABLES.COMBAT.skillMultBase + S.realm * TABLES.COMBAT.skillMultPerRealm; // 技能伤害：功法加成，浮动不大
   const fl = TABLES.JUDGE.dmgFloat;
   const seen = enemy.power / Math.max(1, myP) <= 1.2; // 可见规则：超 1.2 倍则气血只显状态（设定：深不可测）

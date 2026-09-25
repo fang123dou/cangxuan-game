@@ -410,6 +410,63 @@ const GM = (() => {
         };
       },
     },
+    /* ---------- 功法谱系获取剧情（功法谱系见 data.js GONGFU）：求法不空转 ----------
+       宗门线：锻骨境外门弟子领本门 1 阶根本法；灵阶弟子内门考核领 2 阶内篇。
+       散修线：灵品功法圆满后（seekGongfu=2），按灵根主行于古籍摊/自悟求得玄品。 */
+    {
+      id: "sect_chuangong",
+      cond: c => S.sect && S.realm >= 3 && (typeof GONGFU !== "undefined") && GONGFU.some(g => g.line === "sect" && g.tier === 1 && g.sect === S.sect && !(S.inv[g.id] > 0)),
+      w: () => 9,
+      build() {
+        const g = GONGFU.find(g => g.line === "sect" && g.tier === 1 && g.sect === S.sect && !(S.inv[g.id] > 0));
+        const rg = (typeof regionOf === "function") ? regionOf(S.place) : null;
+        const rn = (rg && rg.sect && rg.sect.name === S.sect) ? rg.sect.npc : "传功执事";
+        return {
+          scene: `${S.sect}传功殿前，${rn}拦住你：「境界已至锻骨，筋骨里却还没有本门心法——空有一身气力，灵气从哪条脉走？」他上下打量你，「按门规，外门弟子锻骨境可领一部根本法。随我来。」`,
+          choices: [
+            { label: `拜领《${g.name}》`, hint: `${g.tierName} · ${WX_NAMES[g.el]}行。${g.desc}`, fx: { item: g.id + ":1", dao: 1, npc: { [rn]: 5 } } },
+            { label: "再想想", hint: "功法择一而修，慎重点没错。", fx: { dao: 0.2 } },
+          ],
+        };
+      },
+    },
+    {
+      id: "sect_neimen",
+      cond: c => S.sect && S.realm >= 7 && (typeof GONGFU !== "undefined") && GONGFU.some(g => g.line === "sect" && g.tier === 2 && g.sect === S.sect && !(S.inv[g.id] > 0)),
+      w: () => 8,
+      build() {
+        const g = GONGFU.find(g => g.line === "sect" && g.tier === 2 && g.sect === S.sect && !(S.inv[g.id] > 0));
+        const rg = (typeof regionOf === "function") ? regionOf(S.place) : null;
+        const rn = (rg && rg.sect && rg.sect.name === S.sect) ? rg.sect.npc : "内门执事";
+        return {
+          scene: `${S.sect}的钟声响了九响——内门考核开台。${rn}找到你：「灵阶弟子可入内门一试。过了，本门真传《${g.name}》有你一部。」台下外门弟子黑压压一片，都看向你。`,
+          choices: [
+            { label: "登台应考", hint: `演武较技：胜则入内门，领《${g.name}》（${g.tierName} · ${WX_NAMES[g.el]}行）。`, fx: { special: "neimenKaohe" } },
+            { label: "再备几日", hint: "内门考核年年有，不必急于一时。", fx: { dao: 0.3 } },
+          ],
+        };
+      },
+    },
+    {
+      id: "sanxiu_qiufa",
+      cond: c => !S.sect && (S.flags.seekGongfu || 0) >= 2 && S.realm >= 7 && (typeof GONGFU !== "undefined") && GONGFU.some(g => g.line === "sanxiu" && g.el === dominantWxEl() && !(S.inv[g.id] > 0)),
+      w: () => 8,
+      build() {
+        const el = dominantWxEl();
+        const g = GONGFU.find(g => g.line === "sanxiu" && g.el === el && !(S.inv[g.id] > 0));
+        return {
+          scene: `功法推演至尽头已有些时日。城里古籍摊的跛脚掌柜招呼你：「客官身上有股子${WX_NAMES[el]}气——前几日收了半匣前朝残卷，里头或有你求的东西。三百文，淘不淘随你。」`,
+          choices: [
+            { label: "花三百文淘残卷", hint: `玄品功法《${g.name}》或在此匣中。钱货两讫，童叟无欺。`, disabled: S.money < 300, fx: { money: -300, item: g.id + ":1" } },
+            { label: "凭自身感悟硬推", hint: "判定：以圆满功法为基，自衍下一阶。败则灵气逆行、经脉受损。", fx: { check: "int*6+luck*3+d30>60",
+                success: { item: g.id + ":1" }, fail: { hp: -15, dao: -1 },
+                successText: `七日七夜的推演在某一刻豁然贯通——《${g.name}》的字句，竟与你胸中推演严丝合缝。`,
+                failText: "灵气逆行，你哇地喷出一口血——越阶强推，经脉吃不住。" } },
+            { label: "离开", hint: "机缘不等人，但也不会一夜跑光。", fx: { dao: 0.2 } },
+          ],
+        };
+      },
+    },
 
   ];
 

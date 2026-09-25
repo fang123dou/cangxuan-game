@@ -53,7 +53,7 @@ const QU = (() => {
       name: "主线：求武之路", type: "main",
       desc: "活下来只是第一步。这世道，没有拳脚与气感的穷人死得最快——寻一门功法传承，择一而修，踏入武道。",
       auto: () => (S.quests.done || []).includes("mq_survive"),
-      objectives: [{ text: () => "获得功法传承，择一而修（《引气诀》/《锻骨拳谱》）", done: () => (S.inv.yinqi || 0) > 0 || (S.inv.quanpu || 0) > 0 }],
+      objectives: [{ text: () => "获得功法传承，择一而修（《引气诀》/《锻骨拳谱》）", done: () => (typeof GONGFU !== "undefined") ? GONGFU.some(g => (S.inv[g.id] || 0) > 0) : ((S.inv.yinqi || 0) > 0 || (S.inv.quanpu || 0) > 0) }],
       reward: { points: 30 },
       doneText: "吐纳入体、拳意入骨——从这一刻起，你不再是任人拿捏的凡骨。武道之门，正式踏入。",
     },
@@ -89,7 +89,7 @@ const QU = (() => {
       auto: () => !!S.flags.qingyan,
       objectives: [
         { text: () => `踏入锻骨境（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 3 },
-        { text: () => `与${curSect().npc}结成同门之谊（缘分 ${S.npc[curSect().npc] || 0} / 20）`, done: () => (S.npc[curSect().npc] || 0) >= 20 },
+        { get npc() { return curSect().npc; }, need: 20, text: () => `与${curSect().npc}结成同门之谊（缘分 ${S.npc[curSect().npc] || 0} / 20）`, done: () => (S.npc[curSect().npc] || 0) >= 20 },
       ],
       reward: { points: 80, attr: { con: 0.3 }, dao: 2 },
       get doneText() { return `外门名册上，你的名字被朱笔圈了一道——${curSect().name}的资源、功法、师承，从此向你敞开一线。`; },
@@ -113,7 +113,7 @@ const QU = (() => {
       desc: "老丐头咳得像要散架，却总把最暖的位置让给你。他没什么可求的——只想要一个肯听他讲完故事的人。",
       offer: () => (S.npc["老丐头"] || 0) >= 20,
       offerText: "老丐头招你坐到火边，欲言又止：「娃儿，陪我……听我说段陈年旧事？」",
-      objectives: [{ text: () => `老丐头的托付（缘分 ${S.npc["老丐头"] || 0} / 60）`, done: () => (S.npc["老丐头"] || 0) >= 60 }],
+      objectives: [{ npc: "老丐头", need: 60, text: () => `老丐头的托付（缘分 ${S.npc["老丐头"] || 0} / 60）`, done: () => (S.npc["老丐头"] || 0) >= 60 }],
       reward: { points: 30, cult: 10, flag: "laogaitouWish" },
       doneText: "老丐头浑浊的眼睛亮了：「好，好。」他从怀里摸出半张发黄的纸——是半张旧地图。",
     },
@@ -124,7 +124,7 @@ const QU = (() => {
       offerText: "周先生撂下药杵，忽然道：「小子，识得几味药了？答得上来，老夫教你点真东西。」",
       objectives: [
         { text: () => `识药技艺（${Math.round(S.skills["识药"] || 0)} / 50）`, done: () => (S.skills["识药"] || 0) >= 50 },
-        { text: () => `周先生的认可（缘分 ${S.npc["周先生"] || 0} / 40）`, done: () => (S.npc["周先生"] || 0) >= 40 },
+        { npc: "周先生", need: 40, text: () => `周先生的认可（缘分 ${S.npc["周先生"] || 0} / 40）`, done: () => (S.npc["周先生"] || 0) >= 40 },
       ],
       reward: {},
       rewardFn: () => {
@@ -136,9 +136,9 @@ const QU = (() => {
     sq_xihou: {
       name: "支线：细猴的归处", type: "side",
       desc: "那个比你还瘦的小贼，手快，眼神更快。他偷的不是钱，是活路。给他指条道，或给他一顿饭。",
-      offer: () => (S.npc["小贼细猴"] || 0) !== 0,
+      offer: () => (S.npc["小贼细猴"] || 0) >= 10, // 须先「放了他」结下善缘；若搜身结仇（缘分为负），他躲你还来不及，不会来投奔
       offerText: "细猴缩在墙根，见你来了也不跑——他在等你开口。",
-      objectives: [{ text: () => `细猴的信服（缘分 ${S.npc["小贼细猴"] || 0} / 40）`, done: () => (S.npc["小贼细猴"] || 0) >= 40 }],
+      objectives: [{ npc: "小贼细猴", need: 40, text: () => `细猴的信服（缘分 ${S.npc["小贼细猴"] || 0} / 40）`, done: () => (S.npc["小贼细猴"] || 0) >= 40 }],
       reward: { points: 20, dao: 1, item: "heimu:3" },
       doneText: "细猴把三个黑馍揣进怀里，朝你重重点头：「哥，以后你的口袋，我罩着。」",
     },
@@ -192,7 +192,7 @@ const QU = (() => {
         offer: () => profReqMet(P) && !hasProfession(pid),
         offerText: P.offerText,
         objectives: [
-          { text: () => `${P.master}的认可（缘分 ${S.npc[P.master] || 0} / 40）`, done: () => (S.npc[P.master] || 0) >= 40 },
+          { npc: P.master, need: 40, text: () => `${P.master}的认可（缘分 ${S.npc[P.master] || 0} / 40）`, done: () => (S.npc[P.master] || 0) >= 40 },
           { text: () => { const st = (((S.quests || {}).acceptDay) || {})["pq_" + pid]; return `跟随见习（${st == null ? 0 : Math.min(2, S.day - st)} / 2 日）`; }, done: () => { const st = (((S.quests || {}).acceptDay) || {})["pq_" + pid]; return st != null && S.day - st >= 2; } },
         ],
         reward: {},
@@ -206,7 +206,7 @@ const QU = (() => {
      名号每世随机生成（masterOf）；前置职业熟练度登顶即瓶颈——瓶颈时云游师傅随机现身；
      须手动承接支线方可进阶/转轨（熟练度满绝不自动进阶，固定身份已废除）。 */
   const dynDayObj = id => ({ text: () => { const st = (((S.quests || {}).acceptDay) || {})[id]; return `跟随见习（${st == null ? 0 : Math.min(2, S.day - st)} / 2 日）`; }, done: () => { const st = (((S.quests || {}).acceptDay) || {})[id]; return st != null && S.day - st >= 2; } });
-  const dynBondObj = (pid, need) => ({ text: () => `${masterOf(pid)}的认可（缘分 ${S.npc[masterOf(pid)] || 0} / ${need}）`, done: () => (S.npc[masterOf(pid)] || 0) >= need });
+  const dynBondObj = (pid, need) => ({ get npc() { return masterOf(pid); }, need, text: () => `${masterOf(pid)}的认可（缘分 ${S.npc[masterOf(pid)] || 0} / ${need}）`, done: () => (S.npc[masterOf(pid)] || 0) >= need });
   DEFS.dyn_tiejiang = {
     name: "支线：入行 · 铁匠学徒", type: "side", giver: "云游铁匠",
     desc: "炉边缺个打杂的。器火一脉与药庐不同——师傅云游四方，名号每世不同，遇见了就是缘。",
@@ -390,11 +390,31 @@ const QU = (() => {
     q.lastNudgeDay = S.day;
     return list[0];
   }
-  function questAct(id) { // 催办/AI 选项的「推进」出口
+  /* 登门拜访的演出文案（推进缘分目标的实质动作） */
+  const VISIT_LINES = [
+    n => `你专程去寻「${n}」，陪他说了半日话，顺手把杂活揽了过来。`,
+    n => `你给「${n}」捎了些吃食。对方嘴上不说，眼神暖和了几分。`,
+    n => `你替「${n}」跑了一趟腿，回来时天已擦黑。`,
+    n => `「${n}」见你登门有些意外，末了还是留你多坐了一会儿。`,
+  ];
+  function questAct(id) { // 催办/AI 选项的「推进」出口：花一个时段，实质推进（01:55 修复——此前只打印进度，任务永远原地踏步）
     const d = DEFS[id];
     if (!d) { advanceSlot(); return; }
     if (id === "mq_qingyan" && !S.flags.qy_step1 && S.day >= 11) { startTrials(); return; }
     if (!touched(id)) { activate(id); advanceSlot(); return; }
+    // 有未完成的「缘分」目标：登门拜访、出力相助——这是玩家主动花时段推进，记作特殊剧情（不受日常一次之限），且必定有进展
+    const bond = d.objectives.find(o => o.npc && (() => { try { return !o.done(); } catch (e) { return false; } })());
+    if (bond) {
+      const before = S.npc[bond.npc] || 0;
+      addNpc(bond.npc, 8, { special: true });
+      const after = S.npc[bond.npc] || 0;
+      log(VISIT_LINES[Math.floor(Math.random() * VISIT_LINES.length)](bond.npc), "dim");
+      log(`（${bond.npc} 缘分 ${Math.round(before)} → ${Math.round(after)}，目标 ${bond.need}）`, "dim");
+      try { chronicle(`为「${d.name.replace(/^主线：|^支线：|^凡品任务：/, "")}」奔走：拜访${bond.npc}`, "quest"); } catch (e) {}
+      try { check(); } catch (e) {} // 缘分到档当场结算完成
+      advanceSlot();
+      return;
+    }
     sys(`【卷宗】「${d.name}」当前进度：`);
     d.objectives.forEach(o => { try { log(`${o.done() ? "☑" : "☐"} ${o.text()}`, "dim"); } catch (e) {} });
     advanceSlot();

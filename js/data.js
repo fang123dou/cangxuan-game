@@ -410,8 +410,63 @@ const WX_ELS = ["jin", "mu", "shui", "huo", "tu"];
 const WX_NAMES = { jin: "金", mu: "木", shui: "水", huo: "火", tu: "土" };
 /* 生克：金克木、木克土、土克水、水克火、火克金 */
 const WX_KE = { jin: "mu", mu: "tu", tu: "shui", shui: "huo", huo: "jin" };
+/* ============ 功法谱系（设定集第二章 · 功法品级与反哺） ============
+   品阶与修炼门槛（设定原文）：0 阶凡俗无门槛 ｜ 1 阶灵品·凡阶后期 ｜ 2 阶玄品·灵阶以上 ｜ 3 阶圣品·玄阶以上 ｜ 4 阶仙品·圣阶以上
+   反哺（小成 50% / 圆满 100%）：0 阶 +0.3/+0.7 ｜ 1 阶 +2/+5 ｜ 2 阶 +20/+50 ｜ 3 阶 +100/+250 ｜ 4 阶 +500/+1000
+   谱系三源：宗门（五域小宗门各一脉，入册后传功/内门考核授予）、散修（按灵根主行求法）、推演（野路子圆满自衍）。
+   3 阶以上此界难至（设定：圣域称尊、仙品不出世）——只作风闻伏笔，不入可获得池。 */
+const GONGFU = [
+  /* —— 起手无门无派 —— */
+  { id: "quanpu", name: "锻骨拳谱", tier: 0, tierName: "0 阶功法", el: "jin", cap: 100, fb: { a: "str", an: "力量", half: 0.3, full: 0.7 }, gate: 0, line: "start",
+    desc: "无名残卷，记载淬体拳路。演练可增长修为与力量，圆满后气感自生，可推演吐纳之法。", src: "传承事件或商铺购得。" },
+  { id: "yinqi", name: "引气诀", tier: 1, tierName: "1 阶功法", el: "shui", cap: 200, fb: { a: "int", an: "智力", half: 2, full: 5 }, gate: 5, line: "start",
+    desc: "吐纳引气之法诀。修行效率大增，打坐收益远胜寻常吐纳。", src: "落魄武师一脉的传承；亦可于商铺购得。" },
+  /* —— 宗门 1 阶（外门传功，入册后境界至锻骨境可领） —— */
+  { id: "gfqingyan", name: "青岩炼形诀", tier: 1, tierName: "1 阶功法", el: "tu", cap: 200, fb: { a: "con", an: "体质", half: 2, full: 5 }, gate: 3, line: "sect", sect: "青岩门",
+    desc: "青岩门外门根本法：引山间石气淬体，稳字当头——进境不快，却最不易出岔子。", src: "青岩门传功殿授予外门弟子。" },
+  { id: "gfhuilang", name: "苍狼血勇图", tier: 1, tierName: "1 阶功法", el: "huo", cap: 200, fb: { a: "str", an: "力量", half: 2, full: 5 }, gate: 3, line: "sect", sect: "灰狼图腾殿",
+    desc: "灰狼图腾殿图腾武法：以血勇引狼灵入体，愈战愈勇，极夜冻风里气血自热。", src: "灰狼图腾殿授予见习勇士。" },
+  { id: "gfluoxia", name: "落霞剑引", tier: 1, tierName: "1 阶功法", el: "jin", cap: 200, fb: { a: "str", an: "力量", half: 2, full: 5 }, gate: 3, line: "sect", sect: "落霞剑宗",
+    desc: "落霞剑宗外门剑引：剑势如晚霞铺天，连绵不绝——中州剑宗的体面，在一招一式的规矩里。", src: "落霞剑宗传剑阁授予外门弟子。" },
+  { id: "gfkuquan", name: "枯泉禅心咒", tier: 1, tierName: "1 阶功法", el: "shui", cap: 200, fb: { a: "con", an: "体质", half: 2, full: 5 }, gate: 3, line: "sect", sect: "枯泉寺",
+    desc: "枯泉寺禅法：心如枯泉，波澜不兴——暑热风沙不侵，杂念不生。", src: "枯泉寺知客僧授予沙弥。" },
+  { id: "gfbaimiao", name: "青蛊养灵术", tier: 1, tierName: "1 阶功法", el: "mu", cap: 200, fb: { a: "int", an: "智力", half: 2, full: 5 }, gate: 3, line: "sect", sect: "百苗巫寨",
+    desc: "百苗巫寨巫法：以蛊养灵、以灵饲蛊，瘴林之中如鱼得水。", src: "百苗巫寨寨老授予巫徒。" },
+  /* —— 宗门 2 阶内篇（内门考核后授予，门槛：灵阶） —— */
+  { id: "gfqingyannei", name: "青岩内篇", tier: 2, tierName: "2 阶功法", el: "tu", cap: 400, fb: { a: "con", an: "体质", half: 20, full: 50 }, gate: 7, line: "sect", sect: "青岩门",
+    desc: "青岩门内门真传：石气入骨，不动如山——外门弟子穷其一生也摸不到的半页。", src: "青岩门内门考核后授予。" },
+  { id: "gfhuilangnei", name: "狼灵战典", tier: 2, tierName: "2 阶功法", el: "huo", cap: 400, fb: { a: "str", an: "力量", half: 20, full: 50 }, gate: 7, line: "sect", sect: "灰狼图腾殿",
+    desc: "图腾殿内殿战典：狼灵附体，血勇化煞——北原崇拜强者，这卷就是强者的凭证。", src: "灰狼图腾殿内殿试炼后授予。" },
+  { id: "gfluoxianei", name: "落霞神剑谱", tier: 2, tierName: "2 阶功法", el: "jin", cap: 400, fb: { a: "str", an: "力量", half: 20, full: 50 }, gate: 7, line: "sect", sect: "落霞剑宗",
+    desc: "落霞剑宗内门剑谱：一剑既出，霞光千里——剑宗的招牌，从来只靠剑说话。", src: "落霞剑宗内门考核后授予。" },
+  { id: "gfkuquannei", name: "枯荣禅经", tier: 2, tierName: "2 阶功法", el: "shui", cap: 400, fb: { a: "con", an: "体质", half: 20, full: 50 }, gate: 7, line: "sect", sect: "枯泉寺",
+    desc: "枯泉寺镇寺禅经：一枯一荣，生死轮转——僧人圆寂前口传心授，不落文字。", src: "枯泉寺方丈座前悟得。" },
+  { id: "gfbaimiaonei", name: "万蛊朝天术", tier: 2, tierName: "2 阶功法", el: "mu", cap: 400, fb: { a: "int", an: "智力", half: 20, full: 50 }, gate: 7, line: "sect", sect: "百苗巫寨",
+    desc: "巫寨秘传：万蛊朝宗，瘴气为衣——寨老之位，历来从这部术里出。", src: "百苗巫寨蛊祭大典后授予。" },
+  /* —— 散修 2 阶玄品（按灵根主行求法：古籍残卷、遗迹、高人指点） —— */
+  { id: "gfruijin", name: "锐金吐纳功", tier: 2, tierName: "2 阶功法", el: "jin", cap: 400, fb: { a: "str", an: "力量", half: 20, full: 50 }, gate: 7, line: "sanxiu",
+    desc: "玄品散修功法：吐纳如刀，金气淬脉——锋锐有余，绵长不足，是散修的拼命路数。", src: "古籍残卷、上古遗迹或高人指点，按主行求得。" },
+  { id: "gfqingmu", name: "青木长春功", tier: 2, tierName: "2 阶功法", el: "mu", cap: 400, fb: { a: "con", an: "体质", half: 20, full: 50 }, gate: 7, line: "sanxiu",
+    desc: "玄品散修功法：木气绵长，生机不绝——活得久，才熬得出头。", src: "古籍残卷、上古遗迹或高人指点，按主行求得。" },
+  { id: "gfxuanshui", name: "玄水真解", tier: 2, tierName: "2 阶功法", el: "shui", cap: 400, fb: { a: "int", an: "智力", half: 20, full: 50 }, gate: 7, line: "sanxiu",
+    desc: "玄品散修功法：水性至柔，绕行百脉——灵台澄澈，悟道先行。", src: "古籍残卷、上古遗迹或高人指点，按主行求得。" },
+    { id: "gflihuo", name: "离火熔金录", tier: 2, tierName: "2 阶功法", el: "huo", cap: 400, fb: { a: "str", an: "力量", half: 20, full: 50 }, gate: 7, line: "sanxiu",
+    desc: "玄品散修功法：离火淬体，熔金锻骨——猛则猛矣，须防灼伤经脉。", src: "古籍残卷、上古遗迹或高人指点，按主行求得。" },
+  { id: "gfhoutu", name: "厚土藏形诀", tier: 2, tierName: "2 阶功法", el: "tu", cap: 400, fb: { a: "con", an: "体质", half: 20, full: 50 }, gate: 7, line: "sanxiu",
+    desc: "玄品散修功法：厚土载物，藏形养晦——散修持身保命的正道。", src: "古籍残卷、上古遗迹或高人指点，按主行求得。" },
+];
+const GONGFU_BY_ID = {}; for (const g of GONGFU) GONGFU_BY_ID[g.id] = g;
+const GONGFU_BY_NAME = {}; for (const g of GONGFU) GONGFU_BY_NAME[g.name] = g;
 /* 功法五行：亲和决定该行功法修炼速度；乱拳是凡俗野路子，无行 */
-const TECH_EL = { 锻骨拳谱: "jin", 引气诀: "shui" };
+const TECH_EL = { 乱拳: null }; for (const g of GONGFU) TECH_EL[g.name] = g.el;
+/* 功法熟练度上限（game.js 与各引擎共用） */
+const TECH_CAPS = { 乱拳: 100 }; for (const g of GONGFU) TECH_CAPS[g.name] = g.cap;
+/* 谱系风闻（3 阶圣品 / 4 阶仙品——此界难至，AI 推演可作伏笔素材，绝不可直接授予） */
+const GONGFU_RUMORS = [
+  "圣品功法只闻其名：十大上宗镇宗传承，非真传弟子不得一观。",
+  "上古洞天或藏仙品残卷，然洞天接连崩毁，入者十死无生。",
+  "三千年前「赤霄大劫」前有圣品功法现世的记载，此后只余传说。",
+];
 /* 敌方五行（按名取，默认土行） */
 const ENEMY_EL = {
   "林中的冬狼": "shui", "野狗": "tu", "饿疯的野狗": "tu",
