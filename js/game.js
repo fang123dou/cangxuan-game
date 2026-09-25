@@ -2550,7 +2550,7 @@ function closeEnd() { $("#endModal").classList.remove("open"); }
 /* ================= 存档 / 读档 ================= */
 const SAVE_KEYS = { auto: "cangxuan_save_auto", 1: "cangxuan_save_1", 2: "cangxuan_save_2", 3: "cangxuan_save_3" };
 /* 存档结构版本：改动 S/META 字段结构时 +1，并在 migrateSave 里补对应迁移步骤 */
-const SAVE_VER = 8;
+const SAVE_VER = 9;
 const SLOT_WORDS = ["晨", "午", "昏", "夜"];
 function saveSummary(s) { return `第${s.world}世 · ${s.name} · ${s.day >= 31 ? "春" : "冬"}第${s.day}日${SLOT_WORDS[s.slot] || ""} · ${REALM_NAMES[s.realm]}`; }
 function canSave() { return !!(S && !S.over && !gmBusy && !window.__inCombat); }
@@ -2588,6 +2588,13 @@ function migrateSave(d) {
     d.S.bondDaily = d.S.bondDaily || {};
     d.S.wound = d.S.wound || null; d.S.ill = d.S.ill || null;
     v = 8;
+  }
+  if (v < 9) { // v8 → v9：首世开局身份补录——随机惨境落定后身份/地点 UI 曾恒显「青石城 · 乞丐」，按开局背景回填 S.iden
+    if (!d.S.iden && d.S.flags && d.S.flags.opening && OP_IDEN[d.S.flags.opening]) {
+      d.S.iden = OP_IDEN[d.S.flags.opening];
+      d.S.place = d.S.place || d.S.iden.place;
+    }
+    v = 9;
   }
   d.v = SAVE_VER;
   return d;
@@ -2737,6 +2744,14 @@ const OPENINGS = [
     ],
   },
 ];
+/* 首世惨境背景 → 身份对照：开局落定即写入 S.iden，身份/地点 UI 随随机结果同步，不再恒显「青石城 · 乞丐」 */
+const OP_IDEN = {
+  pomiao:   { grade: "狱", name: "破庙乞丐", desc: "雪夜破庙，高烧三天，排行最末的乞丐。", note: "「向死而生」此局本该死于当夜", place: "东荒 · 云州 · 青石城 · 城南破庙" },
+  laofang:  IDENTITIES.find(i => i.name === "死囚"),
+  heikuang: IDENTITIES.find(i => i.name === "矿奴"),
+  jitan:    IDENTITIES.find(i => i.name === "祭品"),
+  yasong:   { grade: "狱", name: "流犯", desc: "流放押送的队伍遇袭死绝，枷锁钥匙挂在死人腰上。", note: "「戴枷而行」脚程与体面，皆无", place: "东荒 · 云州 · 出城雪道" },
+};
 function startLife() {
   $("#log").innerHTML = "";
   gmBusy = false;
@@ -2744,7 +2759,8 @@ function startLife() {
     askName(() => {
     const op = OPENINGS[Math.floor(Math.random() * OPENINGS.length)]; // 惨境背景随机；际遇由 AI 生成
     S.flags.opening = op.id;
-    S.place = op.place; // 随机开局落定，地点随之同步（顶栏常显）
+    S.iden = OP_IDEN[op.id] || null; // 身份随开局落定（首世此前恒为 null，UI 只能回退显示「青石城 · 乞丐」）
+    S.place = (S.iden && S.iden.place) || op.place; // 随机开局落定，地点随之同步（顶栏常显）
     log(`<div class="scene-head"><div class="place">${op.place}</div>
       <h1>${op.title}</h1><div class="sub">仙陨历三万年 · 冬 · 大雪 —— 灵气潮汐三百年一涨一落，你穿越之时，正值涨潮之初。</div></div>`);
     [
