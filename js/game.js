@@ -503,7 +503,7 @@ function gongfuLead() {
 function castHere() {
   if (typeof WORLDCAST === "undefined") return [];
   const rg = (typeof regionOf === "function") ? regionOf(S.place) : null;
-  const key = rg ? rg.key : "yunzhou";
+  const key = rg ? (rg.key === "sihai" ? "sea" : rg.key) : "yunzhou"; // 角色谱中海域名录记为 "sea"
   return WORLDCAST.filter(c => c.region === key);
 }
 function castMet(id) { return !!S.flags["metcast_" + id]; }
