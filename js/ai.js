@@ -163,7 +163,7 @@ const AI = (() => {
       五行亲和: WX_ELS.map(e => WX_NAMES[e] + (wxOf()[e] || 0)).join("/") + `（主行:${WX_NAMES[dominantWxEl()]}）`,
       状态: `气血${Math.round(S.hp)}/${hpMax()} 体力${Math.round(S.sta)} 饱食${Math.round(100 - S.hunger)} 道心${Math.round(S.daoXin)} 心魔${Math.round(S.xinmo || 0)}/100(${xinmoStage().name}) 战力${combatPower()} 康健${injuryTier().name} 药蚀${Math.round(S.yaoshi || 0)}/100`,
       伤病: `疾病:${S.ill ? S.ill.name + "（余" + S.ill.days + "日，" + S.ill.desc + "）" : "无"} 伤势:${typeof woundText === "function" ? woundText() : "未知"}${(() => { const d = Object.keys(S.darkWounds || {}).filter(k => S.darkWounds[k] > 0); return d.length ? " 暗伤:" + d.map(k => k + "-" + S.darkWounds[k]).join("、") : ""; })()}`,
-      药石: "对症药品（商铺有售，行囊可用）：驱寒汤→风寒、藿香正气散→中暑、解毒散→丹毒侵脉、金疮药/跌打药→外伤回血、生姜→风寒病程-1日、甘草→调和（药蚀-2）；寻医诊治 fx.special=\"seeDoctor\"（30文，病除+气血+8）",
+      药石: "对症药品（商铺有售，行囊可用）：驱寒汤→风寒、藿香正气散→中暑、解毒散→丹毒侵脉、金疮药/跌打药→外伤回血、生姜→风寒病程-1日、驱瘴草→瘴毒侵体（南岭瘴雨/山雾之夜可防瘴）、甘草→调和（药蚀-2）；寻医诊治 fx.special=\"seeDoctor\"（30文，病除+气血+8）",
       钱财: `${S.money}文/${S.stones}灵石/${S.points}万象点`,
       词条: cardNames.join("、") || "无", 物品: JSON.stringify(S.inv),
       职业: S.job || "无", 主职业: (typeof mainJobTitle === "function") ? mainJobTitle() : (S.job || "无"), 灵根: linggen().name, 称号: (META.titles || []).map(t => TITLES[t].name + (S.wornTitle === t ? "(佩戴中)" : "")).join("、") || "无", 系统等级: "Lv" + ((typeof META !== "undefined" && META.sysLv) || 1), 缘分: npcs, 伏笔标记: flags, 近期剧情脉络: recent,
@@ -206,7 +206,7 @@ const AI = (() => {
         const d = QU.DEFS[id];
         if (!d) continue;
         const objs = d.objectives.map(o => (() => { try { return o.done(); } catch (e) { return false; } })());
-        parts.push(`${d.type === "main" ? "主线" : "支线"}「${d.name}」(${objs.filter(Boolean).length}/${d.objectives.length} 目标)`);
+        parts.push(`${d.type === "main" ? "主线" : d.type === "xian" ? "仙品" : "支线"}「${d.name}」(${objs.filter(Boolean).length}/${d.objectives.length} 目标)`);
       }
       const offers = QU.offers().filter(o => o.kind === "quest");
       if (offers.length) parts.push(`可接任务: ${offers.map(o => o.id).join("、")}`);

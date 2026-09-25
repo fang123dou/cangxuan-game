@@ -467,6 +467,41 @@ const GM = (() => {
         };
       },
     },
+    /* ---------- 仙品任务「雪泥鸿爪」兜底剧情（第十一章：只留痕，不点破） ----------
+       寻信物 → 了断去留；两场景串起目标二、三，AI 在线时亦可自行演绎（fx.flag 同名） */
+    {
+      id: "xian_relic",
+      cond: c => (typeof QU !== "undefined") && QU.isActive("xian_henji") && !S.flags.xianRelic,
+      w: () => 9,
+      build() {
+        return {
+          scene: `城隍庙后墙塌了一角。积雪里露出半截石匣，匣身没有锁，却严丝合缝——你拂开雪，看见匣盖上刻着一圈纹样：不属于这一朝，不属于任何一朝。四周很静，静得连风声都绕开了这里。`,
+          choices: [
+            { label: "取出匣中信物", hint: "一片非金非玉的残牌。它不该在这里。", fx: { flag: "xianRelic", coincidence: 1, dao: -0.5 } },
+            { label: "请瞎眼老者过目再取", hint: "他摸过的老物件比你见过的多。", disabled: !S.flags.metBlind, fx: { flag: "xianRelic", coincidence: 1, npc: { 瞎眼老者: 8 } } },
+            { label: "把雪推回去，当没看见", hint: "有些东西，看见了就是债。", fx: { dao: 1 } },
+          ],
+        };
+      },
+    },
+    {
+      id: "xian_follow",
+      cond: c => (typeof QU !== "undefined") && QU.isActive("xian_henji") && !!S.flags.xianRelic && !S.flags.xianChoice,
+      w: () => 9,
+      build() {
+        return {
+          scene: `夜里。你枕边的残牌微微发烫——不是错觉。窗外没有脚印，门闩没有动过，可你就是知道：有「什么」来过了，又走了，只在桌上留了一小撮灰，灰里埋着三枚灵石。`,
+          choices: [
+            { label: "收下灵石，把残牌留在桌上", hint: "两讫。谁也不欠谁。", fx: { flag: "xianChoice", stones: 3, dao: 0.5 } },
+            { label: "把残牌收进怀里，谁也不给", hint: "既然找上你，就是你的因果。", fx: { flag: "xianChoice", luckCharm: 1, coincidence: 1 } },
+            { label: "对着空屋子问一句「是谁」", hint: "判定：问，未必有答；但问本身会被记住。", fx: { check: "int*7+luck*3+d30>55",
+                success: { flag: "xianChoice", coincidence: 1, dao: 1 }, fail: { flag: "xianChoice", hp: -5 },
+                successText: "没有回答。但那一瞬，你识海里掠过一句没有来源的话：「跑好你自己的。」",
+                failText: "没有回答。当夜你做了个很长的梦，醒来时太阳穴突突地疼。" } },
+          ],
+        };
+      },
+    },
 
   ];
 

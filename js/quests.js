@@ -22,6 +22,7 @@ const QU = (() => {
     if (r.item) { const m = /^([a-zA-Z]+):(-?\d+)$/.exec(r.item); if (m) { S.inv[m[1]] = Math.max(0, (S.inv[m[1]] || 0) + (+m[2])); notes.push(`获得物品`); } }
     if (r.npc) for (const n in r.npc) { addNpc(n, r.npc[n], { special: true }); notes.push(`${n} 缘分 ${r.npc[n] > 0 ? "+" : ""}${r.npc[n]}`); } // 任务酬谢属特殊剧情：不受「日常行为每日一次」之限
     if (r.flag) S.flags[r.flag] = 1;
+    if (r.luckCharm) { S.tempLuckDays = Math.max(S.tempLuckDays, r.luckCharm * 2); notes.push("气运临时 +1（数日）"); } // 伏笔兑现：吉星之兆（与 fx 白名单同源）
     computeMods();
     return notes.join("，");
   }
@@ -105,6 +106,22 @@ const QU = (() => {
       ],
       reward: { points: 120, cult: 40, luckCharm: 1 },
       doneText: "凡阶六境，你一境一境走过来了。抬头看——灵泉之上，还有玄、圣，还有那件传说中的东西，和藏在它后面的影子。路，才刚刚开始。",
+    },
+
+    /* ===== 仙品任务（第十一章 · 隐藏设定） =====
+       伏笔碎屑（coincidence）攒够三笔，尘封的卷宗自行浮现——只留痕、不点破、不命名。
+       被动触发、不受催办（仙品不按常理出牌）；目标靠剧情际遇推进，无拜访动作。 */
+    xian_henji: {
+      name: "仙品任务：雪泥鸿爪", type: "xian", passive: true,
+      desc: "那些「巧合」连在一起，就不像巧合了。破庙的雪、城隍庙的老墙、行迹古怪的贵人——鸿爪划过雪泥，总要留下点什么。去找到它。",
+      auto: () => (S.flags.coincidence || 0) >= 3,
+      objectives: [
+        { text: () => `碎屑上的纹路（巧合之痕 ${Math.min(S.flags.coincidence || 0, 3)} / 3）`, done: () => (S.flags.coincidence || 0) >= 3 },
+        { text: () => "寻得「不该存在的东西」", done: () => !!S.flags.xianRelic },
+        { text: () => "为它做个了断", done: () => !!S.flags.xianChoice },
+      ],
+      rewardFn: () => { S.flags.xianTouched = 1; return applyReward({ points: 100, luckCharm: 1 }); },
+      doneText: "信物离手的那一刻，你忽然觉得有什么视线移开了——又好像从来没有过。卷宗合上，这一页没有署名。",
     },
 
     /* ===== 支线 ===== */
@@ -304,9 +321,10 @@ const QU = (() => {
     q.active.push(id);
     q.stamp[id] = S.day; q.acceptDay[id] = S.day; q.prog[id] = progOf(id);
     const d = DEFS[id];
-    sys(`【任务·${d.type === "main" ? "主线" : "支线"}】「${d.name}」已录入天道卷宗。`);
+    const typeLabel = d.type === "main" ? "主线" : d.type === "xian" ? "仙品" : "支线";
+    sys(`【任务·${typeLabel}】「${d.name}」已录入天道卷宗。`);
     log(d.desc, "dim");
-    try { chronicle(`承接${d.type === "main" ? "主线" : "支线"}「${d.name}」`, "quest"); } catch (e) {}
+    try { chronicle(`承接${typeLabel}「${d.name}」`, "quest"); } catch (e) {}
   }
 
   function complete(id) {
@@ -328,6 +346,7 @@ const QU = (() => {
     const q = ensure();
     q.active = q.active.filter(x => x !== id);
     if (!q.failed.includes(id)) q.failed.push(id);
+    if (id === "mq_qingyan") S.flags.qy_failDay = S.day; // 宗门应试失败日记账：五日后可补考（防主线死锁）
     sys(`【任务失败】「${DEFS[id].name}」——${reason}`);
     try { chronicle(`「${DEFS[id].name}」未成——${String(reason).slice(0, 30)}`, "quest-fail"); } catch (e) {}
     renderPanel();
@@ -400,7 +419,7 @@ const QU = (() => {
   function questAct(id) { // 催办/AI 选项的「推进」出口：花一个时段，实质推进（01:55 修复——此前只打印进度，任务永远原地踏步）
     const d = DEFS[id];
     if (!d) { advanceSlot(); return; }
-    if (id === "mq_qingyan" && !S.flags.qy_step1 && S.day >= 11) { startTrials(); return; }
+    if (id === "mq_qingyan" && !S.flags.qingyan && !S.flags.qy_za_reject && S.day >= 11 && (!S.flags.qy_step1 || isFailed("mq_qingyan"))) { startTrials(); return; }
     if (!touched(id)) { activate(id); advanceSlot(); return; }
     // 有未完成的「缘分」目标：登门拜访、出力相助——这是玩家主动花时段推进，记作特殊剧情（不受日常一次之限），且必定有进展
     const bond = d.objectives.find(o => o.npc && (() => { try { return !o.done(); } catch (e) { return false; } })());
@@ -433,10 +452,11 @@ const QU = (() => {
     if (!S || S.over) return [];
     ensure();
     const list = [];
-    // 主线行动：拜入出生地所属小宗门（五域各一，三关应试）
-    if (isActive("mq_qingyan") && !S.flags.qy_step1 && S.day >= 11) {
+    // 主线行动：拜入出生地所属小宗门（五域各一，三关应试）；失败后五日可补考（三关重考，防主线死锁）
+    const qyRetry = isFailed("mq_qingyan") && !S.flags.qingyan && !S.flags.qy_za_reject && S.day >= ((S.flags.qy_failDay || 0) + 5);
+    if ((isActive("mq_qingyan") && !S.flags.qy_step1 && S.day >= 11) || qyRetry) {
       list.push({
-        kind: "act", type: "main", label: `前往${curSect().name}山门，闯三关应试`,
+        kind: "act", type: "main", label: qyRetry ? `重整旗鼓，再闯${curSect().name}山门（补考三关）` : `前往${curSect().name}山门，闯三关应试`,
         hint: S.linggen === "za"
           ? "测灵碑择根而取——杂灵根灵光不过尺，此路多半不通。但不走这一趟，心不甘。"
           : "测灵碑、问心、演武。败则今年无缘。",
@@ -477,6 +497,9 @@ const QU = (() => {
   /* ---------- 小宗门三关（主线演出，宗门随出生地地域） ---------- */
   async function startTrials() {
     S.flags.qy_tried = 1; // 应试足迹：主线第一目标「前往山门」就此勾销（成败另说）
+    S.flags.qy_step1 = 0; S.flags.qy_step2 = 0; S.flags.qy_step3 = 0; // 补考：三关清零重考
+    const qq = ensure(); // 补考即重录卷宗：失败态转回进行态（否则过了三关也拿不到「拜入」任务的完成结算）
+    if (qq.failed.includes("mq_qingyan")) { qq.failed = qq.failed.filter(x => x !== "mq_qingyan"); if (!qq.active.includes("mq_qingyan")) qq.active.push("mq_qingyan"); }
     sys(`【你踏上了${curSect().name}山门前的九百级石阶。测灵碑如剑倒插，碑前已排了百余凡人。】`);
     log("外门执事瞥你一眼：「排队。灵光过三尺者，留。」", "dim");
     await lingTest();

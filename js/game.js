@@ -91,7 +91,8 @@ function newLife() {
 /* ================= 属性与修正 ================= */
 function computeMods() {
   const m = { strP:0, agiP:0, intP:0, conP:0, allP:0, luckFlat:0, hungerR:0, foodP:0,
-    hpRegenP:0, staRegen:1, moneyP:0, socialP:0, trainP:0, dmgP:0, escapeP:0, pityR:0, defP:0 };
+    hpRegenP:0, staRegen:1, moneyP:0, socialP:0, trainP:0, dmgP:0, escapeP:0, pityR:0, defP:0,
+    coldRes:0, heatRes:0, poiRes:0, xinmoRes:0, yaoRes:0 }; // 抗性五件：冻寒/暑热/瘴毒/心魔/药蚀（身份特性与词条实装处）
   for (const id in S.cards) {
     const c = findCard(id); if (!c) continue;
     const mod = c.mod || {};
@@ -100,6 +101,7 @@ function computeMods() {
   const lg = LINGGENS[S.linggen]; // 变异灵根的天生特性
   if (lg && lg.mods) for (const k in lg.mods) m[k] = (m[k] || 0) + lg.mods[k];
   for (const tid of (META.titles || [])) { const t = TITLES[tid]; if (t && t.mod) for (const k in t.mod) m[k] = (m[k] || 0) + t.mod[k]; } // 称号效果永续
+  if (S.iden && typeof NOTE_FX !== "undefined" && NOTE_FX[S.iden.name]) { const fx = NOTE_FX[S.iden.name]; for (const k in fx) m[k] = (m[k] || 0) + fx[k]; } // 身份特性：note 里的承诺在此落地（拒绝纯文案）
   for (const pid in (S.professions || {})) { // 职业特性（设定补丁 v5·3.4/3.5）：凡品判定随级成长，灵品起为常驻规则
     const P = (typeof PROFESSIONS !== "undefined") && PROFESSIONS[pid];
     if (!P || !P.traitMod) continue;
@@ -165,6 +167,7 @@ function mpMax() { const v = S.realm >= 6 ? attr("int") * 10 : S.realm >= 5 ? at
 function combatPower() {
   const a = attr("str") + attr("agi") + attr("int") * 0.8 + attr("con") * 0.6;
   let p = a * (1 + S.realm * TABLES.REALMS.realmDmgPerRealm) * (1 + (S.mods.dmgP || 0) / 100);
+  if (S.iden && S.iden.name === "死囚" && S.hp < hpMax() * 0.3) p *= 1.15; // 身份「死囚」向死而生·伪：濒死战力 +15%（命格之火，先于伤病饥饿折算）
   if (S.hunger > 70) p *= 0.9; // 饥饿 -10%（设定·状态浮动）
   if (S.hunger > 85) p *= 0.78; // 极度饥饿再扣（累计约 -30%）：眼冒金星，手脚发软
   p *= 1 - injuryTier().pen / 100; // 设定：伤病四级压常态战力
@@ -332,6 +335,7 @@ function takeDrug(id, cultAmt, hpAmt) {
   if (hasProfession("yaoshi")) shi = Math.round(shi * 0.5); // 灵品药师「坐堂」：识得药性，丹毒不侵（药蚀减半）
   if (hasSpecial("zhichang")) shi = 0; // 直肠子食神：药蚀免疫
   else if (hasSpecial("huachang") || hasSpecial("baidu")) shi *= 0.5; // 拉得快，毒留不住
+  if (shi > 0 && (S.mods.yaoRes || 0) > 0) shi = Math.max(1, Math.round(shi * (1 - Math.min(50, S.mods.yaoRes) / 100))); // 身份特性「药圃岁月/药性亲和」：药蚀累积减免
   S.yaoshi = Math.min(100, Math.max(0, (S.yaoshi || 0) + shi));
   let effMult = mult;
   if (S.yaoshi >= D.absorbPenaltyAt) effMult *= D.absorbPenalty; // 药蚀 30+：丹药吸收率下降
@@ -356,6 +360,7 @@ function addXinmo(n, why) {
   if (n > 0 && hasTitle("panshiT")) n = Math.max(1, Math.round(n * 0.7)); // 称号「磐石道心」：心魔抗性 +30%
   if (n > 0 && hasSpecial("daoxin")) n = Math.max(1, Math.round(n * 0.7)); // 磐石道心（词条）：心魔增速 -30%
   if (n > 0 && hasSpecial("mindshield")) n = Math.max(1, Math.ceil(n * 0.5)); // 如何呢又能怎：心魔类侵扰效果 -50%
+  if (n > 0 && (S.mods.xinmoRes || 0) > 0) n = Math.max(1, Math.round(n * (1 - Math.min(60, S.mods.xinmoRes) / 100))); // 身份特性「佛性/见惯生死/锁情印」等：心魔累积减免
   const before = xinmoStage().name;
   S.xinmo = Math.min(100, Math.max(0, (S.xinmo || 0) + n));
   const after = xinmoStage().name;
@@ -749,6 +754,7 @@ const ITEM_INFO = {
   jieduSan: { name: "解毒散", tier: "凡药", desc: "以毒攻毒的解毒散。点开服之——对症【丹毒侵脉】立即痊愈，兼化药蚀 -10；无病则清热解毒（气血 +3，药蚀 -5）。" },
   jinchuangYao: { name: "金疮药", tier: "凡药", desc: "外伤圣药，比跌打药更猛。点开敷用（气血 +10，重伤之人尤宜）。" },
   shengjiang: { name: "生姜", tier: "药草", desc: "辛温解表的药草，生食辛辣。点开嚼服——【风寒】病程 -1 日；无病则暖胃（气血 +1）。" },
+  quzhangcao: { name: "驱瘴草", tier: "药草", desc: "南岭十万大山特有的苦涩药草，焚烧或含服皆可辟瘴。点开服之——对症【瘴毒侵体】立即痊愈；无病则清神（气血 +1）。带着它，瘴雨、山雾之夜瘴毒不侵。" },
   gancao: { name: "甘草", tier: "药草", desc: "调和百药的甜草根。点开嚼服（气血 +2，药蚀 -2）。" },
   chaidao: { name: "豁口柴刀", tier: "凡物", desc: "一柄磨得只剩半个豁口的柴刀。砍柴效率 +1，关键时刻也能当兵器使。" },
   jiansui: { name: "玄铁剑穗", tier: "来历不明", desc: "一截乌沉沉的剑穗，非金非铁，坠手冰凉。识货的人见了会变色——它不该出现在一个乞丐手里。" },
@@ -981,6 +987,7 @@ function renderTab() {
     if (S.inv.jieduSan) inv.push(["jieduSan", `解毒散 ×${S.inv.jieduSan}`]);
     if (S.inv.jinchuangYao) inv.push(["jinchuangYao", `金疮药 ×${S.inv.jinchuangYao}`]);
     if (S.inv.shengjiang) inv.push(["shengjiang", `生姜 ×${S.inv.shengjiang}`]);
+    if (S.inv.quzhangcao) inv.push(["quzhangcao", `驱瘴草 ×${S.inv.quzhangcao}`]);
     if (S.inv.gancao) inv.push(["gancao", `甘草 ×${S.inv.gancao}`]);
     if (S.inv.chaidao) inv.push(["chaidao", "豁口柴刀"]);
     if (S.inv.jiansui) inv.push(["jiansui", "玄铁剑穗"]);
@@ -1070,6 +1077,11 @@ function renderTab() {
         if (S.ill && S.ill.name === "风寒") { S.ill.days = Math.max(0, S.ill.days - 1); sys(`【生姜】辛温解表——【风寒】病程 -1 日${S.ill.days <= 0 ? "，就此痊愈" : `（余 ${S.ill.days} 日）`}。`); if (S.ill.days <= 0) S.ill = null; }
         else { S.hp = Math.min(hpMax(), S.hp + 1); log("姜辣冲鼻，胃里一暖。气血 +1。", "good"); }
       })});
+      if (id === "quzhangcao" && (S.inv.quzhangcao || 0) > 0) acts.push({ label: "服之（对症瘴毒侵体）", fn: closeAnd(() => {
+        S.inv.quzhangcao--;
+        if (S.ill && S.ill.name === "瘴毒侵体") { sys(`【驱瘴草】苦涩的草汁入喉，胸肺间的湿浊丝丝化去——【瘴毒侵体】痊愈。`); S.ill = null; }
+        else { S.hp = Math.min(hpMax(), S.hp + 1); log("草汁清苦，神智一爽。气血 +1。", "good"); }
+      })});
       if (id === "gancao" && (S.inv.gancao || 0) > 0) acts.push({ label: "嚼服（气血 +2，药蚀 -2）", fn: closeAnd(() => {
         S.inv.gancao--;
         S.hp = Math.min(hpMax(), S.hp + 2); S.yaoshi = Math.max(0, (S.yaoshi || 0) - 2);
@@ -1135,7 +1147,7 @@ function renderTab() {
         return `<div class="q-obj${done ? " done" : ""}">${done ? "✓ " : "· "}${esc(o.text())}</div>`;
       }).join("");
       return `<div class="quest-main${d.type === "side" ? " side" : ""}" data-qid="${id}">
-        <div class="p-title"><b>${d.type === "main" ? "主 线" : "支 线"}</b><span>${esc(d.name)}</span></div>
+        <div class="p-title"><b>${d.type === "main" ? "主 线" : d.type === "xian" ? "仙 品" : "支 线"}</b><span>${esc(d.name)}</span></div>
         ${objs}<div class="q-desc">${esc(d.desc)}</div></div>`;
     };
     let html = q.active.length ? q.active.map(renderOne).join("") : `<div class="empty">卷宗空白。去活着，事会来找你。</div>`;
@@ -1145,7 +1157,7 @@ function renderTab() {
     body.innerHTML = html;
     body.querySelectorAll("[data-qid]").forEach(el => el.onclick = () => {
       const d = QU.DEFS[el.dataset.qid];
-      showInfo(`「${d.name}」`, `<span style="color:var(--gold-dim)">${d.type === "main" ? "主线任务" : "支线任务"}</span>`,
+      showInfo(`「${d.name}」`, `<span style="color:var(--gold-dim)">${d.type === "main" ? "主线任务" : d.type === "xian" ? "仙品任务" : "支线任务"}</span>`,
         esc(d.desc), "目标随你的行动自动推进，完成即发放奖励。");
     });
   } else if (curTab === 3) {
@@ -1712,7 +1724,7 @@ function night() {
   const ssCut = hasSpecial("shuishen") ? 0.7 : 1; // 睡神附体：眠中自警，夜间寒气/暑热之苦 -30%
   const cold = S.weather === "大雪" || S.weather === "风雪" || S.flags.coldSnap;
   if (cold && !S.inv.mianao && !S.flags.fireTonight) {
-    const chk = attr("con") * 10 + attr("luck") * 4;
+    const chk = attr("con") * 10 + attr("luck") * 4 + (S.mods.coldRes || 0); // 冻寒抗性（雪原弃工/烽堡病卒）：判定 +10
     if (chk < 45 + (S.flags.coldSnap ? 15 : 0)) {
       const dmg = Math.max(1, Math.round((2 + Math.floor(Math.random() * 2)) * (hasTitle("xiaoqiang") ? 0.9 : 1) * ssCut)); // 称号「小强」：环境伤害 -10%
       S.hp -= dmg; S.daoXin -= 0.5;
@@ -1724,7 +1736,7 @@ function night() {
   const rgNight = regionOf(S.place);
   const hot = rgNight.hazard === "heat" && ["酷热", "热风", "沙暴"].includes(S.weather);
   if (hot && !S.inv.shuinang && !S.flags.fireTonight) {
-    const chk = attr("con") * 10 + attr("luck") * 4;
+    const chk = attr("con") * 10 + attr("luck") * 4 + (S.mods.heatRes || 0); // 暑热抗性（沙海弃儿）：判定 +10
     if (chk < 50) {
       const dmg = Math.max(1, Math.round((2 + Math.floor(Math.random() * 2)) * (hasTitle("xiaoqiang") ? 0.9 : 1) * ssCut));
       S.hp -= dmg; S.daoXin -= 0.5;
@@ -1732,10 +1744,21 @@ function night() {
       if (Math.random() < 0.3 && (!S.ill || S.ill.name !== "中暑")) setIll("中暑", 2, "酷热伤津，夜间气血回复减半"); // 受热成疾
     } else lines.push(`你把身体贴在帐篷背阴的一面，硬扛过了这夜的闷热。`);
   }
+  /* 瘴气地域（南岭）：瘴雨/山雾之夜无驱瘴草且未生火，瘴毒侵体、可能成疾（百毒不侵免疫） */
+  const miasma = rgNight.hazard === "miasma" && ["瘴雨", "山雾"].includes(S.weather);
+  if (miasma && !hasSpecial("baidu") && !(S.inv.quzhangcao > 0) && !S.flags.fireTonight) {
+    const chk = attr("con") * 10 + attr("luck") * 4 + (S.mods.poiRes || 0); // 瘴毒抗性（瘴林逃难人/病骨）：判定 +
+    if (chk < 50) {
+      const dmg = Math.max(1, Math.round((2 + Math.floor(Math.random() * 2)) * (hasTitle("xiaoqiang") ? 0.9 : 1) * ssCut));
+      S.hp -= dmg; S.daoXin -= 0.5;
+      lines.push(`<span style="color:var(--blood-hi)">湿瘴顺着呼吸往肺里钻，皮肤泛起细密的痒疹。你烧着冷汗熬到天亮。气血 -${dmg}。</span>`);
+      if (Math.random() < 0.3 && (!S.ill || S.ill.name !== "瘴毒侵体")) setIll("瘴毒侵体", 3, "瘴气入体，夜间气血回复减半"); // 瘴毒成疾
+    } else lines.push(`你用湿布捂住口鼻，屏息浅眠，硬是扛过了这夜的瘴。`);
+  }
   if (hasSpecial("bigu")) { /* 辟谷 */ }
   else if (S.hunger >= 100) { S.hp -= 4; S.base.con = Math.max(1, Math.round((S.base.con - 0.05) * 100) / 100); computeMods(); lines.push(`<span style="color:var(--blood-hi)">胃里像有把钝刀在搅。气血 -4，长期饥饿啃食根本——体质 -0.05。</span>`); }
   else if (S.hunger > 85) { S.hp -= 2; lines.push(`【极度饥饿】啃噬着你。气血 -2。`); }
-  if (S.hunger < 70 && S.hp > 0) S.hp = Math.min(hpMax(), S.hp + attr("con") * 0.8 * (1 + (S.mods.hpRegenP || 0) / 100) * (S.ill && (S.ill.name === "风寒" || S.ill.name === "中暑") ? 0.5 : 1) * ((S.flags.meditateTonight && S.realm < 7) ? 0.5 : 1)); // 风寒/中暑：夜间气血回复减半 ｜ 夜里修炼睡不安稳：再减半（灵阶起打坐代眠，无妨）
+  if (S.hunger < 70 && S.hp > 0) S.hp = Math.min(hpMax(), S.hp + attr("con") * 0.8 * (1 + (S.mods.hpRegenP || 0) / 100) * (S.ill && (S.ill.name === "风寒" || S.ill.name === "中暑" || S.ill.name === "瘴毒侵体") ? 0.5 : 1) * ((S.flags.meditateTonight && S.realm < 7) ? 0.5 : 1)); // 风寒/中暑/瘴毒侵体：夜间气血回复减半 ｜ 夜里修炼睡不安稳：再减半（灵阶起打坐代眠，无妨）
   const sleepDebt = S.flags.meditateTonight && S.realm < 7;
   if (sleepDebt) S.flags.sleepDebtDay = S.day + 1; // 睡眠不足：明日智力敏捷 -10%
   delete S.flags.meditateTonight;
@@ -2027,7 +2050,7 @@ function applyCore(fx) {
   if (fx.item) { const m = /^([a-zA-Z]+):(-?\d+)$/.exec(fx.item); if (m) { const id = m[1], n = +m[2];
     if (n > 0 && GONGFU_BY_ID[id] && !(S.inv[id] > 0)) techniqueUnlockFx(id); // 首次获得功法：解锁反哺（谱系通用）
     const prev = S.inv[id] || 0; S.inv[id] = Math.max(0, prev + n); const d = S.inv[id] - prev;
-    const nm = (GONGFU_BY_ID[id] ? `《${GONGFU_BY_ID[id].name}》` : null) || {wood:"柴薪",heimu:"黑馍",mianao:"棉袄",shuinang:"水囊",quhanTang:"驱寒汤",huoxiangSan:"藿香正气散",jieduSan:"解毒散",jinchuangYao:"金疮药",shengjiang:"生姜",gancao:"甘草",chaidao:"柴刀",jiansui:"玄铁剑穗",juqiDan:"聚气丹"}[id] || id;
+    const nm = (GONGFU_BY_ID[id] ? `《${GONGFU_BY_ID[id].name}》` : null) || {wood:"柴薪",heimu:"黑馍",mianao:"棉袄",shuinang:"水囊",quhanTang:"驱寒汤",huoxiangSan:"藿香正气散",jieduSan:"解毒散",jinchuangYao:"金疮药",shengjiang:"生姜",quzhangcao:"驱瘴草",gancao:"甘草",chaidao:"柴刀",jiansui:"玄铁剑穗",juqiDan:"聚气丹"}[id] || id;
     if (d === 0 && n !== 0) { note(`${nm} 无实际变动（行囊中没有可扣的存量）`); }
     else { const s = `${nm} ${d > 0 ? "+" : ""}${d}`; out.push(s); (d > 0 ? G : L).push(s); } } }
   if (fx.clearWood) { S.inv.wood = 0; }
@@ -3136,6 +3159,7 @@ function startLife() {
     S.iden = op.iden || OP_IDEN[op.id] || null; // 身份随开局落定（区域惨境自带身份；云州惨境查 OP_IDEN）
     S.place = (S.iden && S.iden.place) || op.place; // 随机开局落定，地点随之同步（顶栏常显）
     S.weather = rg.weatherW[Math.floor(Math.random() * rg.weatherW.length)]; // 初日天气随地域
+    if (op.id === "rb_zhanglin") S.inv.quzhangcao = (S.inv.quzhangcao || 0) + 1; // 开局叙事「半把驱瘴草」落到实处（南岭瘴夜傍身之物）
     log(`<div class="scene-head"><div class="place">${op.place}</div>
       <h1>${op.title}</h1><div class="sub">仙陨历三万年 · 冬 · ${rg.name} · ${S.weather} —— 灵气潮汐三百年一涨一落，你穿越之时，正值涨潮之初。</div></div>`);
     [

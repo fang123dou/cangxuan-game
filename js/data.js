@@ -43,7 +43,7 @@ const CARD_POOL = [
   [
     { id:"tongpi", name:"铜皮铁骨",    eff:"体魄提升 10%", mod:{conP:10}, fuse:"jinji" },
     { id:"ganfan", name:"干饭人",      eff:"吃饱后两时辰力量 +5%，热饭滋养体质；饭量 ×1.5，饿得更快", mod:{strP:2, foodP:25, hungerR:1.45} },
-    { id:"tiewei", name:"铁胃",        eff:"免疫食源性腹泻，毒抗 +20%", mod:{conP:2}, special:"tiewei" },
+    { id:"tiewei", name:"铁胃",        eff:"免疫食源性腹泻，毒抗 +20%（瘴毒判定 +20）", mod:{conP:2,poiRes:20}, special:"tiewei" },
     { id:"hajimi", name:"哈基米",      eff:"善缘 +5%；遇恶犬拦路它对你摇尾臣服（任何天气皆可触发，坏天气更频）——可收为同伴（瘦狗缘分 +30、道心 +2）", mod:{socialP:5}, special:"hajimi" },
     { id:"aini",   name:"爱你老己",    eff:"独处恢复 +30%，心魔抗性 +20%（心魔劫判定 +10）", mod:{hpRegenP:30}, special:"aini" },
     { id:"jingyi", name:"敬自己一杯",  eff:"死里逃生后饮一杯，气运临时 +1（三日）", mod:{}, special:"jingyi" },
@@ -132,29 +132,57 @@ const COMBO_PAIRS = [["juanwang", "moyu", "zhangchi"], ["huachang", "ganfan", "z
 /* ============ 随机身份（再世 · 设定集 15.5 开局表，四档：吉/平/劣/狱） ============ */
 const IDENTITIES = [
   /* ---- 吉档 ---- */
-  { grade:"吉", name:"小家族庶子",   desc:"有饭吃有书读，嫡母的猜忌比寒冬更长。", mods:{int:1}, money:400, note:"「灯下苦学」智力成长 +10%", place:"东荒 · 云州 · 青石城 · 内城宅院" },
+  { grade:"吉", name:"小家族庶子",   desc:"有饭吃有书读，嫡母的猜忌比寒冬更长。", mods:{int:1}, money:400, note:"「灯下苦学」修炼效率 +5%、智力 +2%", place:"东荒 · 云州 · 青石城 · 内城宅院" },
   { grade:"吉", name:"宗门记名弟子", desc:"月例三块灵石，外门倾轧月比淘汰。", mods:{con:1}, money:120, note:"「早课不辍」修炼效率 +5%", place:"东荒 · 云州 · 青石城 · 青岩山脚" },
-  { grade:"吉", name:"药王谷药童",   desc:"识药辨草的童子，月有薄俸。", mods:{int:1,con:0}, money:300, note:"「药圃岁月」丹道熟练度 +10%", place:"中州 · 药王谷 · 外门药圃" },
-  { grade:"吉", name:"商队少东",     desc:"拨算盘的手比握剑稳，沙盗的眼睛盯着货。", mods:{int:1,luck:0}, money:800, note:"「算盘精」议价 +5%", place:"东荒 · 云州 · 青石城 · 福源商会货栈" },
-  { grade:"吉", name:"将门遗孤",     desc:"军营里长大的骨头，仇家环伺。", mods:{con:1,str:1}, money:200, note:"「军营长大的骨头」体质成长 +10%", place:"东荒 · 云州 · 青石城 · 城郊军营" },
+  { grade:"吉", name:"药王谷药童",   desc:"识药辨草的童子，月有薄俸。", mods:{int:1,con:0}, money:300, note:"「药圃岁月」药蚀累积 -15%（药性亲和）", place:"中州 · 药王谷 · 外门药圃" },
+  { grade:"吉", name:"商队少东",     desc:"拨算盘的手比握剑稳，沙盗的眼睛盯着货。", mods:{int:1,luck:0}, money:800, note:"「算盘精」工钱利钱 +5%", place:"东荒 · 云州 · 青石城 · 福源商会货栈" },
+  { grade:"吉", name:"将门遗孤",     desc:"军营里长大的骨头，仇家环伺。", mods:{con:1,str:1}, money:200, note:"「军营长大的骨头」体质 +3%", place:"东荒 · 云州 · 青石城 · 城郊军营" },
   /* ---- 平档 ---- */
-  { grade:"平", name:"市井孩童",     desc:"跑街串巷，帮派的保护费比年关难过。", mods:{agi:1}, money:60, note:"「跑街」敏捷成长 +5%", place:"东荒 · 云州 · 青石城 · 市井" },
-  { grade:"平", name:"猎户遗孤",     desc:"山里的鼻子，冬荒夺田的族亲。", mods:{agi:1,con:0}, money:80, note:"「山里的鼻子」野外生存 +10%", place:"东荒 · 云州 · 青石城 · 城外猎户村" },
-  { grade:"平", name:"私塾伴读",     desc:"旁听生，主仆名分随时被逐。", mods:{int:1}, money:40, note:"「旁听生」悟性 +5%", place:"东荒 · 云州 · 青石城 · 私塾" },
-  { grade:"平", name:"渔民之子",     desc:"海税、风暴、渔霸，一样比浪凶。", mods:{con:1}, money:50, note:"「浪里白条」水中战力 +20%", place:"东荒 · 云州 · 临河镇 · 临河渔村" },
-  { grade:"平", name:"铁匠学徒",     desc:"酗酒的师父，催命的军械订单。", mods:{str:1}, money:70, note:"「千锤百炼」炼器熟练度 +5%", place:"东荒 · 云州 · 青石城 · 铁匠铺" },
+  { grade:"平", name:"市井孩童",     desc:"跑街串巷，帮派的保护费比年关难过。", mods:{agi:1}, money:60, note:"「跑街」敏捷 +2%", place:"东荒 · 云州 · 青石城 · 市井" },
+  { grade:"平", name:"猎户遗孤",     desc:"山里的鼻子，冬荒夺田的族亲。", mods:{agi:1,con:0}, money:80, note:"「山里的鼻子」野外生存：逃脱 +5%、饿得慢 5%", place:"东荒 · 云州 · 青石城 · 城外猎户村" },
+  { grade:"平", name:"私塾伴读",     desc:"旁听生，主仆名分随时被逐。", mods:{int:1}, money:40, note:"「旁听生」悟性过人：修炼效率 +5%", place:"东荒 · 云州 · 青石城 · 私塾" },
+  { grade:"平", name:"渔民之子",     desc:"海税、风暴、渔霸，一样比浪凶。", mods:{con:1}, money:50, note:"「浪里白条」水性：敏捷 +2%、逃脱 +5%", place:"东荒 · 云州 · 临河镇 · 临河渔村" },
+  { grade:"平", name:"铁匠学徒",     desc:"酗酒的师父，催命的军械订单。", mods:{str:1}, money:70, note:"「千锤百炼」锤出来的筋骨：力量 +2%", place:"东荒 · 云州 · 青石城 · 铁匠铺" },
   /* ---- 劣档 ---- */
-  { grade:"劣", name:"奴籍",         desc:"契书在身，赎身天价。", mods:{agi:1}, money:0, note:"「忍字诀」隐匿忍耐 +15%", place:"东荒 · 云州 · 青石城 · 某府柴房" },
-  { grade:"劣", name:"疫村遗孤",     desc:"人人避你如瘟神；你的血对某种毒免疫。", mods:{con:-1,luck:0}, money:10, note:"「病骨」毒抗 +10%、体质成长 -10%", place:"东荒 · 云州 · 白蒿镇 · 隔离废村" },
-  { grade:"劣", name:"弃婴·寺中长大", desc:"寺贫，武僧的拳头比经文硬。", mods:{int:1}, money:0, note:"「佛性」心魔抗性 +10%、道心成长 +10%", place:"东荒 · 云州 · 落鸦镇 · 山寺" },
-  { grade:"劣", name:"矿奴",         desc:"地底肺，黑暗中的感知异于常人。", mods:{con:1,int:0}, money:0, note:"「地底肺」黑暗中感知 +15%", place:"东荒 · 云州 · 铁山镇 · 黑矿窑" },
-  { grade:"劣", name:"死囚之子",     desc:"烙印贱籍，见惯生死。", mods:{luck:-1,con:1}, money:0, note:"「见惯生死」恐惧判定 +15%", place:"东荒 · 云州 · 青石城 · 城墙根" },
+  { grade:"劣", name:"奴籍",         desc:"契书在身，赎身天价。", mods:{agi:1}, money:0, note:"「忍字诀」忍气吞声、抽身得快：逃脱 +8%", place:"东荒 · 云州 · 青石城 · 某府柴房" },
+  { grade:"劣", name:"疫村遗孤",     desc:"人人避你如瘟神；你的血对某种毒免疫。", mods:{con:-1,luck:0}, money:10, note:"「病骨」毒抗 +10%（瘴毒判定 +10）、体质 -3%", place:"东荒 · 云州 · 白蒿镇 · 隔离废村" },
+  { grade:"劣", name:"弃婴·寺中长大", desc:"寺贫，武僧的拳头比经文硬。", mods:{int:1}, money:0, note:"「佛性」心魔累积 -15%", place:"东荒 · 云州 · 落鸦镇 · 山寺" },
+  { grade:"劣", name:"矿奴",         desc:"地底肺，黑暗中的感知异于常人。", mods:{con:1,int:0}, money:0, note:"「地底肺」黑暗里耳朵比眼睛快：逃脱 +5%", place:"东荒 · 云州 · 铁山镇 · 黑矿窑" },
+  { grade:"劣", name:"死囚之子",     desc:"烙印贱籍，见惯生死。", mods:{luck:-1,con:1}, money:0, note:"「见惯生死」心魔累积 -10%", place:"东荒 · 云州 · 青石城 · 城墙根" },
   /* ---- 狱档 ---- */
   { grade:"狱", name:"死囚",         desc:"开局在牢里，秋后问斩，只剩百日。", mods:{con:1}, money:0, note:"「向死而生·伪」濒死战力 +15%（仅此一条，非词条）", place:"东荒 · 云州 · 青石城 · 死囚牢" },
-  { grade:"狱", name:"祭品",         desc:"山村十年一祭，你是今年的「山神新娘/新郎」。", mods:{luck:-1}, money:0, note:"「祭品的镇定」疼痛忍耐 +20%", place:"东荒 · 云州 · 山阴村 · 荒祠祭坛" },
-  { grade:"狱", name:"炉鼎苗子",     desc:"被合欢宗外使挑中，已在押送路上。", mods:{agi:1}, money:0, note:"「锁情印」情感波动 -50%", place:"东荒 · 云州 · 落马驿 · 押送官道" },
-  { grade:"狱", name:"渊口守夜人",   desc:"北地界壁裂缝戍卒，上一任疯了。", mods:{con:1}, money:0, note:"「听过渊声」灵感 +20%、理智 -10%", place:"北地 · 渊口戍堡" },
+  { grade:"狱", name:"祭品",         desc:"山村十年一祭，你是今年的「山神新娘/新郎」。", mods:{luck:-1}, money:0, note:"「祭品的镇定」疼痛忍耐：承伤减免 +5%", place:"东荒 · 云州 · 山阴村 · 荒祠祭坛" },
+  { grade:"狱", name:"炉鼎苗子",     desc:"被合欢宗外使挑中，已在押送路上。", mods:{agi:1}, money:0, note:"「锁情印」情怨不扰心：心魔累积 -10%", place:"东荒 · 云州 · 落马驿 · 押送官道" },
+  { grade:"狱", name:"渊口守夜人",   desc:"北地界壁裂缝戍卒，上一任疯了。", mods:{con:1}, money:0, note:"「听过渊声」气运 +1、心魔累积 +10%（灵感与疯狂，一线之隔）", place:"北地 · 渊口戍堡" },
 ];
+/* 身份特性落地表：note 里写的每一句都在这里兑现为数值（computeMods 注入 S.mods；拒绝纯文案空转）。
+   抗性五件：coldRes 冻寒（雪夜判定 +n）｜heatRes 暑热（酷热判定 +n）｜poiRes 瘴毒（瘴夜判定 +n）｜xinmoRes 心魔累积减免%｜yaoRes 药蚀累积减免% */
+const NOTE_FX = {
+  "小家族庶子": { trainP: 5, intP: 2 },
+  "宗门记名弟子": { trainP: 5 },
+  "药王谷药童": { yaoRes: 15 },
+  "商队少东": { moneyP: 5 },
+  "将门遗孤": { conP: 3 },
+  "市井孩童": { agiP: 2 },
+  "猎户遗孤": { escapeP: 5, hungerR: 0.95 },
+  "私塾伴读": { trainP: 5 },
+  "渔民之子": { agiP: 2, escapeP: 5 },
+  "铁匠学徒": { strP: 2 },
+  "奴籍": { escapeP: 8 },
+  "疫村遗孤": { poiRes: 10, conP: -3 },
+  "弃婴·寺中长大": { xinmoRes: 15 },
+  "矿奴": { escapeP: 5 },
+  "死囚之子": { xinmoRes: 10 },
+  "祭品": { defP: 5 },
+  "炉鼎苗子": { xinmoRes: 10 },
+  "渊口守夜人": { luckFlat: 1, xinmoRes: -10 },
+  "烽堡病卒": { coldRes: 10 },
+  "雪原弃工": { coldRes: 10 },
+  "药圃病役": { yaoRes: 15 },
+  "帝畿欠账人": { moneyP: 10 },
+  "沙海弃儿": { heatRes: 10 },
+  "瘴林逃难人": { poiRes: 10 },
+};
 
 /* ============ 地域风物（五域四海 · 设定集第五、六章。开局惨境、存活任务、天气、物价、AI 提示皆按此生成） ============
    再世身份掷在何处，开局就是何处的濒死之局：名随地域，型不变（铁律一：际遇同型——惨境濒死）。 */
@@ -234,6 +262,7 @@ const REGIONS = {
     surviveDesc: "南岭的十万大山，瘴气与妖兽平分地盘。先活下来——驱瘴的草药、夜里的火、避开大妖的鼻子，都是命。",
     weatherW: ["瘴雨", "湿冷", "阴雨", "山雾", "寒晴"], weatherS: ["雷雨", "湿热", "瘴雨", "晴", "山雾"],
     badWx: ["瘴雨", "山雾", "阴雨"],
+    hazard: "miasma", /* 瘴气地域：瘴雨/山雾之夜无驱瘴草且未生火，气血受损并可能染瘴病（百毒不侵免疫） */
     foodMult: 1.2, foodNote: "南岭山货贵、净粮贵两成",
     aiHint: "本地为南岭（十万大山，设定集第五、八章）：妖族地盘，人妖杂居，蛮荒而自由——瘴气入夜尤重（『瘴雨』『山雾』天气下易染瘴病）；人族寨子与妖族洞府比邻，寨老、巫医、妖族巡山者都是常见 NPC；山林馈赠丰厚但守山的未必是人；切莫把妖族写成任人宰割的野兽，灵阶以上皆可有算计。",
     sect: { name: "百苗巫寨", npc: "百苗寨巫徒蓝朵" },
@@ -312,6 +341,7 @@ const SHOP_BASE = [
   { id: "jieduSan", name: "解毒散", price: 60, desc: "以毒攻毒。对症【丹毒侵脉】立即痊愈、药蚀 -10；无病清热解毒（气血 +3、药蚀 -5）。", kind: "药物" },
   { id: "jinchuangYao", name: "金疮药", price: 30, desc: "外伤圣药，比跌打药更猛。气血 +10，重伤之人尤宜。", kind: "药物" },
   { id: "shengjiang", name: "生姜", price: 6, desc: "辛温解表的药草。【风寒】病程 -1 日；无病暖胃（气血 +1）。", kind: "药草" },
+  { id: "quzhangcao", name: "驱瘴草", price: 8, desc: "南岭辟瘴药草。【瘴毒侵体】立即痊愈；无病清神（气血 +1）。带着它，瘴雨、山雾之夜瘴毒不侵。", kind: "药草" },
   { id: "gancao", name: "甘草", price: 5, desc: "调和百药的甜草根。气血 +2，药蚀 -2。", kind: "药草" },
   { id: "huobun", name: "火把", price: 3, desc: "松脂火把。夜里赶路、探林深处都用得上。", kind: "日用" },
   { id: "mianao", name: "老棉袄", price: 300, desc: "厚实的老棉袄（第七章锚：棉袄 300 文）。风雪与寒潮夜不再冻伤。", kind: "衣物" },
