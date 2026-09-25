@@ -2725,10 +2725,19 @@ function trainingEvent() {
     log(scenes[pickAttr[0]], "dim");
     sys(`【五维打熬】${pickAttr[1]} +${amt}${bonus}。`);
     trainNote = { kind: "五维打熬", attr: pickAttr[0], attrName: pickAttr[1], amt };
+  } else if ((S.skills["乱拳"] || 0) >= (TECH_CAPS["乱拳"] || 100)) {
+    /* 乱拳圆满：拳意化境——熟练不再空涨，转入打熬筋骨 */
+    gainAttr("str", 0.12); gainAttr("con", 0.06);
+    const prevC = S.cult; if (hasGongfa) gainCult(6);
+    log(`【历练 · 化境】乱拳已圆。你索性以圆满的拳意打熬筋骨——一拳一脚，皆是功夫的底子。`, "dim");
+    sys(`【拳意化境】乱拳圆满，熟练不再空涨——力量 +0.12，体质 +0.06${hasGongfa ? `，修为 +${Math.round(S.cult - prevC)}` : ""}。`);
+    trainNote = { kind: "五维打熬", attr: "str", attrName: "力量", amt: 0.12 };
   } else {
     /* 武技磨砺（凡人主修之路：熟练提速，7~12/次） */
     const inc = 7 + Math.floor(Math.random() * 6);
-    S.skills["乱拳"] = Math.min(TECH_CAPS["乱拳"] || 100, (S.skills["乱拳"] || 0) + inc);
+    const prevL = S.skills["乱拳"] || 0;
+    S.skills["乱拳"] = Math.min(TECH_CAPS["乱拳"] || 100, prevL + inc);
+    const incReal = Math.round((S.skills["乱拳"] - prevL) * 10) / 10; // 钳顶后按实涨显示，不虚报
     gainAttr("str", 0.08);
     let bonus3 = "";
     if (hasGongfa) {
@@ -2739,9 +2748,9 @@ function trainingEvent() {
       } else { gainCult(2); bonus3 = "，修为 +2"; }
     }
     log(`【历练 · 武技】你对着庙后老槐树出拳一千次。树皮上的霜震落又凝上，拳面渗血，拳路却越来越直。`, "dim");
-    sys(`【武技磨砺】「乱拳」熟练度 +${inc}（${Math.round(S.skills["乱拳"])}/${TECH_CAPS["乱拳"] || 100}），力量 +0.08${bonus3}。`);
+    sys(`【武技磨砺】「乱拳」熟练度 +${incReal}（${Math.round(S.skills["乱拳"])}/${TECH_CAPS["乱拳"] || 100}），力量 +0.08${bonus3}。`);
     checkSkillMilestone("乱拳");
-    trainNote = { kind: "武技磨砺", inc };
+    trainNote = { kind: "武技磨砺", inc: incReal };
   }
   if (trainNote) S.trainScene = Object.assign({ slot: S.slot, day: S.day }, trainNote);
   S.stats.trains = (S.stats.trains || 0) + 1;
