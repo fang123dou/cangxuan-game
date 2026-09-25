@@ -362,13 +362,14 @@ const AI = (() => {
     const prompt = statePrompt();
     lastCtx = prompt;
     lastFail = null;
+    const SYS = (typeof regionOf === "function" && typeof S !== "undefined" && S) ? SYSTEM + "\n【出生地地域风物 · 定稿】\n" + regionOf(S.place).aiHint + "\n（当前地点：" + (S.place || "未知") + "。本世剧情必须符合上述当地风物：环境、物价、NPC 类型、生存压力皆依此地，不得写成云州青石城的雪夜。）" : SYSTEM;
     // 1) BYOK 真 AI
     if (cfg && cfg.key) {
       for (const base of baseCandidates(cfg.base)) {
         try {
           const mkBody = opts => JSON.stringify({
             model: cfg.model || "kimi-k2-0711-preview",
-            messages: [{ role: "system", content: SYSTEM }, { role: "user", content: prompt }],
+            messages: [{ role: "system", content: SYS }, { role: "user", content: prompt }],
             max_tokens: 2600, // 思考型模型低档位推理约 1600 + 输出约 300，2600 足够——过大会拖慢生成（提速补丁 01:08）
             ...(opts.temp == null ? {} : { temperature: opts.temp }),
             ...(opts.reason ? { reasoning_effort: "low" } : {}), // 思考型模型低档位推理，否则单回合要 90 秒以上
@@ -410,7 +411,7 @@ const AI = (() => {
     // 2) 同源服务端（自建部署时存在）
     if (!serverAbsent) try {
       const resp = await fetchWithTimeout("/api/narrate", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt, system: SYSTEM }),
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ prompt, system: SYS }),
       }, 15000);
       if (!resp.ok) serverAbsent = true;
       if (resp.ok) {

@@ -27,7 +27,7 @@ const QU = (() => {
   }
 
   /* ---------- 任务定义 ---------- */
-  /* 开局存活任务锚定当前身份（第十章：主线不定但必定生成，第一条=符合身份的存活任务） */
+  /* 开局存活任务锚定当前身份/地域（第十章铁律一：名随身份与地域，型不变——惨境濒死，先活下来） */
   const SURVIVE_BY_OPENING = {
     pomiao: { name: "凡品任务：活过这个冬天", desc: "灵气潮汐涨潮之初，大雪封城。先活下来——热食、炭火、修为，都是命。" },
     laofang: { name: "凡品任务：活过死牢寒夜", desc: "死囚牢里最不缺的就是死人。先活下来——熬过寒夜、熬过狱卒、熬过这座吃人的牢。" },
@@ -35,6 +35,8 @@ const QU = (() => {
     jitan: { name: "凡品任务：挣脱祭坛，活过雪夜", desc: "山民的巫祝随时会醒，绳索随时会收紧。先活下来——挣脱、跑路、别成为山神的嚼用。" },
     yasong: { name: "凡品任务：活着走到下一座城", desc: "解差死绝的雪道上，逃犯活不过三日。先活下来——走出雪道、挣口热食、甩掉身后的马蹄声。" },
   };
+  for (const k in REGIONS) for (const op of (REGIONS[k].openings || [])) SURVIVE_BY_OPENING[op.id] = { name: REGIONS[k].surviveName, desc: REGIONS[k].surviveDesc };
+  const regionOfSafe = () => (typeof regionOf === "function") ? regionOf(S.place) : null;
   const DEFS = {
     /* ===== 主线 · 卷一 潜龙在渊 ===== */
     mq_survive: {
@@ -42,9 +44,9 @@ const QU = (() => {
       get desc() { const o = SURVIVE_BY_OPENING[S.flags && S.flags.opening]; return o ? o.desc : "命格改写只是死缓。先活下来——这是所有算计的地基。"; },
       type: "main", passive: true,
       auto: () => true,
-      objectives: [{ text: () => `撑到开春（第 ${Math.min(S.day, 31)} / 31 日）`, done: () => S.day >= 31 }],
+      objectives: [{ text: () => `撑过这一关（第 ${Math.min(S.day, 31)} / 31 日）`, done: () => S.day >= 31 }],
       reward: { points: 20 },
-      doneText: "你看到了开春的太阳。这一冬，没白熬。",
+      doneText: "你熬过了这一关。命，暂时是你自己的了。",
     },
     mq_wudao: {
       name: "主线：求武之路", type: "main",

@@ -999,12 +999,16 @@ function renderTab() {
         esc(d.desc), "目标随你的行动自动推进，完成即发放奖励。");
     });
   } else if (curTab === 3) {
-    /* ---------- 商铺 · 云州杂货 ---------- */
-    let html = `<div class="p-title"><b>云 州 杂 货</b><span>铜钱 ${S.money} 文 · 灵石 ${S.stones} 枚</span></div>`;
+    /* ---------- 商铺 · 地域集市（物价随产地） ---------- */
+    const rg = (typeof regionOf === "function") ? regionOf(S.place) : null;
+    let html = `<div class="p-title"><b>${rg && rg.key !== "yunzhou" ? esc(rg.name) + " 集 市" : "云 州 杂 货"}</b><span>铜钱 ${S.money} 文 · 灵石 ${S.stones} 枚</span></div>`;
     const unlocked = SHOP_UNLOCK.filter(it => { try { return it.cond(); } catch (e) { return false; } });
     const lockedN = SHOP_UNLOCK.length - unlocked.length;
+    const foodMult = rg ? rg.foodMult : 1;
+    const priceOf = it => { const p = it.kind === "食物" ? Math.round(it.price * foodMult) : it.price; return hasTitle("caishen") ? Math.ceil(p * 0.9) : p; }; // 地域物价：食物按当地倍率（北原×1.5、中州×1.3、西漠×1.8、南岭×1.2）
+    if (foodMult > 1) html += `<div class="pityline"><span>🗺 ${esc(rg.foodNote)}——本地食物价比云州贵 ${Math.round((foodMult - 1) * 100)}%。</span></div>`;
     const row = (it, isNew) => {
-      const price = hasTitle("caishen") ? Math.ceil(it.price * 0.9) : it.price; // 称号「财神眷顾」：交易议价 +10%
+      const price = priceOf(it);
       const pay = it.stones ? `${it.stones} 枚灵石${price ? " + " + price + " 文" : ""}` : `${price} 文`;
       const afford = it.stones ? S.stones >= it.stones && S.money >= price : S.money >= price;
       return `<div class="shop-row${isNew ? " new" : ""}" data-buy="${it.id}">
@@ -1027,7 +1031,7 @@ function renderTab() {
       const all = SHOP_BASE.concat(SHOP_UNLOCK);
       const it = all.find(x => x.id === el.dataset.buy);
       if (!it) return;
-      const price = hasTitle("caishen") ? Math.ceil(it.price * 0.9) : it.price;
+      const price = priceOf(it);
       if (it.stones) { if (S.stones < it.stones) { toast("灵石不足。"); return; } S.stones -= it.stones; }
       if (S.money < price) { toast("铜钱不够。"); return; }
       S.money -= price;
@@ -1612,7 +1616,9 @@ function night() {
     if (faded) log(`【岁月】久不往来，${faded} 段恩怨淡了下去。深仇与生死之交，从不随时间褪色。`, "dim");
   }
   const spring = S.day >= 31; // 冬三十日而春（第一卷止于开春；自由漫游入春）
-  S.weather = spring ? ["晴", "阴", "细雨", "微风", "扬沙"][Math.floor(Math.random() * 5)] : ["大雪", "阴晦", "风雪", "晴冷", "冻雨"][Math.floor(Math.random() * 5)];
+  const rg = (typeof regionOf === "function") ? regionOf(S.place) : null;
+  const wxPool = rg ? (spring ? rg.weatherS : rg.weatherW) : (spring ? ["晴", "阴", "细雨", "微风", "扬沙"] : ["大雪", "阴晦", "风雪", "晴冷", "冻雨"]);
+  S.weather = wxPool[Math.floor(Math.random() * wxPool.length)];
   if (S.day === 9 || S.day === 28) S.flags.coldSnap = true;
   if (S.day === 11 || S.day === 30) S.flags.coldSnap = false;
   S.flags.fireTonight = false;
@@ -2815,6 +2821,19 @@ function startLife() {
       sys(`【前世记忆决堤——融合冲击判定（${shockRate}%）：失败。】【意识混沌】人格撕裂，噩梦缠身，你抱头蜷了整整三日，才重新分清「我是谁」。（元气大伤 3 日 · 修炼停滞 · 心魔 +5）`);
     }
     sys(`【今生资质：${linggen().name}】${linggen().desc}${linggen().bonus ? "（" + linggen().bonus + "）" : ""}`);
+    /* 地域风物：再世开局随出生地掷当地惨境（铁律一：际遇同型——惨境濒死，名随地域） */
+    const rg = regionOf(S.place);
+    S.flags.region = rg.key;
+    if (rg.openings.length) {
+      const op = rg.openings[Math.floor(Math.random() * rg.openings.length)];
+      S.flags.opening = op.id;
+      S.place = op.place;
+      log(`<div class="scene-head"><div class="place">${esc(op.place)}</div>
+        <h1>${op.title}</h1><div class="sub">${rg.name} · 命定死局收紧之夜——地域不同，死法各异，活路也各异。</div></div>`);
+      op.lines.forEach(l => log(typeof l === "function" ? l(S.name) : l, "dim"));
+      sys(`【凡品任务已发布：${op.quest}。奖励：万象点 ×20。】`);
+    }
+    S.weather = rg.weatherW[Math.floor(Math.random() * rg.weatherW.length)]; // 初日天气随地域
     S.gmRecent = ["rebirth"];
     renderPanel();
     setChoices([{ label: "睁眼，看这新的一世", hint: "", fn: () => advanceSlot() }]);

@@ -413,7 +413,7 @@ const GM = (() => {
   function buildCtx() {
     return {
       weather: S.weather,
-      weatherBad: S.weather === "大雪" || S.weather === "风雪" || S.flags.coldSnap,
+      weatherBad: ((typeof regionOf === "function") ? regionOf(S.place).badWx : ["大雪", "风雪"]).includes(S.weather) || S.flags.coldSnap,
       hungry: S.hunger > 65,
       poor: S.money < 15,
       realm: S.realm, realmLow: S.realm <= 1,
