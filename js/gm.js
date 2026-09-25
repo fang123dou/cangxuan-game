@@ -473,11 +473,11 @@ const GM = (() => {
     /* ---------- 具名法术 · 古籍玉简（散修线）：气海既开，法术可求 ----------
        1 阶灵品聚气境可修（铜钱可购）；2 阶玄品灵阶可修（灵石计价）——与功法谱系三源同理（data.js SPELLS 名录） */
     {
-      id: "spell_tome", cond: () => S.realm >= 5 && (typeof SPELLS !== "undefined") && SPELLS.some(sp => S.realm >= sp.gate && !((S.spells || {})[sp.id] > 0) && (!sp.linggen || sp.linggen === S.linggen)),
+      id: "spell_tome", cond: () => S.realm >= 5 && (typeof SPELLS !== "undefined") && SPELLS.some(sp => S.realm >= sp.gate && !((S.spells || {})[sp.id] > 0) && !sp.kind && (!sp.linggen || sp.linggen === S.linggen)),
       w: () => 3,
       build(r) {
-        // 灵根专属法术不入玉简池（设定：唯对应灵根可修，由灵根支线授予）
-        const pool = SPELLS.filter(sp => S.realm >= sp.gate && !((S.spells || {})[sp.id] > 0) && (!sp.linggen || sp.linggen === S.linggen));
+        // 灵根专属法术不入玉简池（设定：唯对应灵根可修，由灵根支线授予）；禁术亦不入（设定：唯残页/剧情可遇）
+        const pool = SPELLS.filter(sp => S.realm >= sp.gate && !((S.spells || {})[sp.id] > 0) && !sp.kind && (!sp.linggen || sp.linggen === S.linggen));
         const sp = pick(pool, r);
         const isT1 = sp.tier === 1;
         const canPay = isT1 ? S.money >= 120 : S.stones >= 8;
@@ -487,6 +487,61 @@ const GM = (() => {
           choices: [
             { label: `买下「${sp.name}」`, hint: `${sp.tierName} · ${elName} · 耗法 ${sp.mp}。`, disabled: !canPay, fx: isT1 ? { money: -120, spell: sp.id } : { stones: -8, spell: sp.id } },
             { label: "看看就走", hint: "玉简不会跑，铜钱会。", fx: { dao: 0.2 } },
+          ],
+        };
+      },
+    },
+    /* ---------- 禁术残页（设定集·禁术：威力强大的代价）——灵阶可遇，低权重，高危 ----------
+       不入古籍玉简池；燃法/献祭/同归于尽唯残页与特殊剧情授予。收下时道心微震——你早知道它不简单。 */
+    {
+      id: "jinshu_page", cond: () => S.realm >= 7 && (typeof SPELLS !== "undefined") && SPELLS.some(sp => sp.kind === "jinshu" && !((S.spells || {})[sp.id] > 0)),
+      w: () => 1,
+      build(r) {
+        const pool = SPELLS.filter(sp => sp.kind === "jinshu" && !((S.spells || {})[sp.id] > 0));
+        const sp = pick(pool, r);
+        return {
+          scene: `黑市最里的角落摊位，摊主蒙着面，推来一页焦边残纸——纸上的字像用血写的，看久了眼睛发涩：「『${sp.name}』。禁术。威力是真的，代价也是真的。」他不等你还价，只补了一句：「用不用随你。用了，就别想退。」`,
+          choices: [
+            { label: `收下「${sp.name}」残页`, hint: `代价：${sp.cost}`, fx: { spell: sp.id, dao: -1 } },
+            { label: "烧掉它", hint: "有些东西，不碰为好。", fx: { dao: 0.5 } },
+          ],
+        };
+      },
+    },
+    /* ---------- 圣药线 · 万年地心乳（设定集天材地宝名录圣品：重塑道基、修复暗伤药毒）——道伤救赎回路 ----------
+       两段式：先买传闻（灵阶后期起、须身负道伤/暗伤），再深入地脉溶洞夺乳。此物有价无市，一世只得一滴。 */
+    {
+      id: "shengyao_rumor", cond: () => S.realm >= 9 && !S.flags.shengYaoClue && !S.flags.shengYaoDone && !S.inv.dixinru
+        && ((S.daoShang || 0) > 0 || Object.keys(S.darkWounds || {}).some(k => S.darkWounds[k] > 0)),
+      w: () => 2,
+      build() {
+        return {
+          scene: `听雨楼的后堂，说书人歇了嗓子，茶客却压低了声音：「……西漠地底有座万年溶洞，地脉之气凝了一滴『地心乳』——重塑道基的圣物。前朝有个道基受损的老修士，为了一滴乳，把全副身家都折进去了。」他瞥见你杯中的茶凉透了，「客官对这等传说，倒听得认真。」`,
+          choices: [
+            { label: "买下这条消息", hint: "三枚灵石，买溶洞的方位与进去的路。童叟无欺。", disabled: S.stones < 3, fx: { stones: -3, flag: "shengYaoClue" } },
+            { label: "只当听个故事", hint: "圣物有价无市——故事免费，路要自己蹚。", fx: { dao: 0.2 } },
+          ],
+        };
+      },
+    },
+    {
+      id: "shengyao_hunt", cond: () => S.realm >= 9 && !!S.flags.shengYaoClue && !S.flags.shengYaoDone && !S.inv.dixinru,
+      w: () => 5,
+      build() {
+        return {
+          scene: `西漠腹地，沙海之下。你循着买来的方位掘开塌陷的洞口，阴冷的地气扑面而来——溶洞深处，石笋倒悬，一点乳白的微光在黑暗里一明一灭，像大地的心跳。光晕之下，盘踞着一头被地气滋养了不知多少年的岩甲螭，甲壳与溶洞长在了一起。`,
+          choices: [
+            { label: "硬闯（体质/力量判定）", hint: "判定：从岩甲螭的眼皮下取乳。败则重创。",
+              fx: { check: "con*8+str*4+luck*2+d30>85",
+                success: { item: "dixinru:1", flag: "shengYaoDone" }, fail: { hp: -40 },
+                successText: `你贴着石壁的阴影挪到石笋下，指尖触到那一点温润——地心乳入手的一瞬，整个溶洞的地气都为之一滞。岩甲螭睁开眼时，你只余一道背影。`,
+                failText: `岩甲螭的尾巴横扫过来，你像破布袋一样撞在石壁上——乳没取着，肋骨断了两根。` } },
+            { label: "以智取（智力判定）", hint: "判定：观地气潮汐，待螭蜕甲换气的一瞬取之。败则被地气所伤。",
+              fx: { check: "int*9+luck*3+d30>80",
+                success: { item: "dixinru:1", flag: "shengYaoDone" }, fail: { hp: -20, dao: -1 },
+                successText: `你在洞口守了两天两夜，看准地气退潮、岩甲螭蜕甲换气的半个时辰——乳已在你怀中，它还未察觉。`,
+                failText: `地气潮汐比你推演的早了半刻——阴寒之气倒灌经脉，你狼狈退出，只余一身内伤。` } },
+            { label: "退出去", hint: "圣药不会跑，命只有一条。改日再来。", fx: { dao: 0.3 } },
           ],
         };
       },
@@ -748,6 +803,125 @@ const GM = (() => {
             { label: "吐纳一夜", hint: "修为 +4，打坐代眠。", fx: { cult: 4, sta: -2 } },
             { label: "生火睡下", hint: "恢复气血体力。", fx: { special: "rest" } },
           ],
+        };
+      },
+    },
+
+    /* ---------- 终局 · 三方棋局（第十一章：真相分层揭开，五结局由引擎结算） ----------
+       链序：先驱遗痕 ×3（pioneer_*）→ 裂缝低语（devourWhisper）→ 问天（sysQuestioned）
+       → 仙品「天有二心」完成立 truthKnown → 仙品「归墟终局」：入缝（guixuEnter）→ 终结进食（devourSlain）→ 终局抉择（end:*）。 */
+    {
+      id: "pioneer_trace", // 先驱宿主遗痕：牢房刻字 / 半张信物 / 无名坟——「你不是第一个宿主」
+      cond: () => S.realm >= 13 && (S.flags.coincidence || 0) >= 3
+        && !(S.flags.pioneer_kezi && S.flags.pioneer_xinwu && S.flags.pioneer_fen),
+      w: () => 2,
+      build() {
+        const TRACES = [
+          { flag: "pioneer_kezi", scene: "途经一座废弃多年的牢城，断墙内侧有一行刻字，笔画深得不像凡人留的：「别信它的恭喜。」落款没有名字，只有一个被磨平的印。你盯着那行字看了很久——刻它的人，似乎也看得见你看得见的东西。" },
+          { flag: "pioneer_xinwu", scene: "旧货摊上，半张上古信物躺在不起眼的角落。摊主说它「邪性」，历任主人都死得蹊跷。你入手一瞬，面板罕见地闪烁了一下——像有什么东西认得它，又不想让你知道它认得。" },
+          { flag: "pioneer_fen", scene: "荒野一座无名坟，碑上没有字。可你行囊里的什么物件忽然微微发烫——冥冥中有声音说：这里埋着一位「先行者」。他的结局无人知晓。你上了三炷香，风把烟吹成了两个字：快逃。" },
+        ];
+        const left = TRACES.filter(t => !S.flags[t.flag]);
+        const t0 = left[Math.floor(Math.random() * left.length)];
+        return {
+          scene: t0.scene,
+          choices: [
+            { label: "记下这一笔", hint: "先驱的遗痕。伏笔 +1，遗痕入册。", fx: { flag: t0.flag, coincidence: 1 } },
+            { label: "不多管闲事", hint: "有些东西，看见了就当没看见。", fx: { dao: 0.2 } },
+          ],
+        };
+      },
+    },
+    {
+      id: "devour_whisper", // 渊口裂缝的低语：吞世者想让你知道的，永远要打折再打折地听
+      cond: () => regionOf(S.place).key === "beiyuan" && S.realm >= 19 && (typeof castMet === "function") && castMet("shouyeren")
+        && !S.flags.devourWhisper && (S.flags.pioneer_kezi || S.flags.pioneer_xinwu || S.flags.pioneer_fen),
+      w: () => 3,
+      build() {
+        return {
+          scene: "渊口裂缝边缘，守夜人的背影破天荒地侧了半分：「它快来了。你想听的，裂缝里都有——但听过的东西，就塞不回去了。」裂缝深处，渊声忽然不再是风声。它叫了你的名字。它说：你以为的那把刀柄，握在谁手里？它说了一个三万年没人敢说的故事——关于天，关于炉，关于刀用完之后的归宿。",
+          choices: [
+            { label: "听完它", hint: "真相的一半（另一半要自己问）。心魔 +5，伏笔 +1。", fx: { flag: "devourWhisper", coincidence: 1, xinmo: 5 } },
+            { label: "捂耳退去", hint: "敌人想让你知道的事，一个字都不白听。道心 +2。", fx: { dao: 2 } },
+          ],
+        };
+      },
+    },
+    {
+      id: "sys_question", // 问天：它从不解释，只在你问及时回一句【跑好你自己的。】
+      cond: () => S.flags.devourWhisper && !S.flags.sysQuestioned,
+      w: () => 2,
+      build() {
+        return {
+          scene: "夜深，四下无人。你盯着眼前那层只有你能看见的光幕——任务、评级、保底、千秋录，三万年来它俯下身，用你听得懂的话对你说话。你忽然想问它一句话。问出口，就再也装不了糊涂。",
+          choices: [
+            { label: "问：「我到底是你造的第几把刀？」", hint: "它从不解释。但你会记住它回答的方式。道心 +3。", fx: { flag: "sysQuestioned", dao: 3 } },
+            { label: "把话咽回去", hint: "还没到掀桌的时候。", fx: { dao: 1 } },
+          ],
+        };
+      },
+    },
+    {
+      id: "guixu_gate", // 守夜人引路：踏入渊口裂缝（归墟终局 · 目标二）
+      cond: () => (S.quests && (S.quests.active || []).includes("mq_guixu")) && !S.flags.guixuEnter && regionOf(S.place).key === "beiyuan",
+      w: () => 20,
+      build() {
+        return {
+          scene: "守夜人第一次转过身来。他看了你很久，像在核对一件等了很多年的东西：「缝开了。进去的人没有一个回来过——包括上一个像你这样的人。」他让开半步，露出裂缝里深不见底的黑：「路，我引到头了。剩下的是你的。」",
+          choices: [
+            { label: "踏入裂缝", hint: "归墟深处，终结进食——进去了就没有退路。", fx: { flag: "guixuEnter" } },
+            { label: "再备几日", hint: "终局之前，把该了结的都了结。", fx: { dao: 0.5 } },
+          ],
+        };
+      },
+    },
+    {
+      id: "devour_fight", // 终结进食：吞世者从不现身——你斩的是它探进此界的「口器」
+      cond: () => S.flags.guixuEnter && !S.flags.devourSlain,
+      w: () => 30,
+      build() {
+        return {
+          scene: "裂缝尽头没有路，只有「进食」本身：天地本源如百川倒灌，汇入一片看不见底的黑暗。那黑暗察觉到你，三万年来第一次「看」了过来——它不怒，不惧，只是分出一缕，化作你此生见过的每一个死敌的模样。斩了它，这场进食就断了。",
+          choices: [
+            { label: "正面硬撼，斩断进食", hint: "境界/力量/体质判定（极难）。胜则终结进食。", fx: { check: "realm*8+str*4+con*3+luck*2+d30>220",
+              success: { flag: "devourSlain", hp: -20, coincidence: 1 },
+              fail: { hp: -40, sta: -10, xinmo: 8 },
+              successText: "你的全力一击贯入黑暗最深处。三万年的「进食」发出一声不属于任何生灵的闷响——断了。裂缝里第一次漏下光。",
+              failText: "黑暗只晃了晃。你被本源洪流掀飞，浑身经脉如被碾过——它还远远没有被伤到根本。" } },
+            { label: "借裂缝地势，以巧断流", hint: "道心 60+ 方可：不斩口器，断其与界外的呼应（判定较易）。", disabled: S.daoXin < 60, fx: { check: "realm*6+int*5+luck*3+d20>190",
+              success: { flag: "devourSlain", coincidence: 1 },
+              fail: { hp: -30, xinmo: 10 },
+              successText: "你看懂了裂缝的呼吸。不与它争力，只在那声呼应最弱的刹那，替天地合上了嘴。进食，断了。",
+              failText: "呼应的节律算错了半拍。黑暗反扑，你的道心被它「看」出了一道裂纹。" } },
+            { label: "暂退裂缝之外", hint: "它不会追出来——它只在乎进食。气血不损，但终局仍等你回来。", fx: { sta: -5 } },
+          ],
+        };
+      },
+    },
+    {
+      id: "final_choice", // 终局抉择：五结局分岔（第十一章：取决于你的每一步）
+      cond: () => S.flags.devourSlain && !S.flags.endingDone,
+      w: () => 99,
+      build() {
+        const known = !!S.flags.truthKnown;
+        const bonds = Object.values(S.npc || {}).filter(v => v >= 80).length;
+        const broad = Object.values(S.npc || {}).filter(v => v >= 60).length;
+        const hiddenAll = ["duobaoCi", "shouyeren", "jianzheng", "shoumu", "shujing", "chuixianzhe"].every(id => (typeof castMet === "function") && castMet(id));
+        const beyond = (S.flags.coincidence || 0) >= 10 && hiddenAll && known;
+        const choices = [
+          { label: "承接战果，听它道一声「恭喜」", hint: known ? "你已经知道这句话意味着什么。" : "赢了吞世者，天道该论功行赏了。", fx: { special: "end:luding" } },
+          { label: "留在归墟，做新一任守夜人", hint: "不拆穿，也不离开。世界续命，你镇裂缝。", fx: { special: "end:shoujie" } },
+          { label: "识破回炉之局，修补界壁，重开仙路", hint: `需要：已知真相 + 生死羁绊×3（当前 ${bonds}）+ 伏笔≥8（当前 ${S.flags.coincidence || 0}）。完美结局。`,
+            disabled: !(known && bonds >= 3 && (S.flags.coincidence || 0) >= 8), fx: { special: "end:dengxian" } },
+          { label: "反手，弑天", hint: `需要：已知真相 + 听过低语 + 道心 60+（当前 ${Math.round(S.daoXin)}）。古往今来无人做到。`,
+            disabled: !(known && S.flags.devourWhisper && S.daoXin >= 60), fx: { special: "end:sitian" } },
+          { label: "打碎棋盘，让众生共掌天道", hint: `需要：已知真相 + 广结善缘×5（缘分 60+，当前 ${broad}）。从此没有棋手。`,
+            disabled: !(known && broad >= 5), fx: { special: "end:huantian" } },
+        ];
+        if (beyond) choices.push({ label: "什么也不选——转身，向「外面」走一步", hint: "面板上的字开始乱。这条路，它推演不到。", fx: { special: "end:beyond" } });
+        return {
+          scene: `进食断了。归墟深处静得能听见界壁的裂纹在合拢。这时，天道的声音落下来——三万年来它第一次这么近、这么温和：「做得好。承接它的因果吧，那是你应得的。」${known ? "你听得懂这句话。刀用完了，是要回炉的。" : "有什么东西在你心底一闪而过，快得抓不住。"} 终局在此，路在你脚下。`,
+          choices,
         };
       },
     },

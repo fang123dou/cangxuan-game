@@ -98,7 +98,7 @@ const AI = (() => {
    money(铜钱±≤80) stones(灵石±≤2) hp(气血±) sta(体力±≤5) mp(法力±) hunger(饱食度，正=进食≤45) cult(修为±≤25，玩家无功法时无效)
    dao(道心±≤3) points(万象点±≤50) attr({str|agi|int|con: ±≤0.15}) item("id:数量"，id∈wood,heimu,mianao,chaidao,jiansui,quanpu,yinqi,juqiDan,ludian,lianchui；功法授予用「可求功法」字段给出的功法 id）
    npc({"名字":缘分±≤12}) flag("字符串") ach(成就id，或"名|品级0~4|描述|奖励"生成新成就) card(1=天降随机词条) luckCharm(1~2) wx("jin|mu|shui|huo|tu:1~3"，五行亲和，仅天材地宝/洞天机缘可给)
-   spell("sp_标识"，习得具名法术，名录：1阶 sp_gengjin庚金剑气/sp_qingteng青藤绞/sp_shuijian水箭术/sp_huoqiu火球术/sp_dici地刺术；2阶 sp_taibai太白分光剑/sp_yimu乙木天牢/sp_xuanbing玄冰刺/sp_lihuo离火焚心咒/sp_bengshan崩山印——2阶须灵阶以上剧情方可授予)
+   spell("sp_标识"，习得具名法术，名录：1阶 sp_gengjin庚金剑气/sp_qingteng青藤绞/sp_shuijian水箭术/sp_huoqiu火球术/sp_dici地刺术/sp_jinzhen金针术/sp_chansi缠丝藤/sp_shuidan水弹术/sp_huomiao火苗术/sp_feishi飞石术；2阶 sp_taibai太白分光剑/sp_yimu乙木天牢/sp_xuanbing玄冰刺/sp_lihuo离火焚心咒/sp_bengshan崩山印——2阶须灵阶以上剧情方可授予；灵根专属（唯对应灵根剧情可授，引擎强制）：sp_wuxingci五行刺/sp_wuchao五气朝元(杂)/sp_palm掌心雷(雷)/sp_jianzhi剑指(剑)/sp_bingfeng冰封诀(冰)/sp_fengren风刃(风)/sp_duzhang毒瘴掌(毒)/sp_yingxi影袭(影)；禁术（代价惨重，仅限禁术残页/魔道剧情授予，授予前剧情须明示代价）：sp_jin_ranfa倾江(燃法)/sp_jin_xianji燃道(献祭道基)/sp_jin_ranyun偷天(献祭气运)/sp_jin_tonggui道消(同归于尽))
    combat("敌人名:战力数字") danger("pickpocket|trace|deep|caught|fleeDog|catchThief")
    pet("名字") drop("材料名") slay("名字")
    newcard("词条名|品级0~5|效果|mod键:值,…") fabao("法宝名|品级0~5|效果|mod键:值,…") wuqi("兵器名|攻伐%|品阶")
@@ -131,7 +131,8 @@ const AI = (() => {
 24. 【功法求法 · 铁律】输入「可求功法」非空时：该功法是玩家当前境界/身份下确凿可求的传承。请检索其获取路径（宗门传功/内门考核/散修求法），在场景中自然引出机缘（传功执事召见、内门考核开台、古籍摊残卷、高人指点等），并在 choices 中给出获取选项：fx.item 用字段给出的功法 id（如 "gfqingyan:1"），可搭配 money 花费或 check 判定；选项文案贴合场景，不生硬报功法名。功法圆满或境界瓶颈时绝不能让玩家无路可求；3 阶圣品以上功法此界难至，只可作「求法风闻」伏笔，绝不可直接授予。
 25. 【名录人物 · 铁律】输入「当地人物」列出当前地域在场的一方强者（boss）、中立人物与隐藏角色（设定集第五、六章名录）。(a) 场景可让他们自然登场：一方强者可拜谒/讨教（切磋点到为止，其境界远高于玩家时玩家绝无胜算，须写成指教而非险胜）、中立人物可攀谈/交易服务（听雨楼会费换情报、天机楼买消息按字计费）；(b) 结识用 fx.flag="metcast_<id>" 与 fx.npc 记缘，人物性情（重情/贪婪/偏激/豁达/记仇/洒脱）须与缘分规则16一致；(c) 隐藏角色只可远观留痕（fx.coincidence 记一笔），玩家伏笔计数≥2 时才可安排上前接触的剧情，且接触结果含蓄克制；圣域级隐藏角色（如归墟垂钓者）永不可交互，只可留痕。(d) 人物的境界、名号、来路严格按名录，不得自造一方强者；未列名的小人物可依设定集合理生成，但不可与名录人物冲突。
 26. 【宗门日常 · 铁律】输入「宗门」非空时：玩家是宗门弟子，剧情应呼应其门内身份（点卯、杂务、月供、同门与执事的倾轧）。(a) 宗门资源走贡献与月供两套账：贡献由点卯/差事积攒，用于藏经阁兑换；月供每月初一由引擎发放，缺卯过多减半——你不得凭空让玩家获得宗门资源（灵石/丹药/功法）。(b) 外门弟子三千、资源只向强者倾斜：同门竞争、执事刁难、任务赏功都可以是剧情素材，但结算须走 fx 白名单。(c) 内门弟子不再点卯，其剧情转向内门事务与师承。
-27. 【远行 · 铁律】输入「旅途」非「无」时：玩家正在驿道远行途中，本回合场景必须在路途（驿道/山坳/渡口/客栈通铺），可写商队、劫道、路遇行人、荒野吐纳——绝不可写已抵达目的地，也不可照常过目的地或出发地镇上的日子；抵达由引擎跨日结算，脚程耗尽自会落脚该域枢纽。「旅途」为「无」且玩家境界已达灵阶时，可自然引出远行念头（四方路引、远方风闻），启程由引擎选项执行。四海需舟楫，海外剧情暂不开放。`;
+27. 【远行 · 铁律】输入「旅途」非「无」时：玩家正在驿道远行途中，本回合场景必须在路途（驿道/山坳/渡口/客栈通铺），可写商队、劫道、路遇行人、荒野吐纳——绝不可写已抵达目的地，也不可照常过目的地或出发地镇上的日子；抵达由引擎跨日结算，脚程耗尽自会落脚该域枢纽。「旅途」为「无」且玩家境界已达灵阶时，可自然引出远行念头（四方路引、远方风闻），启程由引擎选项执行。四海需舟楫，海外剧情暂不开放。
+28. 【终局 · 铁律】输入「终局」字段记录终局链进度（遗痕/低语/问天/真相/进食）。真相必须分层揭开：(a) 遗痕未齐时只可写「巧合碎屑」，不许点破天道与吞世者；(b) 已闻低语后可借NPC之口半真半假地暗示「天有二心」——吞世者想让你知道的，要打折再打折地写；(c) 「真相：已知」前，绝不可写出天道「没安好心」的定论，也不可替玩家识破结局；(d) 「进食：未断」时可写大劫将至的末世征兆（灵脉枯、天灾频、强者陨落），断后写天地一轻的余韵；(e) 终局五结局由引擎结算，你只可铺垫，绝不可在 scene 里替玩家宣告结局或让天道提前现身摊牌。`;
 
   function chronicleSummary() {
     try {
@@ -179,6 +180,9 @@ const AI = (() => {
       当地人物: castPrompt(),
       宗门: S.sect ? `${S.sect}${S.flags.neimen ? "（内门弟子）" : "（外门弟子）"}·贡献 ${S.sectGong || 0}·本月缺卯 ${S.flags.dianmaoMiss || 0} 次` : "无（未入宗门）",
       旅途: S.travel ? `前往${REGIONS[S.travel.to].name}的驿道上（余 ${S.travel.left} 日脚程）——场景须在路途，不得写已抵达，抵达由引擎结算` : "无（未在远行）",
+      终局: (() => { const p = ["pioneer_kezi", "pioneer_xinwu", "pioneer_fen"].filter(f => S.flags[f]).length;
+        if (!p && !S.flags.devourSlain) return "未启（圣域之后，先驱遗痕会浮出水面）";
+        return `遗痕 ${p}/3 ｜ 低语:${S.flags.devourWhisper ? "已闻" : "未闻"} ｜ 问天:${S.flags.sysQuestioned ? "已问" : "未问"} ｜ 真相:${S.flags.truthKnown ? "已知" : "未知"} ｜ 进食:${S.flags.devourSlain ? "已断" : "未断"}${S.flags.endingDone ? " ｜ 结局已收" : ""}`; })(),
       历练日: (S.day - (S.lastTrainDay || 0)) >= 3 ? "是（三日之期已至：本回合必须安排一次提升实力的机缘，见规则14）" : "否",
       已有职业: (() => { const q = S.professions || {}; const ks = Object.keys(q); return ks.length ? ks.map(pid => { const P = (typeof PROFESSIONS !== "undefined") && PROFESSIONS[pid]; return P ? `${P.name}${q[pid].primary ? "(主)" : "(副)"}Lv${q[pid].lv}` : pid; }).join("、") : "无"; })(),
       伏笔计数: (S.flags.coincidence || 0) + "（幕后阴谋的碎屑：刻意巧合/古怪贵人/上古信物；够数时系统自现仙品任务）",

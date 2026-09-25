@@ -144,6 +144,7 @@ function attr(k) {
   const pb = profAttrBonus(k); // 职业每级属性加成（3.4）：品阶基数 × 境界系数
   if (pb > 0) { const ceil = attrCeiling(); v += Math.min(pb, Math.max(0, ceil - v)); } // 天花板条款：不得突破当前境界的单项属性天花板
   if (S.debuff === "weak" && k !== "luck") v *= 0.8;
+  if (S.jinshuWeak > 0 && k !== "luck") v *= 0.5; // 禁术·虚弱：全属性 -50%（蓝锁 0，3~7 日体质定恢复）
   if (k === "int" && S.flags.hangoverDay === S.day) v *= 0.5; // 酒剑仙：宿醉次日智力减半
   if ((k === "int" || k === "agi") && S.flags.sleepDebtDay === S.day) v *= 0.9; // 睡眠不足：智力敏捷先掉（设定·凡俗生存）
   return Math.round(v * 10) / 10;
@@ -178,6 +179,12 @@ function spellProf(id) { return (S.spells || {})[id] || 0; }
 function spellPower(sp) { // 威力预估：基础随熟练成长（圆满 +30%）× 智力系数 × 存量系数（按当前蓝量）
   const profGrow = 1 + 0.3 * Math.min(1, spellProf(sp.id) / spellCap(sp));
   return Math.max(1, Math.round(sp.base * profGrow * spellIntCoef() * mpReserveCoef() * 10) / 10);
+}
+function spellPowerJinshu(sp) { // 禁术威力预估：燃法随当前蓝量上涨（倾蓝一击），其余为基础 × 智力系数；称号「孤注」+10%
+  let p = sp.jsKind === "ranfa" ? (sp.base + S.mp * 2) : sp.base;
+  p *= spellIntCoef();
+  if (hasTitle("guzhu")) p *= 1.1;
+  return Math.max(1, Math.round(p * 10) / 10);
 }
 function gainSpellProf(sp, why) { // 施法积攒：实战中掐诀求真知（设定·自然习得）；瓶颈（最后 10%）获取减半；小成/圆满反哺智力（法术看智力）
   S.spells = S.spells || {};
@@ -222,6 +229,7 @@ function combatPower() {
   if (S.hunger > 85) p *= 0.78; // 极度饥饿再扣（累计约 -30%）：眼冒金星，手脚发软
   p *= 1 - injuryTier().pen / 100; // 设定：伤病四级压常态战力
   if ((S.flags.drunkSlots || 0) > 0 && hasSpecial("jiujian")) p *= 1.15; // 酒剑仙：酒意酣畅，战力 +15%
+  if (S.realm >= 5) { const mr = mpMax() > 0 ? S.mp / mpMax() : 0; p *= 0.7 + 0.4 * mr; } // 法力存量计入战力浮动（设定·禁术节接口）：满蓝 ×1.1 / 半蓝 ×0.9 / 空蓝 ×0.7
   return Math.round(p * 10) / 10;
 }
 /* 康健 · 伤病四级（设定集）：轻伤 -10% ｜ 中伤 -30% ｜ 重伤 -50% ｜ 濒死 -80%（判定表演算） */
@@ -294,6 +302,7 @@ function powerBreakdown() {
   else if (S.hunger > 70) lines.push(`饥饿缠身：-10%（饱食不足三成）`);
   if (inj.pen) lines.push(`${inj.name}：-${inj.pen}%（伤病四级）`);
   if (S.debuff === "weak") lines.push(`元气大伤：五维 ×0.8（修养 ${S.debuffDays || 0} 日）`);
+  if (S.jinshuWeak > 0) lines.push(`禁术虚耗：全属性 -50%、法力锁 0（${S.jinshuWeak} 日后恢复）`);
   if ((S.flags.drunkSlots || 0) > 0 && hasSpecial("jiujian")) lines.push(`酒剑仙 · 酒意酣畅：战力 +15%（余 ${S.flags.drunkSlots} 时辰；明日宿醉智力减半）`);
   lines.push(`——常态战力（满状态）：${(Math.round(normal * 10) / 10)}`);
   const dw = Object.keys(S.darkWounds || {}).filter(k => S.darkWounds[k] > 0);
@@ -878,7 +887,7 @@ function renderPersonTab(body) {
      <div class="person-sec">身 手</div>
      <div class="p-row pv-row" data-pv="1"><span>攻击力</span><b>${attackPower()}</b></div>
      <div class="p-row dx-row" data-dx="1"><span>道心</span><b>${daoText()}${(S.xinmo || 0) >= 25 ? " ·【" + xinmoStage().name + "】" : ""}</b></div>
-     <div class="p-row ht-row" data-ht="1"><span>康健</span><b>${injuryTier().name}${injuryTier().pen ? "（战力 -" + injuryTier().pen + "%）" : ""}${S.debuff === "weak" ? " ·【元气大伤】" : ""}</b></div>
+     <div class="p-row ht-row" data-ht="1"><span>康健</span><b>${injuryTier().name}${injuryTier().pen ? "（战力 -" + injuryTier().pen + "%）" : ""}${S.debuff === "weak" ? " ·【元气大伤】" : ""}${S.jinshuWeak > 0 ? ` ·【禁术虚耗 ${S.jinshuWeak} 日】` : ""}${S.daoShang ? ` ·【道伤 ×${S.daoShang}】` : ""}</b></div>
      <div class="p-row" data-wd="1"><span>受伤部位</span><b>${woundText()}</b></div>
      <div class="p-row" data-il="1"><span>疾病</span><b>${illText()}</b></div>
      <div class="p-row" data-gr="1"><span>装备</span><b>${gearText()}</b></div>
@@ -1208,7 +1217,7 @@ function renderTab() {
       })});
       if (id === "dixinru" && (S.inv.dixinru || 0) > 0) acts.push({ label: "服之（重塑道基）", fn: closeAnd(() => {
         S.inv.dixinru--;
-        takeDrug("dixinru", 0, 30);
+        S.hp = Math.min(hpMax(), S.hp + 30); // 圣品天材地宝：不走丹药药蚀，温润回血即可
         S.yaoshi = Math.min(100, Math.max(0, (S.yaoshi || 0) - 20)); // 设定集名录：修复暗伤药毒
         const out = [];
         if ((S.daoShang || 0) > 0) { // 道伤回补：献祭禁术亏空，圣药可补（设定·禁术节）
@@ -1374,7 +1383,7 @@ function renderTab() {
     /* 法术栏（设定·技能面板三标签：类型/主属性/消耗） */
     const spKnown = knownSpells();
     html += `<div class="p-title" style="margin-top:14px"><b>法 术</b><span>具名法术 · 耗法力 · 威力 = 基础 × 智力 × 存量</span></div>`;
-    html += spKnown.length ? spKnown.map(sp => `<div class="p-row" data-spell="${sp.id}"><span>「${sp.name}」${sp.linggen ? `<i style="color:var(--gold-dim);font-style:normal"> · ${linggen().name}专属</i>` : ""}</span><b>熟练 ${Math.round(spellProf(sp.id))}/${spellCap(sp)}</b></div>`).join("")
+    html += spKnown.length ? spKnown.map(sp => `<div class="p-row" data-spell="${sp.id}"${sp.kind === "jinshu" ? ` style="border:1px solid var(--blood-hi);padding-left:6px"` : ""}><span>「${sp.name}」${sp.kind === "jinshu" ? `<i style="color:var(--blood-hi);font-style:normal"> · 禁术</i>` : sp.linggen ? `<i style="color:var(--gold-dim);font-style:normal"> · ${linggen().name}专属</i>` : ""}</span><b>${sp.kind === "jinshu" ? "透支未来" : `熟练 ${Math.round(spellProf(sp.id))}/${spellCap(sp)}`}</b></div>`).join("")
       : (S.realm >= 5 ? `<div class="empty">气海已开，尚无具名法术。宗门传功、古籍玉简、游方货郎——法术之路处处可起。</div>` : `<div class="empty">聚气开海之后，方谈法术。</div>`);
     const life = Object.entries(S.skills).filter(([k]) => !(k in TECH_CAPS)).sort((a, b) => b[1] - a[1]);
     html += `<div class="p-title" style="margin-top:14px"><b>技 艺</b><span>生活技能 · 从业历练积攒</span></div>`;
@@ -1420,6 +1429,11 @@ function renderTab() {
     body.querySelectorAll("[data-spell]").forEach(el => el.onclick = () => { // 法术详情：类型/主属性/消耗 + 威力公式拆解
       const sp = (typeof SPELLS_BY_ID !== "undefined") && SPELLS_BY_ID[el.dataset.spell];
       if (!sp) return;
+      if (sp.kind === "jinshu") { // 禁术详情：红框标记，代价前置（设定·禁术节）
+        showInfo(`「${sp.name}」 <span style="color:var(--blood-hi)">· 禁术</span>`, `<span style="color:var(--blood-hi)">${sp.tierName} · 类型：禁术（不入常态战力）</span>`, esc(sp.desc),
+          `代价：${esc(sp.cost)} ｜ 威力预估 ≈${spellPowerJinshu(sp)}（智力系数 ×${spellIntCoef()}${sp.jsKind === "ranfa" ? "，随当前法力上涨" : ""}）｜ 释放前系统三次确认：此术不可逆，天道记账，概不退换。｜ ${esc(sp.src)}`);
+        return;
+      }
       showInfo(`「${sp.name}」`, `<span style="color:var(--gold-dim)">${sp.tierName} · ${sp.el ? WX_NAMES[sp.el] + "行" : "五行皆转"} · 类型：法术${sp.linggen ? " · " + linggen().name + "专属" : ""}</span>`, esc(sp.desc),
         `主属性：智力 ｜ 消耗：法力 ${sp.mp} ｜ 熟练度 ${Math.round(spellProf(sp.id))}/${spellCap(sp)}（施法积攒，瓶颈最后 10% 减半；小成/圆满反哺智力）｜ 基础威力 ${sp.base} ｜ 当前预估 ≈${spellPower(sp)}（智力系数 ×${spellIntCoef()} · 存量系数 ×${mpReserveCoef()}）${sp.trait && typeof SPELL_TRAIT_TEXT !== "undefined" ? "｜ " + SPELL_TRAIT_TEXT[sp.trait] : ""}｜ ${esc(sp.src)}`);
     });
@@ -1537,6 +1551,7 @@ function gainAch(id) {
   if (id === "quest1") S.points += 5;
   if (id === "shengsi") S.flags.yibao = 1; // 称号「义薄云天」：陌生人初始好感 +10
   if (id === "huagan") S.base.luck = Math.min(10, S.base.luck + 1); // 化干戈：气运 +1
+  if (id === "qingtian") S.points += 500; // 倾天一击：万象点 ×500
   if (id === "mingbu") S.base.con = Math.min(10, Math.round((S.base.con + 1) * 10) / 10); // 命不该绝：体质 +1
   if (ACH_TITLE[id]) gainTitle(ACH_TITLE[id]); // 成就授称号
   // 翻页奖励：千秋录每刻满 10 项翻过一页，赠一次「天命一抽」——必出青品以上，不耗万象点、不占保底计数
@@ -1895,8 +1910,9 @@ function night() {
   delete S.flags.meditateTonight;
   if (S.flags.sleepDebtDay && S.flags.sleepDebtDay <= S.day) delete S.flags.sleepDebtDay;
   S.sta = staMax() * (S.mods.staRegen >= 2 ? 1 : sleepDebt ? 0.7 : 0.85);
-  if (S.realm >= 5 && S.mp < mpMax()) S.mp = Math.min(mpMax(), S.mp + mpMax() * 0.3 * (S.linggen === "za" ? 1.5 : 1)); // 杂灵根：回蓝 ×1.5
+  if (S.realm >= 5 && S.mp < mpMax() && !(S.jinshuWeak > 0)) S.mp = Math.min(mpMax(), S.mp + mpMax() * 0.3 * (S.linggen === "za" ? 1.5 : 1)); // 杂灵根：回蓝 ×1.5；禁术虚弱期间蓝锁 0
   if (S.debuff === "weak") { S.debuffDays = (S.debuffDays || 0) - 1; if (S.debuffDays <= 0) { S.debuff = null; lines.push(`元气终于回转，手脚重新有了力气。`); } }
+  if (S.jinshuWeak > 0) { S.jinshuWeak--; if (S.jinshuWeak <= 0) { S.jinshuWeak = 0; lines.push(`禁术虚耗终于熬了过去——丹田重新传来暖意，法力回来了。`); } }
   if (S.flags.ateHot) { S.foodStreak++; S.flags.ateHot = false; if (S.foodStreak >= 100) gainAch("hotRice"); } // 设定集：连续百日热食
   else S.foodStreak = 0;
   if (S.daoXin >= 90) gainAch("wukui"); // 问心无愧：道心 90
@@ -2188,7 +2204,7 @@ function applyCore(fx) {
     if (k === "stones") S.stones = Math.max(0, S.stones + v);
     if (k === "hp") S.hp = Math.min(hpMax(), S.hp + v); // 气血回复不得溢出上限
     if (k === "sta") S.sta = Math.max(0, Math.min(staMax(), S.sta + v));
-    if (k === "mp") S.mp = Math.max(0, Math.min(mpMax(), S.mp + v));
+    if (k === "mp" && (v < 0 || !(S.jinshuWeak > 0))) S.mp = Math.max(0, Math.min(mpMax(), S.mp + v)); // 禁术虚弱期间蓝锁 0（只锁回复，不锁消耗）
     if (k === "hunger") { if (!hasSpecial("bigu")) S.hunger = Math.max(0, S.hunger - v); }
     if (k === "dao") S.daoXin = Math.max(0, Math.min(100, S.daoXin + v));
     if (k === "xinmo") S.xinmo = Math.max(0, Math.min(100, (S.xinmo || 0) + v));
@@ -2383,6 +2399,11 @@ function trainingEvent() {
 // 远行脚程（第五章）：境界越高，日行越远——灵阶(7) 6 日，玄阶(13) 4 日，地阶(19) 3 日
 function travelDaysFor(key) { return S.realm >= 19 ? 3 : S.realm >= 13 ? 4 : 6; }
 function runSpecial(sp, fx) {
+  if (sp.indexOf("end:") === 0) { // 终局抉择（第十一章 · 五结局）：由终局场景给出，endGame 结算
+    const kind = sp.slice(4);
+    if (ENDINGS[kind] && !S.flags.endingDone) { S.flags.endingDone = kind; endGame(kind); }
+    return;
+  }
   if (sp.indexOf("travel:") === 0) {
     const key = sp.slice(7);
     const rg = REGIONS[key];
@@ -2448,7 +2469,7 @@ function runSpecial(sp, fx) {
       log(`你五心朝天，感一丝凉意自鼻尖沉入丹田。灵气潮汐正涨。`, "dim");
     }
     if ((S.xinmo || 0) > 0) { addXinmo(-2); if (xinmoStage().name === "心境清明") log(`杂念尽去，灵台一片清明。`, "good"); }
-    if (S.realm >= 5) S.mp = Math.min(mpMax(), S.mp + mpMax() * 0.2 * (S.linggen === "za" ? 1.5 : 1)); // 杂灵根：回蓝 ×1.5
+    if (S.realm >= 5 && !(S.jinshuWeak > 0)) S.mp = Math.min(mpMax(), S.mp + mpMax() * 0.2 * (S.linggen === "za" ? 1.5 : 1)); // 杂灵根：回蓝 ×1.5；禁术虚弱期间蓝锁 0
     if (Math.random() < attr("luck") * 0.015) { gainCult(20); sys(`【顿悟】灵光毫无预兆地炸开，修为大涨一截！`); }
     S.sta = Math.max(0, S.sta - (focus ? 3 : 0)); // 参悟耗神三分；纯吐纳不耗
     advanceSlot();
@@ -2543,7 +2564,7 @@ function runSpecial(sp, fx) {
     gainCult(cultBase * wxm);
     gainAttr(gd ? gd.fb.a : "str", 0.03);
     const ling = S.realm >= 7;
-    if (ling) S.mp = Math.min(mpMax(), S.mp + mpMax() * 0.2 * (S.linggen === "za" ? 1.5 : 1)); // 灵阶：打坐代眠，法力亦随吐纳回补
+    if (ling && !(S.jinshuWeak > 0)) S.mp = Math.min(mpMax(), S.mp + mpMax() * 0.2 * (S.linggen === "za" ? 1.5 : 1)); // 灵阶：打坐代眠，法力亦随吐纳回补；禁术虚弱期间蓝锁 0
     S.flags.meditateTonight = 1; // 睡不安稳（灵阶起无妨）
     log(`万籁俱寂。你就着残雪月色行功，吐纳绵绵，直至东方泛白。`, "dim");
     sys(`【夜修】${bothTech ? tTechs.join("·") + "合参（" + (hasSpecial("moyu") ? "摸鱼减罚 ÷√2" : "多线分心 ÷2") + "），各" : "「" + sk + "」"}熟练度 +${inc}（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}），修为 +${Math.round(cultBase * wxm)}${ling ? "。灵阶之躯，打坐即是睡眠——今夜无亏。" : "。代价：睡不安稳——今夜恢复减半，明日睡眠不足（智力敏捷 -10%、体力不满）。"}`);
@@ -2720,14 +2741,22 @@ function combatOpts(enemy, done) {
     { label: "逃", hint: `敏捷 ${attr("agi")}，跑赢就算赢。`, fn: () => resolveCombat(enemy, "flee", done) },
   ];
   if (attr("int") >= 4) opts.push({ label: "智取", hint: "战局推演：找它的破绽。", fn: () => resolveCombat(enemy, "trick", done) });
+  opts.push({ label: "护体", hint: "稳守门户：承伤 ×0.6，己伤 ×0.85。", fn: () => resolveCombat(enemy, "guard", done) }); // 护体：防守反击姿态
+  if (attr("agi") >= 6 && attr("int") >= 6) opts.push({ label: "打断", hint: "敏智判定：成则敌方先失一手（开场不还击）；败则白挨一记。", fn: () => resolveCombat(enemy, "interrupt", done) }); // 打断：抢攻其行气节点
   if (enemy.canBeg) opts.push({ label: "求饶", hint: "尊严换命，有时值。", fn: () => resolveCombat(enemy, "beg", done) });
   const known = knownSpells();
   if (S.realm >= 5 && known.length) opts.push({ label: "施法", hint: `具名法术 ${known.length} 门 ｜ 法力 ${Math.round(S.mp)}/${mpMax()}。`, fn: () => spellMenu(enemy, done) });
   return opts;
 }
-/* 施法菜单：类型/主属性/消耗三标签（设定·技能面板）；法力不足可强行催动（遭反噬） */
+/* 施法菜单：类型/主属性/消耗三标签（设定·技能面板）；法力不足可强行催动（遭反噬）；禁术红框、三次确认 */
 function spellMenu(enemy, done) {
   const opts = knownSpells().map(sp => {
+    if (sp.kind === "jinshu") { // 禁术：代价前置展示，释放前系统三次确认（设定·禁术节）
+      const can = sp.jsKind !== "ranfa" || S.mp > 0; // 燃法须有余蓝可倾
+      return { label: `【禁术】「${sp.name}」`,
+        hint: `${sp.tierName} ｜ 代价：${sp.cost} ｜ 威力≈${spellPowerJinshu(sp)}${can ? "" : "——法力空空，无蓝可倾"}`,
+        fn: () => can ? jinshuConfirm(enemy, sp, done, 1) : undefined };
+    }
     const can = S.mp >= sp.mp;
     return { label: `「${sp.name}」`,
       hint: `${sp.tierName} · ${sp.el ? WX_NAMES[sp.el] + "行" : "五行皆转"} · 耗法 ${sp.mp} ｜ 主属性：智力 ｜ 威力≈${spellPower(sp)}（智力 ×${spellIntCoef()} · 存量 ×${mpReserveCoef()}）${can ? "" : "——法力不足：强行催动将遭反噬"}`,
@@ -2735,6 +2764,19 @@ function spellMenu(enemy, done) {
   });
   opts.push({ label: "返回", hint: "", fn: () => setChoices(combatOpts(enemy, done)) });
   setChoices(opts);
+}
+/* 禁术三次确认（设定原文：释放前系统三次确认——此术不可逆，天道记账，概不退换） */
+function jinshuConfirm(enemy, sp, done, n) {
+  const warns = [
+    `【禁术】${sp.desc}`,
+    `【代价】${sp.cost}。释放即付，概不退换。`,
+    `【系统警告】此术不可逆。天道记账，概不退换。${sp.jsKind === "tonggui" ? "这一击之后，没有然后。" : ""}`,
+  ];
+  setChoices([
+    { label: n >= 3 ? `释放禁术「${sp.name}」` : `确认（第 ${n} 次 / 共三次）`, hint: warns[n - 1],
+      fn: () => n >= 3 ? resolveCombat(enemy, "jinshu:" + sp.id, done) : jinshuConfirm(enemy, sp, done, n + 1) },
+    { label: "放弃", hint: "底牌之所以是底牌，正因为它还藏着。", fn: () => spellMenu(enemy, done) },
+  ]);
 }
 function resolveCombat(enemy, mode, onEnd) {
   const myP = combatPower();
@@ -2780,6 +2822,7 @@ function resolveCombat(enemy, mode, onEnd) {
     if (myEl === "shui") myDmg *= 1.1;
     else if (myEl === "huo") myDmg *= 0.9;
   }
+  if (mode === "guard") { foeDmg *= 0.6; myDmg *= 0.85; } // 护体：稳守门户，承伤六成、己伤八成五
   // ———— 第十二章 · 生死判定：敌我同式（气血上限=体质×10，随境界放缩），一力=一基础攻击力（判定表演算） ————
   const pt = TABLES.COMBAT.powerTiers;
   const enemyTier = enemy.power >= pt[4] ? 4 : enemy.power >= pt[3] ? 3 : enemy.power >= pt[2] ? 2 : enemy.power >= pt[1] ? 1 : 0;
@@ -2801,6 +2844,17 @@ function resolveCombat(enemy, mode, onEnd) {
   if (WX_KE[myEl] === eEl) lines.push(`【五行生克】你的${WX_NAMES[myEl]}行克它的${WX_NAMES[eEl]}行——你伤害 +20%，它 -20%。`);
   else if (WX_KE[eEl] === myEl && !za) lines.push(`【五行生克】它的${WX_NAMES[eEl]}行克你的${WX_NAMES[myEl]}行——你伤害 -20%，小心。`);
   else if (za) lines.push(`【杂灵根】五行俱全，没有任何一系能克制你。`);
+  if (mode === "guard") lines.push(`【护体】你沉肩坠肘，气机内敛——承伤六成，出手也留三分。`);
+  let interruptWin = false; // 打断：抢攻其行气节点，成则敌方先失一手
+  if (mode === "interrupt") {
+    const chk = attr("agi") * 6 + attr("int") * 6 + attr("luck") * 2 + Math.random() * 30;
+    if (chk > 60) { interruptWin = true; lines.push(`【打断】你抢先出手，直指它行气节点——它气息一滞，先失一手。`); }
+    else {
+      const back = Math.max(1, Math.round(hpMax() * 0.08));
+      myHp -= back; S.hp = Math.max(1, Math.round(myHp)); // 失手不致死，但白挨一记
+      lines.push(`【打断失手】你扑上去抢攻，它随手一格——你门户大开，白挨一记（气血 -${back}）。`);
+    }
+  }
   const jt = TABLES.JUDGE;
   const judge = (a, d) => { // 双方五维判定（设定：敏管闪避、运管暴击、智管弱点）；暴击与弱点各自独立判定，可叠加（×2×1.5=×3）
     const dodge = Math.max(jt.dodge.cap[0], Math.min(jt.dodge.cap[1], jt.dodge.base + (d.agi - a.agi) * jt.dodge.w));
@@ -2844,18 +2898,56 @@ function resolveCombat(enemy, mode, onEnd) {
           if (sp.trait === "weaken") spellWeaken = true;
           lines.push(`你掐诀催动「${sp.name}」，${sp.el ? WX_NAMES[hit.el] + "行" : ""}法力奔涌（法力 -${sp.mp}，智力 ×${ic0} · 存量 ×${rc0}），造成 ${hit.dmg} 点伤害${hit.kind === "crit" ? "（暴击×2）" : hit.kind === "weak" ? "（命中弱点×1.5）" : hit.kind === "crit+weak" ? "（暴击+弱点×3）" : ""}${hit.m > 1 ? "（五行相克 ×1.2）" : hit.m < 1 ? "（行属被克 ×0.8）" : ""}${hit.note}，${enemy.name} ${seen ? `余 ${Math.max(0, Math.round(eHp))}/${eHpMax}` : `【${eHpState()}】`}`);
         }
-        if (eHp > 0 && sp.trait !== "noCounter") { // 敌方反击一次（风刃先制：敌不及还手）
+        if (eHp > 0 && sp.trait !== "noCounter" && !interruptWin) { // 敌方反击一次（风刃先制/打断得手：敌不及还手）
           const j2 = judge({ agi: eAgi, int: eInt, luck: eLuck }, { agi: myAgi, int: myInt, luck: myLuck });
           if (j2.kind === "dodge") lines.push(`你侧身避过它的反击`);
           else {
-            let dmg = eStr * (fl[0] + Math.random() * (fl[1] - fl[0])) * foeDmg * j2.mult * (enemyTier >= 1 && Math.random() < TABLES.COMBAT.enemySkillChance ? TABLES.COMBAT.enemySkillMult : 1) * (1 - (S.mods.defP || 0) / 100) * (laosouWeak ? 0.5 : 1) * (spellWeaken ? 0.7 : 1);
+            const eSpell = enemy.power >= 30 && Math.random() < 0.25; // 敌方施法：强敌以术法攻伐（伤害 ×1.4，可闪避）
+            let dmg = eStr * (eSpell ? 1.4 : 1) * (fl[0] + Math.random() * (fl[1] - fl[0])) * foeDmg * j2.mult * (enemyTier >= 1 && Math.random() < TABLES.COMBAT.enemySkillChance ? TABLES.COMBAT.enemySkillMult : 1) * (1 - (S.mods.defP || 0) / 100) * (laosouWeak ? 0.5 : 1) * (spellWeaken ? 0.7 : 1);
             if (spellWeaken) { lines.push(`【冰封】它血脉僵滞，这一击缓了三成。`); spellWeaken = false; }
             dmg = Math.max(1, Math.round(dmg));
             myHp -= dmg;
-            lines.push(`它${j2.kind === "crit" ? "暴击" : j2.kind === "weak" ? "打中你的破绽" : j2.kind === "crit+weak" ? "暴击正中你的破绽" : "反击"}，你受 ${dmg} 点伤害，气血 ${Math.max(0, Math.round(myHp))}/${hpMax()}`);
+            lines.push(`${eSpell ? `它掐诀引动${WX_NAMES[eEl]}行灵气，一道术法轰至` : `它${j2.kind === "crit" ? "暴击" : j2.kind === "weak" ? "打中你的破绽" : j2.kind === "crit+weak" ? "暴击正中你的破绽" : "反击"}`}，你受 ${dmg} 点伤害，气血 ${Math.max(0, Math.round(myHp))}/${hpMax()}`);
           }
         }
+        if (interruptWin) interruptWin = false;
       }
+    }
+  }
+  /* 禁术 · 开场一击（施法菜单三次确认后）：代价释放即付、不可逆；不入熟练度、不自动掐诀、不计入常态战力 */
+  let jinshuUsed = null, tonggui = false;
+  if (/^jinshu:/.test(mode)) {
+    const sp = (typeof SPELLS_BY_ID !== "undefined") && SPELLS_BY_ID[/^jinshu:(.+)$/.exec(mode)[1]];
+    if (sp && sp.kind === "jinshu" && S.realm >= 5) {
+      jinshuUsed = sp;
+      S.stats.jinshuN = (S.stats.jinshuN || 0) + 1;
+      const power = spellPowerJinshu(sp) * (fl[0] + Math.random() * (fl[1] - fl[0])); // 先算威力（燃法按当前蓝量），再付代价
+      if (sp.jsKind === "ranfa") { // 一档 · 燃法（竭蓝型）：倾全部法力于一击，法力归零 +【虚弱】
+        const poured = Math.round(S.mp);
+        S.mp = 0;
+        let days = 3 + Math.min(4, Math.floor(attr("con") / 2.5)); // 3~7 日，体质定恢复
+        if (hasTitle("daokou")) days = Math.max(1, days - 1); // 称号「刀口舔蜜」：虚弱 -1 日
+        S.jinshuWeak = days;
+        lines.push(`【禁术 · 倾江】你倾尽 ${poured} 点法力于一击（法力归零）——【虚弱】${days} 日：全属性 -50%、法力锁 0。放禁术前，先找好藏身之处。`);
+      } else if (sp.jsKind === "xianji") { // 二档 · 献祭道基：永久亏空记【道伤】，唯圣药可补
+        S.base.str = Math.max(1, Math.round((S.base.str - 1) * 10) / 10); S.base.con = Math.max(1, Math.round((S.base.con - 1) * 10) / 10);
+        S.daoShang = (S.daoShang || 0) + 1; computeMods();
+        lines.push(`【禁术 · 燃道】你点燃道基换这一击——力量 -1、体质 -1，亏空记【道伤 ×${S.daoShang}】（唯圣药可补）。`);
+      } else if (sp.jsKind === "ranyun") { // 二档 · 献祭气运：-1 气运，威力冠绝同档
+        S.base.luck = Math.max(1, S.base.luck - 1);
+        lines.push(`【禁术 · 偷天】你押上 1 点气运——此后经年，霉运缠身。`);
+      } else if (sp.jsKind === "tonggui") { // 半档 · 同归于尽：燃尽道基与寿元，之后没有然后
+        tonggui = true;
+        lines.push(`【禁术 · 道消】你燃尽全部道基与剩余寿元——这一击之后，没有然后。`);
+      }
+      if (tonggui) eHp = 0; // 同归于尽：一击必杀，无从闪避
+      else {
+        const j0 = judge({ agi: myAgi, int: myInt, luck: myLuck }, { agi: eAgi, int: eInt, luck: eLuck });
+        const hit = spellHit(sp, power, j0, eEl, za);
+        if (hit.dodged) lines.push(`禁术「${sp.name}」轰出——它侧身闪开，术法落空。代价照付，概不退换。`);
+        else { eHp -= hit.dmg; lines.push(`禁术「${sp.name}」命中，造成 ${hit.dmg} 点伤害，${enemy.name} ${seen ? `余 ${Math.max(0, Math.round(eHp))}/${eHpMax}` : `【${eHpState()}】`}`); }
+      }
+      if (S.stats.jinshuN % 3 === 0) { S.flags.jinshuMarked = 1; lines.push(`【？】道基燃过的气息散入夜色——像黑夜里的火炬。某些存在，似乎朝这边看了一眼。`); } // 隐藏风险：频繁使用献祭禁术者，会逐渐进入某些存在的视野
     }
   }
   while (round < 8 && myHp > 0 && eHp > 0) {
@@ -2864,7 +2956,7 @@ function resolveCombat(enemy, mode, onEnd) {
     let lashTurn = false; // 五连鞭：快若闪电，出鞭之合敌方无暇反击
     const j1 = judge({ agi: myAgi, int: myInt, luck: myLuck }, { agi: eAgi, int: eInt, luck: eLuck }); // 你出手
     const isSpell = technique && technique.indexOf("引气") >= 0; // 引气诀系属功法（耗法 5）；锻骨拳是武技，不耗蓝
-    const affordable = knownSpells().filter(x => S.mp >= x.mp);
+    const affordable = knownSpells().filter(x => !x.kind && S.mp >= x.mp); // 禁术不走战中自动掐诀——底牌只由你亲手揭
     const weave = affordable.length && Math.random() < 0.3 ? affordable[Math.floor(Math.random() * affordable.length)] : null; // 具名法术：战中掐诀（30%），存量系数按当前蓝量
     const cast = !weave && technique && Math.random() < 0.35 && (!isSpell || S.mp >= 5); // 法力不足则退为普攻
     let weavePower = 0, weaveRc = 1;
@@ -2896,17 +2988,18 @@ function resolveCombat(enemy, mode, onEnd) {
       eHp -= dmg;
       parts.push(`${cast ? `你运转「${technique}」，${isSpell ? "法力 -5，" : ""}` : ""}造成 ${dmg} 点伤害${j1.kind === "crit" ? "（暴击×2）" : j1.kind === "weak" ? "（命中弱点×1.5）" : j1.kind === "crit+weak" ? "（暴击+弱点×3）" : ""}，${enemy.name} ${seen ? `余 ${Math.max(0, Math.round(eHp))}/${eHpMax}` : `【${eHpState()}】`}`);
     }
-    if (eHp > 0 && !lashTurn) {
+    if (eHp > 0 && !lashTurn && !interruptWin) {
       const j2 = judge({ agi: eAgi, int: eInt, luck: eLuck }, { agi: myAgi, int: myInt, luck: myLuck }); // 它出手
       if (j2.kind === "dodge") parts.push(`你侧身避过它的反击`);
       else {
-        let dmg = eStr * (fl[0] + Math.random() * (fl[1] - fl[0])) * foeDmg * j2.mult * (enemyTier >= 1 && Math.random() < TABLES.COMBAT.enemySkillChance ? TABLES.COMBAT.enemySkillMult : 1) * (1 - (S.mods.defP || 0) / 100) * (laosouWeak ? 0.5 : 1) * (spellWeaken ? 0.7 : 1); // 老叟戏顽童：碾压局承伤减半
+        const eSpell = enemy.power >= 30 && Math.random() < 0.25; // 敌方施法：强敌以术法攻伐（伤害 ×1.4，可闪避）
+        let dmg = eStr * (eSpell ? 1.4 : 1) * (fl[0] + Math.random() * (fl[1] - fl[0])) * foeDmg * j2.mult * (enemyTier >= 1 && Math.random() < TABLES.COMBAT.enemySkillChance ? TABLES.COMBAT.enemySkillMult : 1) * (1 - (S.mods.defP || 0) / 100) * (laosouWeak ? 0.5 : 1) * (spellWeaken ? 0.7 : 1); // 老叟戏顽童：碾压局承伤减半
         if (spellWeaken) { parts.push(`【冰封】它血脉僵滞，这一击缓了三成。`); spellWeaken = false; }
         dmg = Math.max(1, Math.round(dmg));
         myHp -= dmg;
-        parts.push(`它${j2.kind === "crit" ? "暴击" : j2.kind === "weak" ? "打中你的破绽" : j2.kind === "crit+weak" ? "暴击正中你的破绽" : "反击"}，你受 ${dmg} 点伤害，气血 ${Math.max(0, Math.round(myHp))}/${hpMax()}`);
+        parts.push(`${eSpell ? `它掐诀引动${WX_NAMES[eEl]}行灵气，一道术法轰至` : `它${j2.kind === "crit" ? "暴击" : j2.kind === "weak" ? "打中你的破绽" : j2.kind === "crit+weak" ? "暴击正中你的破绽" : "反击"}`}，你受 ${dmg} 点伤害，气血 ${Math.max(0, Math.round(myHp))}/${hpMax()}`);
       }
-    }
+    } else if (interruptWin) { interruptWin = false; parts.push(`它行气未平，这一合没能还手。`); }
     lines.push(`第${round}合：${parts.join("；")}。`);
     if (round >= TABLES.COMBAT.quickRound && myHp > 0 && eHp > 0) { // 超过5回合：系统运算简化，快速结算（按双方每合期望伤害推完剩余回合）
       const myPer = Math.max(1, (atkP * 0.65 + myStr * skillMult * 0.35) * myDmg * TABLES.COMBAT.quickMyPerFactor); // 期望：普攻占 65%（攻击力），运功占 35%（myStr×功法倍率），含闪避折损
@@ -2922,9 +3015,11 @@ function resolveCombat(enemy, mode, onEnd) {
   if (S.hp > 0 && S.hp < hpMax() * 0.4) maybeDarkWound(); // 重伤之下未妥善处理 → 永久损伤（设定：身体会记账）
   lines.forEach(l => log(l, "dim"));
   if (S.hp <= 0) { lethalCheck(enemy.name, onEnd); return; }
+  if (jinshuUsed && (jinshuUsed.jsKind === "xianji" || jinshuUsed.jsKind === "ranyun")) gainAch("hupi"); // 与虎谋皮：首次使用献祭禁术且生还
   if (eHp <= 0) {
     log(`<span style="color:#9fc3a5">【胜】${enemy.name}倒下了。你扶着膝盖喘气，手心全是汗。</span>`);
     S.kills++; gainAch("firstBlood");
+    if (jinshuUsed && enemy.power >= myP * 1.3) gainAch("qingtian"); // 倾天一击：以禁术击杀高于自己一个小境以上的对手
     if (laosouWeak) { // 老叟戏顽童：虐菜记账，每胜 5 名弱者引来一名强者
       S.stats.bully = (S.stats.bully || 0) + 1;
       if (S.stats.bully % 5 === 0) { S.flags.laosouBounty = 1; sys(`【老叟戏顽童】你又戏耍了一个不如你的对手（累计 ${S.stats.bully}）。名声这东西——快传到不该传的人耳朵里了。`); }
@@ -2932,6 +3027,7 @@ function resolveCombat(enemy, mode, onEnd) {
     if (enemy.power >= myP * 1.3) { gainAch("yuejie"); S.stats.yuejieN = (S.stats.yuejieN || 0) + 1; } // 跨越一个小境界取胜（轮回结算：越阶战绩加成）
     if (startHp <= hpMax() * 0.2 && enemy.power >= myP) gainAch("juejing"); // 濒死反杀强敌
     if (enemy.loot) enemy.loot();
+    if (tonggui) { die(`禁术「道消」燃尽了你的道基与寿元——${enemy.name}倒下的同时，你也随风散了。`, "禁术·同归于尽"); return; } // 同归于尽：敌死，你亡，没有然后
     onEnd("win");
   } else {
     log(`<span style="color:var(--blood-hi)">你渐落下风，只能且战且退，狼狈脱身。</span>`);
@@ -3222,6 +3318,74 @@ function ending() {
   });
   renderPanel();
 }
+/* ================= 终局 · 五结局（设定集第十一章） =================
+   一般「守界人」｜坏「炉鼎」｜完美「登仙超脱」｜特殊「弑天」「换天」｜隐藏「界外之路」。
+   由终局抉择场景（gm.js）以 fx.special="end:<kind>" 触发；结局随魂封存于 META.endings，千秋录刻成就。 */
+const ENDINGS = {
+  shoujie: {
+    name: "一般结局 · 守界人", grade: "守 界", color: "#6fa8a0", ach: "endShoujie",
+    quote: "进食停了，归墟重归死寂。你没有拆穿那声「恭喜」，也没有力气拆穿——你留了下来，成了新一任守夜人。天还是那个天，劫还会再来，但至少这一世，是你把它挡在了门外。",
+    rebirth: { points: 250, pool: "吉", dice: "adv" },
+  },
+  luding: {
+    name: "坏结局 · 炉鼎", grade: "炉 鼎", color: "#a03c3c", ach: "endLuding",
+    quote: "「做得好。」天道的声音第一次这么温柔。你承接吞世者全部因果的那一刻，它连你带战果一起炼化了——补全自身，超脱此界。刀用完了，是要回炉的。最坏的结局，离最好只差一步。",
+    rebirth: { points: 100, pool: "平", dice: "nor", echoAny: true },
+  },
+  dengxian: {
+    name: "完美结局 · 登仙超脱", grade: "超 脱", color: "#d4af6e", ach: "endDengxian",
+    quote: "你抢在「恭喜」出口之前识破了它。界壁在你掌心合拢，断绝三万年的仙路重新亮起——登仙路的真相从来不是「断」，是「被藏」。你携所有羁绊跳出棋盘，身后传来棋局崩塌的声音。",
+    rebirth: { points: 400, pool: "吉", dice: "adv" },
+  },
+  sitian: {
+    name: "特殊结局 · 弑天", grade: "弑 天", color: "#8e5fb8", ach: "endSitian",
+    quote: "先斩吞世者，再反手炼化天道——它算尽因果，唯独算漏了一件事：刀有了自己的意思。天塌下来的那一日，世人只看见极亮的雷。古往今来无人做到的事，被一个界外之人做成了。",
+    rebirth: { points: 400, pool: "吉", dice: "adv" },
+  },
+  huantian: {
+    name: "特殊结局 · 换天", grade: "换 天", color: "#5f8eb8", ach: "endHuantian",
+    quote: "你没有坐上那个位置——你把它打碎了。天道与吞世者的棋盘一并崩解，天道碎片散入众生识海：从此人人头顶都有自己的一寸天。没有棋手的棋局，众生自己下。",
+    rebirth: { points: 400, pool: "吉", dice: "adv" },
+  },
+  beyond: {
+    name: "隐藏结局 · 界外之路", grade: "？？？", color: "#e8e0c8", ach: "endBeyond",
+    quote: "面板上的字迹忽然乱了——【推演失败】【变量丢失】【路径不存在】。你没有杀谁，也没有救谁，只是转身，向「外面」走了一步。你来自界外。「界外」意味着什么，它从此再也没机会知道了。",
+    rebirth: { points: 500, pool: "吉", dice: "adv" },
+  },
+};
+function endGame(kind) {
+  const E = ENDINGS[kind]; if (!E) return;
+  S.over = true;
+  if (!META.endings) META.endings = {};
+  META.endings[kind] = { world: S.world, day: S.day, realm: REALM_NAMES[S.realm] };
+  lifeRecord().push({ world: S.world, end: "ending:" + kind, days: S.day, realm: REALM_NAMES[S.realm], grade: E.grade });
+  try { gainAch(E.ach); } catch (e) {}
+  try { chronicle("达成结局「" + E.name + "」", "quest"); } catch (e) {}
+  saveMeta();
+  const known = !!S.flags.truthKnown;
+  sys(kind === "luding" && !known
+    ? "【宿主因果已回收。棋局继续。】"
+    : `【结局达成：${E.name}。】`);
+  const rb = E.rebirth;
+  showEnd({
+    title: E.name, grade: E.grade, color: E.color, score: "",
+    quote: E.quote,
+    stats: [["周目", "第 " + S.world + " 世"], ["境界", REALM_NAMES[S.realm]], ["存活", S.day + " 日"],
+      ["先驱遗痕", (["pioneer_kezi", "pioneer_xinwu", "pioneer_fen"].filter(f => S.flags[f]).length) + " / 3"],
+      ["真相", known ? "已知（天有二心）" : "未知"], ["千秋录", META.ach.length + " 项"]],
+    note: `结局已随魂封存（千秋录 · 成就名录，死亡不回收）。轮回馈赠：初始万象点 ${rb.points}，身份掷骰「${rb.pool}」档${rb.dice === "adv" ? "（掷二取优）" : ""}。`,
+    btns: [
+      { label: "再入轮回", fn: () => {
+        META.rebirth = { points: rb.points, attrBonus: 2, identity: pickIdentity(rb.pool, rb.dice),
+          echo: rb.echoAny ? (() => { const c = (S.cardOrder || []).filter(id => !id.startsWith("echo_") && findCard(id)); return c.length ? "echo_" + c[Math.floor(Math.random() * c.length)] : null; })() : null };
+        META.world++; META.ach = []; META.dynAch = []; saveMeta(); closeEnd(); newLife(); startLife();
+      } },
+      { label: "封盘留档", fn: () => { closeEnd(); sys("【此世封盘。可随时读档再启，或自轮回重来。】"); renderPanel(); } },
+    ],
+  });
+  renderPanel();
+}
+
 function showEnd(o) {
   const m = $("#endModal");
   $("#endBody").innerHTML = `

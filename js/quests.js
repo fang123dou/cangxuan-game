@@ -334,6 +334,48 @@ const QU = (() => {
     doneText: "异地之火点燃，风箱拉出的风声像龙吟。云游师傅咧嘴：「从今天起，器火一脉有你一支。」",
   };
 
+  /* ===== 终局 · 卷三 三方棋局（设定集第十一章：天道腐化 / 吞世者 / 五结局） =====
+     真相分层：先驱遗痕（3 处）→ 仙品「天有二心」（低语 + 问天）→ 仙品「归墟终局」（入缝、终结进食、终局抉择）。
+     五结局由引擎终局场景结算（game.js endGame）：一般「守界人」｜坏「炉鼎」｜完美「登仙超脱」｜特殊「弑天」「换天」｜隐藏「界外之路」。 */
+  const pioneerCount = () => ["pioneer_kezi", "pioneer_xinwu", "pioneer_fen"].filter(f => S.flags[f]).length;
+  Object.assign(DEFS, {
+    mq_dingfeng: {
+      name: "主线：大世之巅", type: "main",
+      desc: "凡阶、灵阶、玄阶……你走的每一步，都有一只看不见的手替你校正方向。登顶的路上，留意那些「不该存在的东西」——它们比功法更值钱。",
+      auto: () => (S.quests.done || []).includes("mq_dengfeng"),
+      objectives: [
+        { text: () => `踏入玄阶（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 13 },
+        { text: () => `踏入圣域（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 19 },
+        { text: () => `集齐先驱宿主遗痕（${pioneerCount()} / 3）`, done: () => pioneerCount() >= 3 },
+      ],
+      reward: { points: 300, dao: 5 },
+      doneText: "圣域之巅，四顾无人。牢房刻字、半张信物、无名孤坟——你不是第一把刀。这个认知，比任何功法都烫。",
+    },
+    xian_truth: {
+      name: "仙品任务：天有二心", type: "xian", passive: true,
+      desc: "鸿爪之下，雪泥全开。牢房墙上的刻字、裂缝边缘的背影、读不出你命格的那盏灯——它们指向同一件事：天，有二心。",
+      auto: () => pioneerCount() >= 3 && (S.flags.coincidence || 0) >= 6,
+      objectives: [
+        { text: () => "听完界壁裂缝里的「低语」（北地 · 渊口）", done: () => !!S.flags.devourWhisper },
+        { text: () => "向「系统」问出那句话", done: () => !!S.flags.sysQuestioned },
+      ],
+      rewardFn: () => { S.flags.truthKnown = 1; return applyReward({ points: 200, dao: 5 }); },
+      doneText: "【跑好你自己的。】它只回了这五个字。但你听懂了——刀用完了，是要回炉的。从今日起，它写下的每一行字，你都多看出一层意思。",
+    },
+    mq_guixu: {
+      name: "仙品任务：归墟终局", type: "xian", passive: true,
+      desc: "断灵大劫的周期将至，它又要去天地尽头「进食」了。渊口裂缝——守夜人守了不知多少年的那道缝，这一次，换你走进去。",
+      auto: () => S.realm >= 21 && pioneerCount() >= 3 && (typeof castMet === "function") && castMet("shouyeren"),
+      objectives: [
+        { text: () => `圣域五境之上（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 21 },
+        { text: () => "得守夜人引路，踏入渊口裂缝", done: () => !!S.flags.guixuEnter },
+        { text: () => "终结那场持续三万年的「进食」", done: () => !!S.flags.devourSlain },
+      ],
+      reward: { points: 500 },
+      doneText: "归墟深处，进食停了。三万年的账，今日平了一半——剩下那一半，在天上。",
+    },
+  });
+
   /* ---------- 状态 ---------- */
   function ensure() {
     if (!S.quests) S.quests = { active: [], done: [], failed: [], refused: {} };

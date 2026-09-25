@@ -308,6 +308,9 @@ const ACHIEVEMENTS = {
   dabusi:   { name:"打不死的",   tier:1, desc:"身负「霉神附体」满一年而毫发无损", reward:"称号「小强」：环境伤害 -10%" },
   danyun:   { name:"丹动一城",   tier:3, desc:"炼出绝品——九纹圆满，出世引动异象", reward:"气运 +1" },
   renji:    { name:"凡俗之巅",   tier:3, desc:"不入聚气境，纯以凡躯将力/敏/体全部磨到 10", reward:"破境成功率永久 +10%，未来属性上限 +10%，称号「人极」", secret:true },
+  /* —— 禁术成就（设定集·千秋录：与虎谋皮 / 倾天一击） —— */
+  hupi:     { name:"与虎谋皮",   tier:2, desc:"首次使用献祭禁术且生还", reward:"称号「刀口舔蜜」：禁术【虚弱】 -1 日" },
+  qingtian: { name:"倾天一击",   tier:3, desc:"以禁术击杀高于自己一个小境以上的对手", reward:"万象点 ×500，称号「孤注」：禁术威力 +10%" },
   /* —— 结局名录（第十一章 · 五结局；终局场景结算，随魂封存，死亡不回收） —— */
   endShoujie: { name:"守界人",     tier:3, desc:"一般结局：斩了吞世者，接过镇守归墟的担子。天还是那个天。", reward:"轮回馈赠：初始万象点 +150" },
   endLuding:  { name:"炉鼎",       tier:3, desc:"坏结局：赢了吞世者，死在天道温柔的「恭喜」里。最坏的结局，离最好只差一步。", reward:"轮回馈赠：伴生残影必得", secret:true },
@@ -328,9 +331,11 @@ const TITLES = {
   panshiT:  { name: "磐石道心", from: "问心无愧", desc: "心魔抗性 +30%（心魔增长减缓，渡劫更稳）" },
   caishen:  { name: "财神眷顾", from: "富甲一方", desc: "交易议价 +10%（商铺价格 -10%）" },
   xiaoqiang:{ name: "小强",     from: "打不死的", desc: "环境伤害 -10%（寒潮冻伤等减免）" },
+  daokou:   { name: "刀口舔蜜", from: "与虎谋皮", desc: "禁术【虚弱】持续时间 -1 日" },
+  guzhu:    { name: "孤注",     from: "倾天一击", desc: "禁术威力 +10%" },
 };
 /* 成就 → 称号 */
-const ACH_TITLE = { shengsi: "yibao", gacha100: "lunpan", renji: "renjiT", yuejie: "yike", juejing: "xisheng", yushi: "ganlu", wukui: "panshiT", fujia: "caishen", dabusi: "xiaoqiang" };
+const ACH_TITLE = { shengsi: "yibao", gacha100: "lunpan", renji: "renjiT", yuejie: "yike", juejing: "xisheng", yushi: "ganlu", wukui: "panshiT", fujia: "caishen", dabusi: "xiaoqiang", hupi: "daokou", qingtian: "guzhu" };
 
 /* ============ 商铺 · 云州杂货 ============
    品类依《苍玄界世界设定集》：南荒奇珍为筑基丹（二十三章·南荒篇），
@@ -554,6 +559,34 @@ const SPELLS = [
     desc: "毒灵根专属：掌风带瘴——伤可见，毒难防（命中追加五成毒发之伤）。", src: "毒灵根试炼支线授予。" },
   { id: "sp_yingxi", name: "影袭", el: "shui", tier: 1, tierName: "1 阶法术", mp: 7, base: 12, gate: 5, linggen: "ying", trait: "sure",
     desc: "影灵根专属：敛息潜行，自影中暴起——防不胜防，避无可避。", src: "影灵根试炼支线授予。" },
+  /* —— 五行下位替代（低耗低威， mp4 base8，聚气境即可上手；给蓝薄之人一条施法之路） —— */
+  { id: "sp_jinzhen", name: "金针术", el: "jin", tier: 1, tierName: "1 阶法术", mp: 4, base: 8, gate: 5,
+    desc: "凝金气为细针，攒射而出——不如剑气堂皇，胜在省力。", src: "古籍玉简 / 宗门传功同授。" },
+  { id: "sp_chansi", name: "缠丝藤", el: "mu", tier: 1, tierName: "1 阶法术", mp: 4, base: 8, gate: 5,
+    desc: "催出细藤缠腕绊足——杀性不足，扰敌有余。", src: "古籍玉简 / 宗门传功同授。" },
+  { id: "sp_shuidan", name: "水弹术", el: "shui", tier: 1, tierName: "1 阶法术", mp: 4, base: 8, gate: 5,
+    desc: "水箭术的下位替代：凝水成弹，聊胜于无。", src: "古籍玉简 / 宗门传功同授。" },
+  { id: "sp_huomiao", name: "火苗术", el: "huo", tier: 1, tierName: "1 阶法术", mp: 4, base: 8, gate: 5,
+    desc: "一簇火苗掷出——吓唬人比伤人好用。", src: "古籍玉简 / 宗门传功同授。" },
+  { id: "sp_feishi", name: "飞石术", el: "tu", tier: 1, tierName: "1 阶法术", mp: 4, base: 8, gate: 5,
+    desc: "土灵卷起碎石打人——土行修士的启蒙课。", src: "古籍玉简 / 宗门传功同授。" },
+  /* —— 禁术 · 透支未来的力量（设定集原文：面板红框标记，释放前系统三次确认；不入常态战力、不入古籍玉简池） ——
+     kind:"jinshu"：不走熟练度积攒、不战中自动掐诀，唯施法菜单手动释放，代价释放即付、不可逆。
+     一档·燃法（竭蓝型）：倾全部法力于一击，威力越 1~2 小境；法力归零 +【虚弱】（全属性 -50%、蓝锁 0，3~7 日体质定恢复）。
+     二档·献祭（血祭型）：献祭永久属性/气运换越一整个大阶的爆发；亏空记【道伤】，唯圣药可补；燃运 -1 气运，威力冠绝同档。
+     半档·同归于尽：燃尽道基与寿元的一击——之后，没有然后。 */
+  { id: "sp_jin_ranfa", name: "倾江", el: null, tier: 1, tierName: "禁术 · 燃法", mp: 0, base: 40, gate: 6, kind: "jinshu", jsKind: "ranfa",
+    cost: "法力倾尽归零，【虚弱】3~7 日（全属性 -50%、蓝锁 0，体质定恢复）",
+    desc: "燃法禁术：一次性倾泻全部法力于一击，如江河倒灌——威力可越 1~2 个小境。", src: "禁术残页（黑市/遗迹/某些存在的手笔）。" },
+  { id: "sp_jin_xianji", name: "燃道", el: null, tier: 2, tierName: "禁术 · 献祭", mp: 0, base: 400, gate: 7, kind: "jinshu", jsKind: "xianji",
+    cost: "献祭道基：力量、体质永久各 -1，亏空记【道伤】（唯圣药可补）",
+    desc: "献祭禁术：燃道基换一击，威力可越一整个大阶——此术不可逆，天道记账，概不退换。", src: "禁术残页（黑市/遗迹/某些存在的手笔）。" },
+  { id: "sp_jin_ranyun", name: "偷天", el: null, tier: 2, tierName: "禁术 · 献祭", mp: 0, base: 800, gate: 7, kind: "jinshu", jsKind: "ranyun",
+    cost: "献祭 1 点气运（永久），此后经年霉运缠身",
+    desc: "献祭禁术：气运是最贵也最疯的筹码——燃一点气运换冠绝同档的一击。", src: "禁术残页（黑市/遗迹/某些存在的手笔）。" },
+  { id: "sp_jin_tonggui", name: "道消", el: null, tier: 2, tierName: "禁术 · 同归于尽", mp: 0, base: 9999, gate: 7, kind: "jinshu", jsKind: "tonggui",
+    cost: "燃尽全部道基与剩余寿元——这一击之后，没有然后",
+    desc: "同归于尽：把自己也押上牌桌的一击。敌死，你亡，没有然后。", src: "禁术残页（黑市/遗迹/某些存在的手笔）。" },
 ];
 const SPELLS_BY_ID = {}; for (const sp of SPELLS) SPELLS_BY_ID[sp.id] = sp;
 /* 法术熟练度上限（设定集「等阶划分」：1 阶 200 ｜ 2 阶 400）；瓶颈（最后 10% 获取减半）与小成/圆满反哺对齐功法体系 */
