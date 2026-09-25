@@ -1060,6 +1060,7 @@ const STAGED_NPCS = [
       m70:{ scene:"你刚落脚，屋顶就落下个黑影——癞五买通了城外的闲汉，价码是你的两条腿。他这次是动了真火。",
         choices:[
           { label:"连夜遁出城去", hint:"忍一时，断尾求生。", fx:{ hp:-4, hunger:10, cult:-3, npc:{ "癞五":5 } } },
+          { label:"折回去，亲手废了他的局", hint:"迎战他雇来的闲汉——赢了他才会怕。", fight:{ name:"癞五雇的闲汉", power:5 } },
           { label:"放话：我等他亲自来", hint:"道心不动，仇怨加倍。", fx:{ dao:2, npc:{ "癞五":-10 } } },
         ]},
     }},
@@ -1094,6 +1095,7 @@ const STAGED_NPCS = [
       m70:{ scene:"你的雪橇辙印被人一路缀着——豁牙叫上了整个马队。白夜里，狼嚎声都避着他们走。",
         choices:[
           { label:"弃货遁入冰雾", hint:"留得命在。", fx:{ money:-50, hp:-4, npc:{ "豁牙":5 } } },
+          { label:"回马迎战马队", hint:"白夜里，弯刀对弯刀。", fight:{ name:"雪盗马队", power:8 } },
           { label:"在冰湖上设下假踪", hint:"智斗雪盗。", fx:{ npc:{ "豁牙":-5 }, attr:{ int:0.1 }, cult:2 } },
         ]},
     }},
@@ -1128,7 +1130,7 @@ const STAGED_NPCS = [
       m70:{ scene:"你工钱还没焐热，巷口就转出三条棍影——棍儿张这次出了双倍的价。帝畿的规矩：欠账不行，欠仇更不行。",
         choices:[
           { label:"报官", hint:"中州的差役，只要钱到位。", fx:{ money:-50, npc:{ "棍儿张":-10 } } },
-          { label:"以棍还棍，夜里寻他", hint:"一战了恩怨。", fx:{ hp:-8, npc:{ "棍儿张":-10 }, attr:{ str:0.15 } } },
+          { label:"以棍还棍，夜里寻他", hint:"一战了恩怨。", fight:{ name:"棍儿张", power:11 } },
         ]},
     }},
   /* ———— 卷一 · 西漠 ———— */
@@ -1162,6 +1164,7 @@ const STAGED_NPCS = [
       m70:{ scene:"商队里的人看你的眼神变了——鹞子放了话：谁载你，谁沉沙。西漠的路，一夜之间都对你关上了。",
         choices:[
           { label:"孤身走沙海，不走商道", hint:"最险的路，没人拦。", fx:{ hp:-6, hunger:8, attr:{ con:0.12 } } },
+          { label:"回马冲阵", hint:"沙盗的规矩：打服了才算完。", fight:{ name:"鹞子", power:11 } },
           { label:"备一份重礼托高僧说和", hint:"佛面还是要给的。", fx:{ money:-80, npc:{ "鹞子":10 } } },
         ]},
     }},
@@ -1197,6 +1200,7 @@ const STAGED_NPCS = [
         choices:[
           { label:"连夜攀崖绕出大山", hint:"险路保命。", fx:{ hp:-5, hunger:8, attr:{ agi:0.12 } } },
           { label:"请巫寨出面,按山规了断", hint:"寨老的规矩,他不敢破。", fx:{ money:-60, npc:{ "山魈客":-20 }, flag:"shanxiao_judged" } },
+          { label:"按山规与他栈道上对决", hint:"赢的人留下栈道。", fight:{ name:"山魈客", power:14 } },
         ]},
     }},
   /* ———— 卷一 · 四海 ———— */
@@ -1230,6 +1234,7 @@ const STAGED_NPCS = [
       m70:{ scene:"你的船底被人凿了个洞——黑橹的手笔。他站在码头上喊：「这海里，我说了算！」",
         choices:[
           { label:"泅水夜渡,弃船上岸", hint:"船没了,人还在。", fx:{ hp:-5, hunger:6, money:-30 } },
+          { label:"纠集埠头苦主,砸了他的税棚", hint:"民怨可借势——但要真刀真枪。", fight:{ name:"黑橹", power:11 } },
           { label:"搜集他吞税的把柄,递到听潮坞", hint:"坞主正愁没有由头动他。", fx:{ money:-20, npc:{ "黑橹":-20 }, flag:"heilu_evidence", dao:2 } },
         ]},
     }},
@@ -1283,6 +1288,7 @@ const STAGED_NPCS = [
       m70:{ scene:"你闭关的山头被人用阵法围了——裴绝请了帮手。他在阵外朗声笑道：「道友,裴某借东西,从来借到手为止。」",
         choices:[
           { label:"闭死关,以静制动", hint:"阵有尽时,耐心无价。", fx:{ hp:-6, cult:-5, npc:{ "裴绝":-5 }, dao:3 } },
+          { label:"出关应局", hint:"灵阶之争,一战定夺。", fight:{ name:"裴绝", power:35 } },
           { label:"连夜破阵遁走", hint:"留得青山。", fx:{ hp:-10, hunger:8, attr:{ agi:0.15 } } },
         ]},
     }},
@@ -1291,13 +1297,67 @@ const STAGED_NPCS = [
     story:{
       m40:{ scene:"疯剑客抱着剑蹲在你的去路上,眼睛血红：「他们都说你的剑快。让我看看——不然,你就留下用剑的手。」",
         choices:[
-          { label:"与他全力一战", hint:"疯子敬疯子。", fx:{ hp:-10, npc:{ "疯剑客":-10 }, attr:{ str:0.2 }, flag:"fengjian_dueled" } },
+          { label:"与他全力一战", hint:"疯子敬疯子。", fight:{ name:"疯剑客", power:38 } },
           { label:"以「剑在何处」反问到底", hint:"陪他疯一场,论剑不论胜负。", fx:{ npc:{ "疯剑客":10 }, attr:{ int:0.15 }, dao:2 } },
         ]},
       p60:{ scene:"疯剑客追了你三座城,最后在山巅坐下了,忽然大笑：「你的剑,不在手上——在骨头里。我找了十年,总算找到一个。」他把酒葫芦抛给你。",
         choices:[
           { label:"与他结为酒友", hint:"亦敌亦友,惺惺相惜。", fx:{ npc:{ "疯剑客":15 }, points:40, flag:"bond_fengjian", luckCharm:2 } },
           { label:"劝他放下剑,回人间去", hint:"疯子的病,疯话医。", fx:{ npc:{ "疯剑客":5 }, dao:5, flag:"fengjian_rest" } },
+        ]},
+    }},
+  /* ———— 卷三 · 圣阶（此界之巅） ———— */
+  { id:"baiduyuren", vol:3, region:null, name:"白衣摆渡人", pers:"豁达", realm:20, el:"shui", start:10,
+    title:"归墟边缘的摆渡人", intro:"风闻：北海尽头有位白衣摆渡人，渡人不收钱——只渡「有资格知道归墟」的人。",
+    story:{
+      p20:{ scene:"你在海天尽头遇见一叶无帆的小舟，舟上白衣人撑着长篙，头也不回：「上船。能走到这里的人，脚下这海，会替你说话。」",
+        choices:[
+          { label:"上船，听他讲归墟的旧事", hint:"禁忌的知识，是船钱。", fx:{ npc:{ "白衣摆渡人":6 }, flag:"ferryman_lore", cult:8 } },
+          { label:"隔海一揖，谢而不扰", hint:"守礼之人，他高看一眼。", fx:{ npc:{ "白衣摆渡人":8 }, dao:2 } },
+        ]},
+      p40:{ scene:"摆渡人这回主动开口：「界壁的裂缝，不是天破的，是人撕的。你想知道谁撕的——先让我看看你的心稳不稳。」",
+        choices:[
+          { label:"任他以篙点水，照见道心", hint:"道心定者，见真相。", fx:{ npc:{ "白衣摆渡人":10 }, dao:3, flag:"ferryman_truth" } },
+          { label:"请他讲个可以讲的故事", hint:"有所问，有所不问。", fx:{ npc:{ "白衣摆渡人":7 }, attr:{ int:0.3 } } },
+        ]},
+      p80:{ scene:"临别，摆渡人把长篙往舟上一横，篙身显出两个古字：「守界」。「归墟缺一个守夜的人。来日你走到那一步——记得今夜这叶舟。」他说完，连人带舟淡进了雾里。",
+        choices:[
+          { label:"收下「守界」之约", hint:"生死之交，一诺归墟。", fx:{ npc:{ "白衣摆渡人":10 }, points:60, flag:"bond_ferryman", luckCharm:3 } },
+          { label:"拜谢，只问他姓名", hint:"他笑而不答——摆渡人没有名字。", fx:{ npc:{ "白衣摆渡人":5 }, dao:5 } },
+        ]},
+    }},
+  { id:"beiqianlaoyu", vol:3, region:null, name:"碑前老妪", pers:"重情", realm:21, el:"tu", start:0,
+    title:"圣域碑林前守碑的老妪",
+    intro:() => { try { const lives = lifeRecord(); const past = lives && lives.length ? lives[lives.length - 1] : null; return past ? `风闻：圣域碑林前有位老妪，守着一块无字碑。她说碑上的人她等了三千年——那名字，和你第${past.world}世的${past.name}一模一样。` : "风闻：圣域碑林前有位老妪，守着一块无字碑。她说她在等一个总会回来的人。"; } catch (e) { return "风闻：圣域碑林前有位老妪，守着一块无字碑。她说她在等一个总会回来的人。"; } },
+    story:{
+      p20:{ scene:"老妪浑浊的眼睛在你脸上停了许久，忽然笑了：「回来了？瘦了。」——你不认得她。可她递来的那碗热汤，味道熟得让你心头发酸。",
+        choices:[
+          { label:"陪她坐一坐，听她讲「碑上的人」", hint:"有些缘分，不问来处。", fx:{ npc:{ "碑前老妪":8 }, xinmo:-6, flag:"laoyu_meet" } },
+          { label:"如实相告：你记不得前尘", hint:"诚实，是对故人最大的敬意。", fx:{ npc:{ "碑前老妪":6 }, dao:3 } },
+        ]},
+      p40:{ scene:"老妪从碑底摸出个布包：「他每一世路过，都留一件东西。老身替他收着——如今，该交还了。」布包里是一枚磨得温润的铜钱，和一页看不懂的残图。",
+        choices:[
+          { label:"收下遗物", hint:"前世债，今生缘。", fx:{ npc:{ "碑前老妪":10 }, points:40, flag:"laoyu_gift", money:88 } },
+          { label:"请她留着，「等他亲自来取」", hint:"老妪怔住，随即笑出了泪。", fx:{ npc:{ "碑前老妪":8 }, dao:4 } },
+        ]},
+      p80:{ scene:"老妪把无字碑上尘封的三个角落擦净，露出底下的小字——一笔一划，都是你这一世用过的名字。「碑记事，老身记人。你哪一世来，老身都在。」",
+        choices:[
+          { label:"以茶代酒，拜她为「此生亲人」", hint:"生死之交，不问血缘。", fx:{ npc:{ "碑前老妪":10 }, points:60, flag:"bond_laoyu", xinmo:-15 } },
+          { label:"许她：终局之后，来此告祭", hint:"一诺重于碑。", fx:{ npc:{ "碑前老妪":5 }, dao:6, flag:"laoyu_oath" } },
+        ]},
+    }},
+  { id:"shenglai", vol:3, region:null, name:"圣域来使", pers:"贪婪", realm:22, el:"jin", start:-10,
+    title:"圣域至尊座下的招安使", intro:"风闻：圣域来使携至尊法旨游走人间——顺者入圣域名册，逆者……名册之外的人，死了没人记账。",
+    story:{
+      m40:{ scene:"圣域来使落在你的山头，法旨展开如金幕：「至尊观你百年，赐你入册。」他笑着，眼睛里却全是秤——他在称你的命值几个价。",
+        choices:[
+          { label:"虚与委蛇，收下法旨再作打算", hint:"缓兵之计。", fx:{ npc:{ "圣域来使":5 }, flag:"sheng_lingzhi" } },
+          { label:"当众烧了法旨", hint:"圣域的脸面，比天还大。", fx:{ npc:{ "圣域来使":-20 }, dao:4 } },
+        ]},
+      m70:{ scene:"三尊圣域执法堂了你的洞府——来使站在云头，声音漠然：「名册之外的散修，活过今日，便是打圣域的脸。」",
+        choices:[
+          { label:"撕破脸，迎战执法", hint:"圣阶之战，天崩地裂。", fight:{ name:"圣域执法", power:70 } },
+          { label:"弃府远遁，暂避锋芒", hint:"留得道基，来日方长。", fx:{ hp:-10, hunger:8, cult:-8, attr:{ agi:0.4 } } },
         ]},
     }},
 ];

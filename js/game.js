@@ -1702,11 +1702,12 @@ function ensureStagedNpcs() { // 每夜调用：踏入对应地域/时期，风�
   const rg = regionOf(S.place || (S.iden && S.iden.place) || "");
   for (const n of STAGED_NPCS) {
     if (S.staged[n.id]) continue;
-    const volOk = n.vol === 1 ? (rg && rg.key === n.region) : (S.realm >= 7); // 卷一按当前地域入册；卷二踏入灵阶即入册
+    const volOk = n.vol === 1 ? (rg && rg.key === n.region) : n.vol === 2 ? (S.realm >= 7) : (S.realm >= 19); // 卷一按当前地域入册；卷二踏入灵阶、卷三踏入圣阶即入册
     if (!volOk) continue;
     S.staged[n.id] = { met: S.day, fired: [] };
     if (typeof S.npc[n.name] !== "number") S.npc[n.name] = n.start; // 初识缘分：友者正、敌者负
-    log(`<span class="dim">【风闻 · ${n.title}】${n.intro}</span>`);
+    const intro = (typeof n.intro === "function") ? n.intro() : n.intro; // 动态风闻（跨世钩子：读取历世记录）
+    log(`<span class="dim">【风闻 · ${n.title}】${intro}</span>`);
     try { chronicle(`风闻「${n.name}」（${n.pers}）`, "npc"); } catch (e) {}
   }
 }
@@ -1729,7 +1730,16 @@ function stagedStoryTurn(entry) { // 缘分剧情线回合：优先于 AI/离线
   const n = (typeof STAGED_BY_ID !== "undefined") && STAGED_BY_ID[entry.id];
   const line = n && n.story && n.story[entry.tier];
   if (!line) return { _src: "gm", _staged: true, scene: "……风过无痕，缘悭一面。", choices: [{ label: "继续赶路", hint: "", fx: {} }] };
-  return { _src: "gm", _staged: true, scene: `【${n.name} · ${n.title}】${line.scene}`, choices: line.choices.map(c => ({ label: c.label, hint: c.hint || "", fx: c.fx || {} })) };
+  return { _src: "gm", _staged: true, scene: `【${n.name} · ${n.title}】${line.scene}`, choices: line.choices.map(c => {
+    if (c.fight) return { label: c.label, hint: c.hint || "", fn: () => { // 迎战选项：真实战斗演出（赢则仇怨钉死，输则重伤脱身）
+      S._choiceSet = false; S.lastPick = c.label;
+      combat({ name: c.fight.name, power: c.fight.power, canBeg: false, el: n.el }, (res) => {
+        if (res === "win") { addNpc(n.name, -10, { special: true }); log(`<span style="color:var(--blood-hi)">【${n.name}】这一战之后，梁子结死了。</span>`); }
+        if (!S.over) advanceSlot();
+      });
+    } };
+    return { label: c.label, hint: c.hint || "", fx: c.fx || {} };
+  }) };
 }
 function addNpc(name, v, opts) {
   opts = opts || {};
@@ -2294,7 +2304,7 @@ async function gmTurn() {
   const turnChoices = turn.choices.filter(c => !choiceBlocked(c.fx)); // 钱袋/物品门槛兜底：付不起的选项直接不出（规则19/21）
   const choices = turnChoices.map(c => ({
     label: c.label, hint: c.hint, free: true,
-    fn: () => { S._choiceSet = false; S.lastPick = c.label; resolveFx(c.fx || {}, c.label); },
+    fn: () => { S._choiceSet = false; S.lastPick = c.label; if (c.fn) c.fn(); else resolveFx(c.fx || {}, c.label); }, // c.fn：剧情线自定义动作（战斗演出等）；fx：常规结算
   }));
   if (checkBreakthrough()) {
     choices.unshift({ label: "【破境】积累已圆满", hint: "临门一脚。失败会元气大伤。", free: true, fn: () => askBreakthrough() });
