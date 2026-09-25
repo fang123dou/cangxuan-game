@@ -426,6 +426,17 @@ function ownedTechs() {
   return out.sort((a, b) => b.tier - a.tier || b.cap - a.cap);
 }
 function mainTechnique() { const o = ownedTechs(); return o.length ? o[0] : null; }
+/* 打坐参悟（设定·修炼涨幅：每实际修炼一个时辰，熟练度 = 时长 ×（关联主属性 ÷ 当前境界基准值）× 状态系数 0.8~1.2） */
+const REALM_ATTR_BASE = (() => { const t = []; for (let r = 0; r <= 24; r++) t.push(r >= 19 ? 1000 : r >= 13 ? 100 : r >= 7 ? 10 : 5); return t; })(); // 境界属性下限基准：凡阶 5 ｜ 灵泉 10 ｜ 化神 100（设定原文，依此类推）
+function medStateCoef() { // 状态系数：伤病/心魔/疲惫拖累，道心通明提振，心境浮动 ±0.1——钳在设定区间 0.8~1.2
+  let c = 1;
+  if (S.ill || S.hp < hpMax() * 0.6) c *= 0.85;
+  if ((S.xinmo || 0) >= 50) c *= 0.9;
+  if (S.sta < staMax() * 0.3) c *= 0.9;
+  if (S.daoXin >= 80) c *= 1.1;
+  c *= 0.9 + Math.random() * 0.2;
+  return Math.max(0.8, Math.min(1.2, Math.round(c * 100) / 100));
+}
 /* 功法解锁反哺：第一次握到功法的那一刻，门就开了（谱系见 data.js GONGFU 表） */
 function techniqueUnlockFx(id) {
   const g = GONGFU_BY_ID[id];
@@ -837,6 +848,7 @@ const ITEM_INFO = {
   fangcun: { name: "方寸戒", tier: "法器", desc: "内蕴一方小空间的储物法器。得此戒者，行囊各 +10。" },
   huiLingDan: { name: "回灵丹", tier: "灵品丹药", desc: "灵品丹药，回气养元。点开服之（气血 +25，药蚀 10——灵品 8~12 之数）。" },
   xisuiDan: { name: "洗髓丹", tier: "玄品丹药", desc: "洗经伐髓，清除一道暗伤——玄品丹药中的硬通货，散修梦寐以求。点开服之（药蚀 20，玄品 15~25 之数）。" },
+  dixinru: { name: "万年地心乳", tier: "圣品天材地宝", desc: "地脉万载凝一滴，乳白如玉，触手生温。设定集天材地宝名录圣品：重塑道基、修复暗伤药毒。点开服之——【道伤】减一（献祭亏空尽数回补），兼愈一道暗伤、药蚀 -20。此物有价无市，怀璧其罪。" },
   ludian: { name: "青铜丹炉", tier: "凡器", desc: "三足两耳的青铜小炉，火膛温驯。开炉时带在身边：品质「一分在器」的那一分，就押在它身上。" },
   lianchui: { name: "精铁炼锤", tier: "凡器", desc: "前人留下的一柄精铁炼锤，柄上满是岁月与汗渍的痕迹。抡它炼器：「一分在器」的那一分，就押在它身上。" },
 };
@@ -1069,6 +1081,7 @@ function renderTab() {
     if (S.inv.paiduDan) inv.push(["paiduDan", `排毒丹 ×${S.inv.paiduDan}`]);
     if (S.inv.huiLingDan) inv.push(["huiLingDan", `回灵丹 ×${S.inv.huiLingDan}`]);
     if (S.inv.xisuiDan) inv.push(["xisuiDan", `洗髓丹 ×${S.inv.xisuiDan}`]);
+    if (S.inv.dixinru) inv.push(["dixinru", `万年地心乳 ×${S.inv.dixinru}`]);
     if (S.inv.ludian) inv.push(["ludian", "青铜丹炉"]);
     if (S.inv.lianchui) inv.push(["lianchui", "精铁炼锤"]);
     if (S.gear && S.gear.weapon) inv.push(["gear", `⚔ ${S.gear.weapon.name}（攻伐 +${S.gear.weapon.dmgP}%）`]);
@@ -1192,6 +1205,26 @@ function renderTab() {
           delete S.darkWounds[k];
           computeMods();
         } else log("【洗髓丹】药力冲刷周身百脉，并无暗伤可洗——浊气随汗而出，倒也通体轻快。", "dim");
+      })});
+      if (id === "dixinru" && (S.inv.dixinru || 0) > 0) acts.push({ label: "服之（重塑道基）", fn: closeAnd(() => {
+        S.inv.dixinru--;
+        takeDrug("dixinru", 0, 30);
+        S.yaoshi = Math.min(100, Math.max(0, (S.yaoshi || 0) - 20)); // 设定集名录：修复暗伤药毒
+        const out = [];
+        if ((S.daoShang || 0) > 0) { // 道伤回补：献祭禁术亏空，圣药可补（设定·禁术节）
+          S.daoShang--;
+          S.base.str = Math.round((S.base.str + 1) * 100) / 100; S.base.con = Math.round((S.base.con + 1) * 100) / 100; // 燃道献祭的力量/体质各回补 1
+          out.push(`道基重塑——【道伤】减一（余 ${S.daoShang}），献祭亏空的力量与体质各回补 1`);
+        }
+        const ks = Object.keys(S.darkWounds || {}).filter(k => S.darkWounds[k] > 0);
+        if (ks.length) {
+          const k = ks[0];
+          S.base[k] = Math.round((S.base[k] + S.darkWounds[k]) * 100) / 100;
+          delete S.darkWounds[k];
+          out.push(`${DARK_WOUND_NAMES[k]}里的暗伤一并化去`);
+        }
+        computeMods();
+        log(`【万年地心乳】一滴入喉，温润如玉的凉意沉入丹田，漫向四肢百骸——${out.length ? out.join("，") : "周身百脉如洗，并无道伤暗伤可补"}。`, "good");
       })});
       if (id === "fangcun" && (S.inv.fangcun || 0) > 0 && !S.flags.fangcunUsed) acts.push({ label: "滴血认主", fn: closeAnd(() => {
         S.flags.fangcunUsed = 1;
@@ -1329,6 +1362,7 @@ function renderTab() {
     const techGot = t => t.sk === "乱拳" ? ("乱拳" in S.skills) : (S.inv[t.id] || 0) > 0;
     const owned = TECH_LIST.filter(techGot); // 未入手的功法不占栏位：没有就是没有，不预告
     let html = `<div class="p-title"><b>功 法</b><span>修行根本 · 熟练度满反哺五维</span></div>`;
+    html += `<div class="p-row" data-meditate="1" style="cursor:pointer;color:var(--gold-dim)"><span>🧘 打坐参悟</span><b>耗一时辰 · 涨主修熟练</b></div>`; // 战斗外修炼入口（设定：打坐参悟/向 NPC 讨教）
     html += owned.length ? owned.map(t => {
       const cur = Math.round(S.skills[t.sk] || 0), cap = TECH_CAPS[t.sk];
       return `<div class="p-row" data-skill="${t.sk}"><span>${t.sk === "乱拳" ? t.sk : "《" + t.sk + "》"}</span><b>熟练 ${cur}/${cap}</b></div>`;
@@ -1347,6 +1381,26 @@ function renderTab() {
     html += life.length ? life.map(([k, v]) => `<div class="p-row" data-skill="${esc(k)}"><span>${esc(k)}</span><b>熟练 ${Math.round(v)}/${TECH_CAPS[k] || 100}</b></div>`).join("")
       : `<div class="empty">尚无傍身技艺。去谋生、去历练——手艺是饿不死的底气。</div>`;
     body.innerHTML = html;
+    // 战斗外修炼入口：打坐参悟 / 向 NPC 讨教（设定公式见 runSpecial("meditate")）
+    body.querySelector("[data-meditate]") && (body.querySelector("[data-meditate]").onclick = () => {
+      if (S.over) return;
+      if (window.__inCombat) { toast("生死相搏，无暇打坐。"); return; }
+      if (typeof gmBusy !== "undefined" && gmBusy) { toast("天道推演未歇，稍候再打坐。"); return; }
+      const mt = mainTechnique(); const sk = mt ? mt.name : "乱拳"; const ak = mt ? mt.fb.a : "str";
+      const wxm = sk === "乱拳" ? 1 : wxTrainMult(sk);
+      const coef = medStateCoef();
+      const base = 6 * (attr(ak) / (REALM_ATTR_BASE[S.realm] || 5)) * coef * (1 + (S.mods.trainP || 0) / 100) * wxm;
+      const est = Math.round(base * 10) / 10;
+      let teacher = null;
+      const masters = (S.masters && Object.keys(S.masters).length) ? Object.values(S.masters) : [];
+      const bondTop = Object.entries(S.npc || {}).filter(([n, v]) => typeof v === "number" && v >= 30).sort((a, b) => b[1] - a[1])[0];
+      teacher = masters[0] || (bondTop ? bondTop[0] : null);
+      const opts = [];
+      if (teacher) opts.push({ label: `向「${teacher}」讨教「${sk}」关隘`, hint: `耗一时辰 · 讨教加成 ×1.5，约 +${Math.round(base * 1.5 * 10) / 10} 熟练 · 缘分 +2`, fn: () => runSpecial("meditate", { coef, teacher, focus: sk }) });
+      opts.push({ label: `独坐参悟「${sk}」`, hint: `耗一时辰 · 熟练 +${est}（状态系数 ${coef}）· 体力 -3`, fn: () => runSpecial("meditate", { coef, focus: sk }) });
+      opts.push({ label: "罢了", hint: "修行不急在一时。", fn: () => {} });
+      setChoices(opts);
+    });
     body.querySelectorAll("[data-skill]").forEach(el => el.onclick = () => {
       const k = el.dataset.skill;
       const t = TECH_LIST.find(x => x.sk === k);
@@ -2137,10 +2191,11 @@ function applyCore(fx) {
     if (k === "mp") S.mp = Math.max(0, Math.min(mpMax(), S.mp + v));
     if (k === "hunger") { if (!hasSpecial("bigu")) S.hunger = Math.max(0, S.hunger - v); }
     if (k === "dao") S.daoXin = Math.max(0, Math.min(100, S.daoXin + v));
+    if (k === "xinmo") S.xinmo = Math.max(0, Math.min(100, (S.xinmo || 0) + v));
     if (k === "points") S.points = Math.max(0, S.points + v);
   }
   num("money", "铜钱", " 文"); num("stones", "灵石", " 枚"); num("hp", "气血"); num("sta", "体力");
-  num("mp", "法力"); num("hunger", "饱食"); num("cult", "修为"); num("dao", "道心"); num("points", "万象点");
+  num("mp", "法力"); num("hunger", "饱食"); num("cult", "修为"); num("dao", "道心"); num("points", "万象点"); num("xinmo", "心魔");
   if (fx.attr) for (const k in fx.attr) { // 途径一·日常磨炼：日常成长有效
     const prev = S.base[k]; gainAttr(k, fx.attr[k]); const d = fmt1(S.base[k] - prev);
     const nm = { str: "力量", agi: "敏捷", int: "智力", con: "体质" }[k];
@@ -2367,12 +2422,35 @@ function runSpecial(sp, fx) {
     advanceSlot();
   } else if (sp === "eat") { openEat(); }
   else if (sp === "meditate") {
+    /* 打坐：无锁定则吐纳静心（旧行为）；面板参悟入口传 fx.focus=功法名 → 按设定公式涨该功法熟练（fx.teacher=讨教 NPC ×1.5） */
     S.stats.meditates++;
-    gainCult(8); gainAttr("int", 0.03);
+    const focus = fx && fx.focus;
+    const teacher = fx && fx.teacher;
+    if (focus) {
+      const mt = GONGFU_BY_NAME[focus]; const ak = mt ? mt.fb.a : "str";
+      const coef = (fx && fx.coef) || medStateCoef();
+      const wxm = focus === "乱拳" ? 1 : wxTrainMult(focus);
+      const inc = Math.round(6 * (attr(ak) / (REALM_ATTR_BASE[S.realm] || 5)) * coef * (1 + (S.mods.trainP || 0) / 100) * wxm * (teacher ? 1.5 : 1) * 10) / 10;
+      S.skills[focus] = Math.min(TECH_CAPS[focus] || 100, (S.skills[focus] || 0) + inc);
+      checkSkillMilestone(focus);
+      const cultBase = mt ? ({ 0: 2, 1: 5, 2: 9, 3: 15, 4: 30 }[mt.tier] || 2) : 2;
+      const cultGain = cultBase * wxm * (teacher ? 1.5 : 1) * 0.5;
+      gainCult(cultGain);
+      let spLine = "";
+      const sp0 = (S.realm >= 5) ? knownSpells()[0] : null; // 参悟法术：神识内视，已习法术的关窍随之透亮
+      if (sp0) { const sinc = Math.round(inc * 0.4 * 10) / 10; S.spells[sp0.id] = Math.min(spellCap(sp0), spellProf(sp0.id) + sinc); spLine = `；「${sp0.name}」法术熟练 +${sinc}`; }
+      if (teacher) addNpc(teacher, 2, { special: true }); // 讨教结缘
+      log(teacher ? `你带着「${focus}」中三处想不通的关隘去寻「${teacher}」。对方听完你的比划，拈须点拨数语——如拨云见月。你当即依言独坐，将那数语在识海里翻来覆去地参。`
+        : `你寻了处背风清净地，盘膝坐下，于识海中一遍一遍拆解「${focus}」的关窍。一个时辰倏忽而过。`, "dim");
+      sys(`【参悟】「${focus}」熟练度 +${inc}（${Math.round(S.skills[focus])}/${TECH_CAPS[focus] || 100}），修为 +${Math.round(cultGain)}${spLine}。涨幅拆解：${{ str: "力量", agi: "敏捷", int: "智力", con: "体质" }[ak]} ${attr(ak)} ÷ 境界基准 ${REALM_ATTR_BASE[S.realm]} × 状态系数 ${coef}${wxm !== 1 ? ` × 五行契合 ${wxm}` : ""}${(S.mods.trainP || 0) ? ` × 悟性 ${1 + S.mods.trainP / 100}` : ""}${teacher ? " × 讨教 1.5" : ""}${teacher ? `。「${teacher}」缘分 +2` : ""}`);
+    } else {
+      gainCult(8); gainAttr("int", 0.03);
+      log(`你五心朝天，感一丝凉意自鼻尖沉入丹田。灵气潮汐正涨。`, "dim");
+    }
     if ((S.xinmo || 0) > 0) { addXinmo(-2); if (xinmoStage().name === "心境清明") log(`杂念尽去，灵台一片清明。`, "good"); }
     if (S.realm >= 5) S.mp = Math.min(mpMax(), S.mp + mpMax() * 0.2 * (S.linggen === "za" ? 1.5 : 1)); // 杂灵根：回蓝 ×1.5
     if (Math.random() < attr("luck") * 0.015) { gainCult(20); sys(`【顿悟】灵光毫无预兆地炸开，修为大涨一截！`); }
-    log(`你五心朝天，感一丝凉意自鼻尖沉入丹田。灵气潮汐正涨。`, "dim");
+    S.sta = Math.max(0, S.sta - (focus ? 3 : 0)); // 参悟耗神三分；纯吐纳不耗
     advanceSlot();
   } else if (sp === "seeDoctor") {
     /* 寻医诊治（AI 剧情可给出的治病路径；30 文，药到病除） */

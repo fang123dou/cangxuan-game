@@ -238,7 +238,7 @@ const AI = (() => {
   }
 
   /* ---------- 校验 AI 输出 ---------- */
-  const FX_KEYS = ["money","stones","hp","sta","mp","hunger","cult","dao","points","attr","item","npc","flag","ach","card","luckCharm","combat","danger","special","coincidence","clearWood","skill","spell","wx","check","success","fail","successText","failText","checkText","pet","drop","slay","newcard","fabao","wuqi","job"];
+  const FX_KEYS = ["money","stones","hp","sta","mp","hunger","cult","dao","points","attr","item","npc","flag","ach","card","luckCharm","combat","danger","special","coincidence","xinmo","clearWood","skill","spell","wx","check","success","fail","successText","failText","checkText","pet","drop","slay","newcard","fabao","wuqi","job"];
   const CHECK_RE = /^[a-zA-Z0-9+\-*/().<>=!\s]{1,80}$/;
   function clampFx(src, depth) {
     const fx = {};
