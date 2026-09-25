@@ -1041,7 +1041,7 @@ const GM = (() => {
         const hasAnchor = S.gear && S.gear.xianqi === "guiXuAnchor";  // 归墟锚：负过锚的人，界壁认他——登仙羁绊门槛减一
         const beyond = ((S.flags.coincidence || 0) >= 10 && hiddenAll && known) || (hasWangchuan && known && (S.flags.coincidence || 0) >= 6);
         const choices = [
-          { label: "承接战果，听它道一声「恭喜」", hint: known ? "你已经知道这句话意味着什么。" : "赢了吞世者，天道该论功行赏了。", fx: { special: "end:luding" } },
+          { label: "承接战果，听它道一声「恭喜」", hint: known ? (S.flags.bossVol4 ? "你已斩过它的化身——这一句恭喜，它说不利索了。" : "你已经知道这句话意味着什么。") : "赢了吞世者，天道该论功行赏了。", fx: { special: "end:luding" } },
           { label: "留在归墟，做新一任守夜人", hint: "不拆穿，也不离开。世界续命，你镇裂缝。", fx: { special: "end:shoujie" } },
           { label: "识破回炉之局，修补界壁，重开仙路", hint: `需要：已知真相 + 生死羁绊×3（当前 ${bonds}，持归墟锚者×2）+ 伏笔≥8（当前 ${S.flags.coincidence || 0}）。完美结局。`,
             disabled: !(known && (bonds >= 3 || (hasAnchor && bonds >= 2)) && (S.flags.coincidence || 0) >= 8), fx: { special: "end:dengxian" } },
@@ -1052,7 +1052,7 @@ const GM = (() => {
         ];
         if (beyond) choices.push({ label: "什么也不选——转身，向「外面」走一步", hint: hasWangchuan ? "忘川盏在你怀里轻轻一晃——因果既洗，此界留不住你。这条路，它推演不到。" : "面板上的字开始乱。这条路，它推演不到。", fx: { special: "end:beyond" } });
         return {
-          scene: `进食断了。归墟深处静得能听见界壁的裂纹在合拢。这时，天道的声音落下来——三万年来它第一次这么近、这么温和：「做得好。承接它的因果吧，那是你应得的。」${known ? "你听得懂这句话。刀用完了，是要回炉的。" : "有什么东西在你心底一闪而过，快得抓不住。"}${hasLiangtian ? " 怀里那柄量天尺烫得惊人——量过你的尺子，此刻正贴着天道的掌纹。" : ""}${hasAnchor ? " 归墟锚在你背上低鸣，界壁的裂纹在向它合拢。" : ""} 终局在此，路在你脚下。`,
+          scene: `进食断了。归墟深处静得能听见界壁的裂纹在合拢。这时，天道的声音落下来——三万年来它第一次这么近、这么温和：「做得好。承接它的因果吧，那是你应得的。」${known ? "你听得懂这句话。刀用完了，是要回炉的。" : "有什么东西在你心底一闪而过，快得抓不住。"}${hasLiangtian ? " 怀里那柄量天尺烫得惊人——量过你的尺子，此刻正贴着天道的掌纹。" : ""}${hasAnchor ? " 归墟锚在你背上低鸣，界壁的裂纹在向它合拢。" : ""}${S.flags.bossVol4 ? " 它的化身已折于你手——那声「恭喜」缺了一角，说话的人第一次有了迟疑。" : ""} 终局在此，路在你脚下。`,
           choices,
         };
       },
@@ -1173,6 +1173,81 @@ const GM = (() => {
             fail: { hp: -25, dao: -1 },
             successText: x.trial.successText, failText: x.trial.failText } },
           { label: "还不是时候", hint: "器已应你，跑不了。", fx: { dao: 0.5 } },
+        ],
+      };
+    },
+  });
+
+  /* ---------- 章节 Boss（可选挑战，非强制——避而不战随时可走，胜则立旗不重复） ----------
+     卷一灭门执行者 → 卷二血河少主 → 卷三「莫名寻衅」的疯尊（爪印执行者）→ 卷四终 Boss 天道化身（先于终局抉择出场）。 */
+  SITUATIONS.push({
+    id: "boss_vol1", // 卷一 Boss：皂衣执令——上宗灭门的执行人，灭门之夜的刀
+    cond: () => !!S.flags.mieDone && !S.flags.bossVol1 && S.realm >= 6,
+    w: () => 5,
+    build() {
+      const pw = Math.max(14, Math.round(8 + S.realm * 3));
+      return {
+        scene: "茶棚外来了个皂衣人，斗笠压得很低，腰间悬着一柄无铭短刀——你认得那把刀：灭门之夜，火光里晃的就是它。他慢慢抬起头：「斩草要除根。上宗的令，迟到一世，也是令。」",
+        choices: [
+          { label: "战：报灭门之仇", hint: `皂衣执令（战力 ${pw}，随境界而涨）。胜则大仇得报。`, fx: { boss: `皂衣执令:${pw}:bossVol1`, canBeg: false, el: "jin",
+            success: { points: 100, dao: 2, coincidence: 1 }, fail: { hp: -20 },
+            successText: "无铭短刀断成两截。皂衣人倒下前忽然笑了：「你也会查到那枚羽毛的……我在下面等你。」他袖中滑出半枚灰白的羽——灰鹭的羽。",
+            failText: "你且战且退，皂衣人也不深追：「根没除净，令没完。」他消失在雪幕里。" } },
+          { label: "避而不战", hint: "仇要报，但不是今天。", fx: { dao: 0.3 } },
+        ],
+      };
+    },
+  });
+  SITUATIONS.push({
+    id: "boss_vol2", // 卷二 Boss：血河教少主——夺信之因果的债主亲至
+    cond: () => (typeof META !== "undefined") && META.story && META.story.stage >= 4 && !S.flags.bossVol2 && S.realm >= 8,
+    w: () => 5,
+    build() {
+      const pw = Math.max(18, Math.round(10 + S.realm * 3));
+      return {
+        scene: "红衣如火的人拦在路心，腰间玉佩与你怀中那半块隐隐相鸣——血河教少主，亲至。「分舵的事，我听说过你。」她笑得明艳，「教里规矩：怀璧者，要么入教，要么入土。你挑一个？」",
+        choices: [
+          { label: "战：「我挑第三个——你让路」", hint: `血河教少主（战力 ${pw}）。胜则夺信因果两讫。`, fx: { boss: `血河教少主:${pw}:bossVol2`, canBeg: false, el: "huo",
+            success: { points: 150, stones: 5, dao: 2 }, fail: { hp: -25 },
+            successText: "她的红衣裂了三寸，玉佩脱手飞出，正好落进你掌心——两半古玉隔世重合，温热如心跳。她擦着血笑：「原来它真认你。这桩因果，血河教不讨了。」",
+            failText: "她的血焰压得人睁不开眼，你拼死才脱出三里：「第三个选项不存在的，下次想好了再来。」" } },
+          { label: "避而不战", hint: "魔道少主，绕着走是江湖常识。", fx: { dao: 0.3 } },
+        ],
+      };
+    },
+  });
+  SITUATIONS.push({
+    id: "boss_vol3", // 卷三 Boss：问薪疯尊——「莫名寻衅」的爪印执行者，老祖级战力的具现
+    cond: () => (S.flags.doomLv || 0) >= 1 && !S.flags.bossVol3 && S.realm >= 13 && !S.flags.devourSlain,
+    w: () => 5,
+    build() {
+      const pw = Math.max(24, Math.round(12 + S.realm * 3));
+      return {
+        scene: "灵脉枯死的山谷里，一位老祖盘坐在裂谷中央，双目赤红，周身气息乱如沸粥——又一位「莫名寻衅」的老祖。可这一位在发疯之前，先看见了你：「小辈……你身上有理线的味道。它们让我杀你。老夫这辈子最后一件明白事——」他缓缓起身，「就是让老夫替它们办的这桩。」",
+        choices: [
+          { label: "战：替天下人斩断这只爪", hint: `问薪疯尊（战力 ${pw}，玄阶以上的硬仗）。胜则爪印折一指。`, fx: { boss: `问薪疯尊:${pw}:bossVol3`, canBeg: false, el: "tu",
+            success: { points: 200, dao: 3, coincidence: 1, attr: { con: 0.2 } }, fail: { hp: -35 },
+            successText: "老祖倒下时，眼里的赤红褪了，露出清明：「好……好一招。原来老夫这百年，是被人借了刀。」他含笑而逝——山谷里那股掐着时辰的「巧合」，乱了半拍。",
+            failText: "疯尊的掌风把你掀出谷口，山石崩裂：「走！趁老夫还认得『不该杀』三个字！」" } },
+          { label: "避而不战", hint: "老祖之威，非玄阶不可挡——先走。", fx: { dao: 0.3 } },
+        ],
+      };
+    },
+  });
+  SITUATIONS.push({
+    id: "boss_vol4", // 卷四终 Boss：天道化身——终局抉择之前的最后一战（非强制；胜则那句「恭喜」缺一角）
+    cond: () => !!S.flags.devourSlain && !!S.flags.truthKnown && !S.flags.bossVol4 && !S.flags.endingDone,
+    w: () => 100, // 压过终局抉择（99）：此战在先，抉择在后
+    build() {
+      const pw = Math.max(30, Math.round(14 + S.realm * 4)); // 终局之战：战力冠绝此界
+      return {
+        scene: "进食断了。归墟深处刚静下来，天——真的「下来」了。云海向两边翻开，一道和你等高、和你等形、连面板上的字迹都分毫不差的人影立在裂缝之前。它开口，是你的声音：「刀养得不错。可刀柄，从来在握刀的人手里。」天道化身——你要不要，先试试斩这只握刀的手？",
+        choices: [
+          { label: "战：「刀有没有意思，问刀」", hint: `天道化身（终局之战，战力 ${pw}，不可求饶）。胜则为终局抉择撕开缺口。`, fx: { boss: `天道化身:${pw}:bossVol4`, canBeg: false, el: "jin",
+            success: { points: 500, dao: 5, coincidence: 2, luckCharm: 1 }, fail: { hp: -50, xinmo: 5 },
+            successText: "人影碎成漫天光雨，每一滴雨里都是一行小字：【推演失败】【变量越界】【……有趣】。天的声音第一次有了起伏：「三万年来，你是第一个让『恭喜』说不出口的人。」",
+            failText: "你一剑斩过，它如水面般合拢：「刀不错。手，还差得远。」你被轰出百丈，筋骨欲裂——可你注意到：它合拢的涟漪，乱了一瞬。" } },
+          { label: "避而不战", hint: "不斩化身，直接听它开价——终局照样在你脚下。", fx: { dao: 1 } },
         ],
       };
     },

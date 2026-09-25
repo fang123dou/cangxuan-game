@@ -2365,6 +2365,29 @@ async function resolveFx(fx, label) {
   }
   if (fx.special) { runSpecial(fx.special, fx); return; }
   if (fx.combat) { const m = /^(.+):(\d+)$/.exec(fx.combat); if (m) { combat({ name: m[1], power: +m[2], canBeg: true }, () => { if (!S.over) advanceSlot(); }); return; } }
+  /* 章节 Boss 战（可选挑战，非强制）：fx.boss="名号:战力:胜利旗"——胜则立旗+结算 success，败则结算 fail，皆可来日再战 */
+  if (fx.boss) {
+    const m = /^([^:：]{1,12})[:：](\d+)[:：]([a-zA-Z0-9_]+)$/.exec(String(fx.boss));
+    if (m) {
+      combat({ name: m[1].trim(), power: +m[2], el: fx.el || "tu", canBeg: fx.canBeg !== false, desc: "（章节 Boss）" }, res => {
+        if (S.over) return;
+        if (res === "win" || res === "cheated") {
+          S.flags[m[3]] = 1;
+          const out2 = applyCore(fx.success || {});
+          if (fx.successText) log(fx.successText, "good");
+          try { chronicle("讨伐章节 Boss：" + m[1].trim(), "quest"); } catch (e) {}
+          if (out2 && out2.length) { const g = out2.gains || []; if (g.length) log(`<div class="fxl-row g"><b>收获</b><span>${g.join("；")}</span></div>`, "good"); }
+        } else {
+          applyCore(fx.fail || {});
+          if (fx.failText) log(fx.failText, "hurt");
+        }
+        computeMods(); renderPanel();
+        if (S.over) return;
+        advanceSlot();
+      });
+      return;
+    }
+  }
   if (fx.danger) { await runDanger(fx.danger); return; }
   advanceSlot();
 }
