@@ -1243,6 +1243,31 @@ const GM = (() => {
     },
   });
 
+  /* ---------- 可驯养妖灵兽（设定集第八章 · 缔结三法）——表驱动自 PETS 生成 ---------- */
+  if (typeof PETS !== "undefined") for (const p of PETS) SITUATIONS.push({
+    id: "pet_" + p.id,
+    cond: () => (!p.region || regionOf(S.place).key === p.region) && S.realm >= p.realm
+      && (!p.luck || attr("luck") >= p.luck) && !S.flags["pet_" + p.id],
+    w: () => 3,
+    build() {
+      const attrFx = {}; for (const k in p.attr) if (p.attr[k]) attrFx[k] = p.attr[k];
+      const cp = p.card.split("|"); // 「名|品级0~5|效果|mod键:值,…」→ 词条对象（同 ai.js 解析规则）
+      const cardMod = {};
+      if (cp[3]) for (const kv of cp[3].split(/[,，]/)) { const km = /^([a-zA-Z]+):(-?\d+(?:\.\d+)?)$/.exec(kv.trim()); if (km) cardMod[km[1]] = +km[2]; }
+      const winFx = { pet: p.name, attr: attrFx, newcard: { name: cp[0].trim(), tier: +cp[1].trim(), eff: cp[2].trim().slice(0, 60), mod: cardMod }, flag: "pet_" + p.id, dao: 1 };
+      const ch = [
+        { label: `以心相契——驯养「${p.name}」`, hint: p.ranch.hint, fx: { check: p.ranch.check,
+          success: winFx, fail: { hp: -12 }, successText: p.ranch.ok, failText: p.ranch.ng } },
+      ];
+      if (p.force) ch.push({ label: `武力收服——打服「${p.name}」`, hint: p.force.hint,
+        fx: { boss: `${p.name}:${Math.max(p.force.base, Math.round(p.force.base - 4 + S.realm * (p.force.per - 2)))}:pet_${p.id}`,
+          canBeg: true, el: "mu", success: winFx, fail: { hp: -15 },
+          successText: p.ranch.ok, failText: "它让你知道了什么叫野性——你且战且退，它还站在原地。" } });
+      ch.push({ label: "放生，各走各路", hint: "强扭的缘不甜。", fx: { dao: 0.5 } });
+      return { scene: p.scene, choices: ch };
+    },
+  });
+
   /* ---------- 上下文 ---------- */
   /* 缘分突破候选：缘分 ≥80 且尚未 bondbreak 的有名 NPC（「路人缘」是汇总池，除外） */
   function bondCandidates() {
