@@ -1163,7 +1163,10 @@ const GM = (() => {
       return {
         scene: x.scene,
         choices: [
-          { label: `取之——「${x.name}」`, hint: "仙器入手，随身入装备栏；佩戴之益即刻生效。", fx: { special: "xianqi:" + x.id, coincidence: 1, dao: 2 } },
+          { label: `受器灵之试——「${x.name}」认主`, hint: x.trial.hint, fx: { check: x.trial.check,
+            success: { special: "xianqi:" + x.id, coincidence: 1, dao: 2 },
+            fail: { hp: -25, dao: -1 },
+            successText: x.trial.successText, failText: x.trial.failText } },
           { label: "还不是时候", hint: "器已应你，跑不了。", fx: { dao: 0.5 } },
         ],
       };
