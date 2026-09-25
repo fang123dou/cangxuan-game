@@ -889,6 +889,20 @@ const MOBS = [
     scene:"海天一线上掠来一片遮天的金云——金翅大鹏，圣阶妖圣，双翼一展便是九万里。它没有俯冲，只是看着你：敢对它亮剑的人，它记得。" },
 ];
 const MOBS_BY_ID = {}; for (const m of MOBS) MOBS_BY_ID[m.id] = m;
+
+/* ============ 妖兽守药（采药不是采摘，是一场战争——设定集·猎杀与取材） ============
+   灵药/矿母必有妖兽盘踞：打赢（或智取）才采得到。name 与 RECIPES 主材严格一致，入材料账即可开炉。 */
+const HERBS = [
+  { id:"chixuezhi", name:"赤血芝", pin:"灵品", region:"nanling", realm:5, mob:"寒鳞蟒", power:14, el:"shui",
+    scene:"瘴林背阴的断崖上，一株赤红如血的灵芝生在腐叶间——赤血芝，灵品名录上的续命圣药。断崖下的深潭里，一片霜鳞无声滑过水面。这药，有主。" },
+  { id:"shizhongru", name:"石钟乳", pin:"玄品", region:null, realm:8, mob:"铁背猿", power:18, el:"tu",
+    scene:"深窟溶洞的穹顶垂下百丈玉柱，柱尖悬着一滴将坠未坠的乳白——石钟乳，百年一滴。洞底阴影里，铁背猿抱臂而坐，把这座洞当成了它的私窖。" },
+  { id:"xuantie", name:"玄铁", pin:"玄品", region:"beiyuan", realm:10, mob:"冰渊虬龙血裔", power:26, el:"shui",
+    scene:"北原废矿的井底，一截玄铁母岩乌沉沉嵌在冰壁里，坠手生寒。井口的雪地上盘着一道修长的白影——冰渊虬龙的血裔，守这条矿脉已不知多少年。" },
+  { id:"jiuyexuanzhi", name:"九叶玄芝", pin:"玄品", region:"nanling", realm:13, mob:"影豹", power:30, el:"mu",
+    scene:"灵脉交汇的幽谷里，九叶玄芝一叶一品，光华内蕴，隔十丈都能嗅到那股清气。夜色中，一双金瞳在你必经的路上亮起——影豹先到一步，这处灵穴它占下了。" },
+];
+const HERBS_BY_ID = {}; for (const h of HERBS) HERBS_BY_ID[h.id] = h;
 /* 敌方五行（按名取，默认土行） */
 const ENEMY_EL = {
   "林中的冬狼": "shui", "野狗": "tu", "饿疯的野狗": "tu",

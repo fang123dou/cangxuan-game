@@ -1275,6 +1275,28 @@ const GM = (() => {
     },
   });
 
+  /* ---------- 妖兽守药（HERBS 表驱动）：炼丹/炼器主材的唯一主动获取通道——打跑守药妖兽才采得到 ---------- */
+  if (typeof HERBS !== "undefined") for (const h of HERBS) SITUATIONS.push({
+    id: "herb_" + h.id,
+    cond: () => (!h.region || regionOf(S.place).key === h.region) && S.realm >= h.realm && !S.flags["herb_" + h.id + "_" + S.day], // 每日每株一次
+    w: () => 2,
+    build() {
+      S.flags["herb_" + h.id + "_" + S.day] = 1; // 今日已遇（见智取/退避也算）
+      const pw = Math.max(h.power, Math.round(h.power + S.realm)); // 守药妖兽战力随境界水涨船高
+      return { scene: h.scene, choices: [
+        { label: `斩兽采药——战「${h.mob}」`, hint: `战力约 ${pw}。胜则「${h.name}」到手，兼取妖兽一身是宝。`, fx: { boss: `${h.mob}:${pw}:herb_${h.id}`, canBeg: false, el: h.el,
+          success: { drop: h.name, mobloot: 1, dao: 0.2 }, fail: { hp: -8 },
+          successText: `【${h.mob}】败退。你取了「${h.name}」，又割了妖兽一身是宝的材料。`,
+          failText: `「${h.mob}」凶性大发，你抱着一身伤退了出来——药，还在它眼皮底下。` } },
+        { label: "潜行智取", hint: "不与它照面，摸了药就走（敏捷/智力判定，败则被扑击重创）。", fx: { check: "agi*6+int*5+luck*2+d30>52",
+          success: { drop: h.name, dao: 0.5 }, fail: { hp: -6, dao: -0.2 },
+          successText: `你屏息绕过守药的「${h.mob}」，指尖一捻——「${h.name}」到手，它连头都没回。`,
+          failText: `枯枝在你脚下「咔嚓」一声。守药的「${h.mob}」暴起，你只来得及护住要害。` } },
+        { label: "拱手让药", hint: "天材地宝，有德者居之——它守着，也算一种德。道心 +0.3。", fx: { dao: 0.3 } },
+      ] };
+    },
+  });
+
   const mobMonth = () => Math.floor((S.day - 1) / 30) + 1; // 游戏历法：三十日一月（冬三十日而春）
   /* ---------- 野怪猎杀（MOBS 表驱动）：真实战斗，胜则随机掉落（修为/功法/宝物随等阶涨） ---------- */
   if (typeof MOBS !== "undefined") for (const mb of MOBS) SITUATIONS.push({
