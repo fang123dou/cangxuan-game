@@ -581,6 +581,63 @@ const GM = (() => {
         };
       },
     },
+    /* ---------- 修行记事（打坐参悟/向 NPC 讨教的专属后续剧情） ----------
+       设定依据：打坐一时辰约回一成（体质定恢复）、灵阶起打坐替代睡眠；名录人物可讨教。
+       参悟/讨教结算后由引擎记下 S.medScene，下一回合 AI 提示词（修行记事）与离线引擎（本二景）
+       双双承接——或写余韵，或让点拨者现身考校；build 时即焚，不空转不滞留。 */
+    {
+      id: "med_teacher",
+      cond: () => !!(S.medScene && S.medScene.teacher),
+      w: () => 12,
+      build() {
+        const m = S.medScene; S.medScene = null; // 用完即焚
+        const t = m.teacher;
+        return {
+          scene: `${["清晨", "午后", "黄昏", "夜里"][S.slot]}，${t}负手而来，目光在你周身一落：「昨日点拨的「${m.focus}」，练给我看看。」${m.nearCap ? `你起手演式，气机贯通——连你自己都听见了那层薄膜将破未破的声响。${t}眼中精光一闪：「瓶颈要破了。就差一层窗户纸。」` : `你依言演完一套，${t}点点头，又挑出两处瑕疵，一一拆给你听。`}`,
+          choices: [
+            { label: `请${t}再点拨一二`, hint: `再耗一时辰：讨教参悟「${m.focus}」（×1.5 熟练），缘分 +2。`, fx: { special: "meditate", focus: m.focus, teacher: t } },
+            { label: "谢过先生，各行其是", hint: "师徒缘深一分，道心稳一分。", fx: { npc: { [t]: 2 }, dao: 0.5 } },
+            { label: `向${t}讨教行走江湖的经验`, hint: "判定：口聪心诚，则得几句要紧的叮嘱。", fx: { check: "int*6+dao*0.3+d20>30",
+                success: { npc: { [t]: 4 }, attr: { int: 0.05 } }, fail: { npc: { [t]: 1 } },
+                successText: `${t}提点你三句话，字字是老江湖用命换来的。`,
+                failText: `${t}笑了笑：「路要自己走。」还是多嘱咐了你两句。` } },
+          ],
+        };
+      },
+    },
+    {
+      id: "med_after",
+      cond: () => !!(S.medScene && !S.medScene.teacher),
+      w: () => 12,
+      build() {
+        const m = S.medScene; S.medScene = null; // 用完即焚
+        if (m.nearCap) return { // 逼近瓶颈：突破在望
+          scene: `「${m.focus}」的关隘在识海里咯吱作响——你昨日参到的那层薄膜，此刻薄得透光。气机每运转一周天，它就松一分。破与不破，只在你一念之间。`,
+          choices: [
+            { label: "一鼓作气，再参一时", hint: `趁热打铁：独坐参悟「${m.focus}」。瓶颈在望。`, fx: { special: "meditate", focus: m.focus } },
+            { label: "强压下悸动，暂且按下", hint: "心急易生心魔。道心 +1，心魔 -2。", fx: { dao: 1, xinmo: -2 } },
+          ],
+        };
+        if ((S.xinmo || 0) >= 50) return { // 心魔扰神：硬修有险（设定：心魔高涨时修行受扰）
+          scene: `本该澄明的识海里浮起一层油腻的黑。昨日参「${m.focus}」时压下去的杂念，趁你神思疲惫又翻涌上来——心魔在笑。`,
+          choices: [
+            { label: "以道心镇之，继续参悟", hint: "判定：道心够硬，杂念自退；压不住，则反受其噬。", fx: { check: "dao*1.2+d20>55",
+                success: { special: "meditate", focus: m.focus, xinmo: -3 }, fail: { xinmo: 6, hp: -4 },
+                successText: "你守定灵台，任它千般幻象，我自不动。一个时辰下来，杂念竟退了大半。",
+                failText: "幻象趁虚而入。你闷哼一声喷出一口浊气，胸口火辣辣地疼。" } },
+            { label: "起身走走，散散心神", hint: "心魔正盛时硬修易伤。体力 +4，道心 +0.3。", fx: { sta: 4, dao: 0.3 } },
+          ],
+        };
+        return { // 默认：参悟余韵
+          scene: `昨日参「${m.focus}」的余韵还在筋骨里流转。行气一周天，你察觉那几处昨日想不通的关窍，竟在睡梦间悄悄松了两分——原来识海从不睡。`,
+          choices: [
+            { label: "趁热打铁，再参一时", hint: `独坐参悟「${m.focus}」，熟练照设定公式入账。`, fx: { special: "meditate", focus: m.focus } },
+            { label: "把心得默记成册", hint: "温故知新。「读书」技艺 +3，修为 +2。", fx: { skill: "读书:3", cult: 2 } },
+            { label: "起身谋生去", hint: "修行不碍饭碗。体力 +3，道心 +0.2。", fx: { sta: 3, dao: 0.2 } },
+          ],
+        };
+      },
+    },
     /* ---------- 宗门日常（第六章 · 外门弟子三千，资源只向强者倾斜） ----------
        点卯（每日清晨）：到卯记贡献，缺卯三次以上月供减半；
        宗门任务：执事派活，贡献与赏钱并行；贡献兑换：聚气丹/功法指点/内门推荐。 */
@@ -898,6 +955,51 @@ const GM = (() => {
         };
       },
     },
+    /* ---------- 隐藏结局暗线 · 界外三瞥（第十一章：「界外」意味着什么，它比你更想知道） ----------
+       只惊鸿一瞥、绝不解释：面板错字 / 故乡语言的梦 / 世界边缘的「框」。
+       每幕伏笔 +1——配合遗痕与低语线，伏笔攒到 10 的路由此有迹可循。 */
+    {
+      id: "beyond_glint1",
+      cond: () => (S.flags.coincidence || 0) >= 4 && !S.flags.beyond1,
+      w: () => 1.5,
+      build() {
+        return {
+          scene: "擦身而过的一瞬间，你眼角的光幕忽然错了一行字——【变量不明】四个字一闪而过，快得像错觉。再看时，一切如常。你的心跳却漏了半拍：它也会……看走眼？",
+          choices: [
+            { label: "记住这一瞬", hint: "稍纵即逝的异样。伏笔 +1。", fx: { flag: "beyond1", coincidence: 1 } },
+            { label: "晃神而已", hint: "装作没看见。", fx: { dao: 0.2 } },
+          ],
+        };
+      },
+    },
+    {
+      id: "beyond_glint2",
+      cond: () => (S.flags.coincidence || 0) >= 7 && S.flags.beyond1 && !S.flags.beyond2,
+      w: () => 1.5,
+      build() {
+        return {
+          scene: "梦里有两个声音在吵架。一个说：「跑好你自己的。」——是它，你认得。另一个声音很轻，说的竟是……你故乡的语言。它说了一句什么，你没听清，醒来时只记得尾音，像一声叹息。",
+          choices: [
+            { label: "把那句尾音默念三遍", hint: "穿越者两世记忆，梦里双倍素材。伏笔 +1。", fx: { flag: "beyond2", coincidence: 1, dao: 1 } },
+            { label: "翻个身接着睡", hint: "梦里的事，醒了就散了。", fx: { sta: 2 } },
+          ],
+        };
+      },
+    },
+    {
+      id: "beyond_glint3",
+      cond: () => (S.flags.coincidence || 0) >= 9 && S.flags.beyond2 && !S.flags.beyond3,
+      w: () => 1.5,
+      build() {
+        return {
+          scene: "登高处，云海尽头忽然「齐」得反常——天与地在那条线上收边，像一幅画裱到了框。你鬼使神差地伸出手。指尖什么也没碰到，可面板上的字齐齐一颤，像被风吹皱的水面。【推演失败】——又一闪而过。",
+          choices: [
+            { label: "再往前，探半步", hint: "框的后面是什么？伏笔 +1，道心 +2。", fx: { flag: "beyond3", coincidence: 1, dao: 2 } },
+            { label: "收手，下山", hint: "天边的框，不是给人碰的。", fx: { dao: 1 } },
+          ],
+        };
+      },
+    },
     {
       id: "final_choice", // 终局抉择：五结局分岔（第十一章：取决于你的每一步）
       cond: () => S.flags.devourSlain && !S.flags.endingDone,
@@ -956,8 +1058,10 @@ const GM = (() => {
     const wOf = s => Math.max(0.1, s.w(ctx)) * (s.social && hasSpecial("xianyan") ? 1.5 : 1);
     // 防重复：近期 8 次 + 当日全部（同一天内剧情不重复）
     const seen = new Set((S.gmRecent || []).slice(-8).concat(S.daySeen || []));
+    // 修行记事待承接时（med_*）：不受当日去重限制——一日多次参悟，每次都有回响
+    const medPending = !!S.medScene;
     let pool = SITUATIONS.filter(s => {
-      if (seen.has(s.id)) return false;
+      if (seen.has(s.id) && !(medPending && s.id.indexOf("med_") === 0)) return false;
       try { return s.cond(ctx); } catch (e) { return false; }
     });
     // 当日耗尽才放宽到「近期不重复」

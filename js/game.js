@@ -2097,6 +2097,7 @@ async function gmTurn() {
     const why = AI.failInfo && AI.failInfo();
     toast("AI 未接管：" + (why ? esc(why) : "未知原因") + "，本回合由离线引擎推演");
   }
+  if (S.medScene) S.medScene = null; // 修行记事：本回合剧情（AI 或离线引擎）已承接参悟/讨教，钩子用完即焚
   // 承接上文的引子
   if (S.echoLine) { log(esc(S.echoLine), "dim"); chronicle(S.echoLine, "evt"); S.echoLine = null; }
   const srcKey = turn._src === "ai" || turn._src === "server" ? turn._src : "gm";
@@ -2461,6 +2462,8 @@ function runSpecial(sp, fx) {
       const sp0 = (S.realm >= 5) ? knownSpells()[0] : null; // 参悟法术：神识内视，已习法术的关窍随之透亮
       if (sp0) { const sinc = Math.round(inc * 0.4 * 10) / 10; S.spells[sp0.id] = Math.min(spellCap(sp0), spellProf(sp0.id) + sinc); spLine = `；「${sp0.name}」法术熟练 +${sinc}`; }
       if (teacher) addNpc(teacher, 2, { special: true }); // 讨教结缘
+      // 修行记事：喂给下一回合的 AI 提示词与离线引擎，生成参悟/讨教专属后续剧情（用完即焚，不空转）
+      S.medScene = { kind: teacher ? "讨教" : "独悟", focus, teacher: teacher || "", inc, slot: S.slot, day: S.day, nearCap: (S.skills[focus] || 0) >= (TECH_CAPS[focus] || 100) - 15 };
       log(teacher ? `你带着「${focus}」中三处想不通的关隘去寻「${teacher}」。对方听完你的比划，拈须点拨数语——如拨云见月。你当即依言独坐，将那数语在识海里翻来覆去地参。`
         : `你寻了处背风清净地，盘膝坐下，于识海中一遍一遍拆解「${focus}」的关窍。一个时辰倏忽而过。`, "dim");
       sys(`【参悟】「${focus}」熟练度 +${inc}（${Math.round(S.skills[focus])}/${TECH_CAPS[focus] || 100}），修为 +${Math.round(cultGain)}${spLine}。涨幅拆解：${{ str: "力量", agi: "敏捷", int: "智力", con: "体质" }[ak]} ${attr(ak)} ÷ 境界基准 ${REALM_ATTR_BASE[S.realm]} × 状态系数 ${coef}${wxm !== 1 ? ` × 五行契合 ${wxm}` : ""}${(S.mods.trainP || 0) ? ` × 悟性 ${1 + S.mods.trainP / 100}` : ""}${teacher ? " × 讨教 1.5" : ""}${teacher ? `。「${teacher}」缘分 +2` : ""}`);
