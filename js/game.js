@@ -1608,7 +1608,7 @@ function renderTab() {
         combat({ name: n, power: Math.max(15, Math.round(20 + S.realm * 6 + Math.abs(v) / 3)), canBeg: false, el: st ? st.el : null }, (res) => {
           if (res === "win") { addNpc(n, 30, { special: true }); log(`【了断】你胜了。${n}输了气势也输了仇——恩怨两清，反倒生出几分敬重。（缘分 +30）`, "good"); chronicle(`与「${n}」一战泯恩仇`, "npc"); }
           else if (res !== "dead") { addNpc(n, -5, { special: true }); log(`【了断】你技不如人，讨回来的只有一身新伤。${n}的冷笑比刀更冷。（缘分 -5）`, "hurt"); }
-          if (!S.over) advanceSlot();
+          if (!S.over) { renderPanel(); gmTurn(); } // 寻仇属随手互动：不占用当日选项次数，同辰补一幕
         });
       }) });
       showInfo(n, `<span style="color:${v >= 0 ? "var(--gold-dim)" : "var(--blood-hi)"}">${relText(v)}（${v > 0 ? "+" : ""}${v}）</span>`,
