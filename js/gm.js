@@ -286,7 +286,7 @@ const GM = (() => {
       id: "corpse_road", cond: c => !c.flag("corpseMet"), w: c => c.weatherBad ? 2 : 1,
       build() {
         return {
-          scene: `雪地里半埋着一个冻僵的旅人，行囊还系在背上。以青石城的规矩，死人身上的东西，谁先翻到就是谁的。`,
+          scene: `雪地里半埋着一个冻僵的旅人，行囊还系在背上。以${placeTown()}的规矩，死人身上的东西，谁先翻到就是谁的。`,
           choices: [
             { label: "搜他的行囊", hint: "发死人财，有伤阴德。", fx: { money: 15, item: "heimu:1", dao: -2, flag: "corpseMet" } },
             { label: "挖个雪坑埋了他", hint: "费时费力。天地记得。", fx: { sta: -2, dao: 2, cult: 3, flag: "corpseMet", luckCharm: 1 } },
@@ -460,7 +460,7 @@ const GM = (() => {
   }
   function fallbackScene(ctx) {
     return {
-      scene: `${["清晨", "午后", "黄昏", "夜里"][S.slot]}，${S.weather}。青石城的一天又翻过一页，你继续熬着。`,
+      scene: `${["清晨", "午后", "黄昏", "夜里"][S.slot]}，${S.weather}。${placeTown()}的一天又翻过一页，你继续熬着。`,
       choices: [
         { label: "去讨饭", hint: "智力定你讨不讨得到，气运定你遇上什么人。", fx: { special: "beg" } },
         { label: "进山砍柴", hint: "柴薪能卖钱，也能夜里生火。", fx: { special: "chop" } },

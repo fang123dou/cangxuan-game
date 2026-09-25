@@ -603,6 +603,12 @@ function setChoices(list) {
   });
 }
 function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;"); }
+/* 从 S.place 提取所在城池/城镇名（"东荒 · 云州 · 青石城 · 市井"→青石城；"北地 · 渊口戍堡"→渊口戍堡）——再世身份地异，文案不得一律作青石城 */
+function placeTown() {
+  const segs = (S && S.place || "").split("·").map(x => x.trim()).filter(Boolean);
+  if (!segs.length) return "青石城";
+  return segs.length >= 3 ? segs[segs.length - 2] : segs[segs.length - 1];
+}
 
 /* ================= 面板渲染 ================= */
 function bar(cls, cur, max, label) {
@@ -877,11 +883,9 @@ function renderTab() {
     if (S.gear && S.gear.weapon) inv.push(["gear", `⚔ ${S.gear.weapon.name}（攻伐 +${S.gear.weapon.dmgP}%）`]);
     if (S.inv.fangcun && !S.flags.fangcunUsed) inv.push(["fangcun", "方寸戒"]);
     if (S.mats) for (const m in S.mats) if (S.mats[m] > 0) inv.push(["mat:" + m, `${m} ×${S.mats[m]}`]);
-    const skills = Object.keys(S.skills).map(k => `${k} ${Math.round(S.skills[k])}%`);
-    body.innerHTML = (inv.length || skills.length)
-      ? `<div class="chips">${inv.map(([id, label]) => `<span class="chip" data-item="${id}" style="color:var(--paper-70);border-color:var(--line)">${label}</span>`).join("")}</div>
-        ${skills.length ? `<div class="p-row" style="margin-top:10px"><span>技艺</span><b>${skills.join(" · ")}</b></div>` : ""}`
-      : `<div class="empty">两袖清风。破庙神像的裂缝里也许有东西。</div>`;
+    body.innerHTML = inv.length
+      ? `<div class="chips">${inv.map(([id, label]) => `<span class="chip" data-item="${id}" style="color:var(--paper-70);border-color:var(--line)">${label}</span>`).join("")}</div>`
+      : `<div class="empty">两袖清风。破庙神像的裂缝里也许有东西。</div>`; // 技艺已迁入技能栏（curTab 9），行囊只装物
     body.querySelectorAll("[data-item]").forEach(el => el.onclick = () => {
       const id = el.dataset.item;
       if (id.startsWith("mat:")) { // 材料账（猎杀取材）：只读展示，折算走剧情
@@ -1093,12 +1097,12 @@ function renderTab() {
       { sk: "引气诀", tier: "1 阶功法", el: "shui", desc: "吐纳引气之法诀。修行效率大增，打坐收益远胜寻常吐纳。", src: "落魄武师一脉的传承；亦可于商铺购得。" },
     ];
     const techGot = t => t.sk === "乱拳" ? ("乱拳" in S.skills) : (S.inv[t.sk === "引气诀" ? "yinqi" : "quanpu"] || 0) > 0;
+    const owned = TECH_LIST.filter(techGot); // 未入手的功法不占栏位：没有就是没有，不预告
     let html = `<div class="p-title"><b>功 法</b><span>修行根本 · 熟练度满反哺五维</span></div>`;
-    html += TECH_LIST.map(t => {
-      const got = techGot(t);
+    html += owned.length ? owned.map(t => {
       const cur = Math.round(S.skills[t.sk] || 0), cap = TECH_CAPS[t.sk];
-      return `<div class="p-row" ${got ? `data-skill="${t.sk}"` : `style="opacity:.45"`}><span>${got ? "" : "🔒 "}${t.sk === "乱拳" ? t.sk : "《" + t.sk + "》"}</span><b>${got ? `熟练 ${cur}/${cap}` : "未入手"}</b></div>`;
-    }).join("");
+      return `<div class="p-row" data-skill="${t.sk}"><span>${t.sk === "乱拳" ? t.sk : "《" + t.sk + "》"}</span><b>熟练 ${cur}/${cap}</b></div>`;
+    }).join("") : `<div class="empty">尚无傍身功法。市井中的落魄武师、古籍摊的残卷、宗门的山门——求武之路，处处可起。</div>`;
     const life = Object.entries(S.skills).filter(([k]) => !(k in TECH_CAPS)).sort((a, b) => b[1] - a[1]);
     html += `<div class="p-title" style="margin-top:14px"><b>技 艺</b><span>生活技能 · 从业历练积攒</span></div>`;
     html += life.length ? life.map(([k, v]) => `<div class="p-row" data-skill="${esc(k)}"><span>${esc(k)}</span><b>熟练 ${Math.round(v)}/${TECH_CAPS[k] || 100}</b></div>`).join("")
@@ -2737,7 +2741,7 @@ const OPENINGS = [
     ],
   },
   {
-    id: "yasong", place: "东荒 · 云州 · 出城雪道", title: "押 送 雪 道",
+    id: "yasong", place: "东荒 · 云州 · 青石城 · 出城雪道", title: "押 送 雪 道",
     lines: [
       "你在枷锁的冰冷里醒来——流放押送的队伍昨夜遇袭，解差死绝，押送的文书散了一地。高烧三天，浑身滚烫，你是队列里罪最轻的那个，枷锁钥匙就挂在死去的解差腰上。",
       (n) => `同枷的老犯人还有一口气，脚踝肿得发亮。他是队伍里唯一没欺负过你的人，分过你半壶水——他抬了抬眼皮：「${n}……钥匙……拿了就跑，别管我。」`,
@@ -2750,7 +2754,7 @@ const OP_IDEN = {
   laofang:  IDENTITIES.find(i => i.name === "死囚"),
   heikuang: IDENTITIES.find(i => i.name === "矿奴"),
   jitan:    IDENTITIES.find(i => i.name === "祭品"),
-  yasong:   { grade: "狱", name: "流犯", desc: "流放押送的队伍遇袭死绝，枷锁钥匙挂在死人腰上。", note: "「戴枷而行」脚程与体面，皆无", place: "东荒 · 云州 · 出城雪道" },
+  yasong:   { grade: "狱", name: "流犯", desc: "流放押送的队伍遇袭死绝，枷锁钥匙挂在死人腰上。", note: "「戴枷而行」脚程与体面，皆无", place: "东荒 · 云州 · 青石城 · 出城雪道" },
 };
 function startLife() {
   $("#log").innerHTML = "";

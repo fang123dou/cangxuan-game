@@ -35,6 +35,9 @@ const CARD_POOL = [
     { id:"feiqiu", name:"非酋",        eff:"【负面】气运 -1；保底计数速度 +25%", mod:{luckFlat:-1, pityR:25}, bad:true },
     { id:"dayuan", name:"大冤种",      eff:"【负面】易被坑骗；每次被坑后三日内必有补偿机缘", mod:{}, bad:true, special:"yuanchang" },
     { id:"huachang",name:"滑肠之体",   eff:"【负面】吃不洁食物必腹泻；但药蚀累积减半", mod:{conP:-2}, bad:true, special:"huachang" },
+    { id:"shouwen", name:"手稳",       eff:"手上功夫扎实：敏捷提升 2%，修炼 +4%", mod:{agiP:2, trainP:4} },
+    { id:"kangzao", name:"抗造",       eff:"皮实耐揍：体质提升 2%，承伤 +2%", mod:{conP:2, defP:2} },
+    { id:"jizhi",   name:"急智",       eff:"脑子转得快：智力提升 2%，逃脱 +3%", mod:{intP:2, escapeP:3} },
   ],
   /* ---- 良品（白） ---- */
   [
@@ -55,6 +58,8 @@ const CARD_POOL = [
     { id:"ercong", name:"耳聪目明",    eff:"六识敏锐：智力提升 6%，守夜察觉先人一步", mod:{intP:6, escapeP:4} },
     { id:"yijing", name:"半卷医经",    eff:"自救救人两相宜：气血恢复 +15%", mod:{hpRegenP:15} },
     { id:"huaibi", name:"怀璧其罪",    eff:"【负面】身怀重宝必被觊觎：灵石过夜可能招贼；睡不踏实，逃脱警觉 +10%", mod:{escapeP:10}, bad:true, special:"huaibi" },
+    { id:"mensheng",name:"闷声发财",   eff:"不显山不露水：利润与工钱 +8%，逃脱 +4%", mod:{moneyP:8, escapeP:4} },
+    { id:"jiaodi", name:"脚底抹油",    eff:"说溜就溜：逃脱 +12%，敏捷 +4%", mod:{escapeP:12, agiP:4} },
   ],
   /* ---- 灵品（青） ---- */
   [
@@ -76,6 +81,8 @@ const CARD_POOL = [
     { id:"renyuan",name:"人缘广结",    eff:"善缘积累 +25%，陌生人看你顺眼", mod:{socialP:25} },
     { id:"mengwu", name:"梦中悟道",    eff:"气运高者偶有预警之梦：睡眠恢复 +20%，修炼 +10%", mod:{hpRegenP:20, trainP:10} },
     { id:"meishen",name:"霉神附体",    eff:"【负面】霉运缠身，身边人跟着倒霉：气运 -1；保底计数 +25%——坏卡用好了，是把不见血的刀", mod:{luckFlat:-1, pityR:25}, bad:true, special:"meishen" },
+    { id:"guomu",  name:"过目不忘",    eff:"见过的招式与丹方过目不忘：修炼 +15%，智力 +4%", mod:{trainP:15, intP:4} },
+    { id:"liugan", name:"六感灵通",    eff:"六识过人：智力 +4%，逃脱 +10%", mod:{intP:4, escapeP:10} },
   ],
   /* ---- 玄品（紫） ---- */
   [
@@ -88,6 +95,7 @@ const CARD_POOL = [
     { id:"xinxi",  name:"心血来潮",    eff:"规则：睡着也生效——刀落下前会把你叫醒（致死袭击 30% 概率预感避开）", mod:{}, special:"xinxi" },
     { id:"baidu",  name:"百毒不侵",    eff:"毒吃多了不死，也是条路：免疫食源性腹泻与瘴毒，体质 +8%", mod:{conP:8}, special:"baidu" },
     { id:"shafa",  name:"杀伐果断",    eff:"攻伐 +30%——犹豫是留给活人的", mod:{dmgP:30} },
+    { id:"cangfeng",name:"藏锋",       eff:"锋藏于鞘，出则必杀：攻伐 +15%，承伤 +5%", mod:{dmgP:15, defP:5} },
   ],
   /* ---- 圣品（金） ---- */
   [
@@ -96,6 +104,7 @@ const CARD_POOL = [
     { id:"daoxinzhu",name:"磐石道心",  eff:"道心恒稳：心魔抗性 +30%，破境时心境判定大幅加成", mod:{conP:8, intP:8}, special:"daoxin" },
     { id:"chouqin",name:"天道酬勤",    eff:"大道级勤勉：修炼速度 +60%——天道不亏待人", mod:{trainP:60} },
     { id:"wuwo",   name:"刀剑无我",    eff:"攻伐 +60%，防御 -10%——眼里只有进手，没有退路", mod:{dmgP:60, defP:-10} },
+    { id:"wanfa",  name:"万法归一",    eff:"触类旁通至极境：全属性 +8%，修炼 +20%", mod:{allP:8, trainP:20} },
   ],
   /* ---- 仙品（红） ---- */
   [
@@ -124,26 +133,26 @@ const COMBO_PAIRS = [["juanwang", "moyu", "zhangchi"], ["huachang", "ganfan", "z
 const IDENTITIES = [
   /* ---- 吉档 ---- */
   { grade:"吉", name:"小家族庶子",   desc:"有饭吃有书读，嫡母的猜忌比寒冬更长。", mods:{int:1}, money:400, note:"「灯下苦学」智力成长 +10%", place:"东荒 · 云州 · 青石城 · 内城宅院" },
-  { grade:"吉", name:"宗门记名弟子", desc:"月例三块灵石，外门倾轧月比淘汰。", mods:{con:1}, money:120, note:"「早课不辍」修炼效率 +5%", place:"东荒 · 云州 · 青岩山脚" },
+  { grade:"吉", name:"宗门记名弟子", desc:"月例三块灵石，外门倾轧月比淘汰。", mods:{con:1}, money:120, note:"「早课不辍」修炼效率 +5%", place:"东荒 · 云州 · 青石城 · 青岩山脚" },
   { grade:"吉", name:"药王谷药童",   desc:"识药辨草的童子，月有薄俸。", mods:{int:1,con:0}, money:300, note:"「药圃岁月」丹道熟练度 +10%", place:"中州 · 药王谷 · 外门药圃" },
-  { grade:"吉", name:"商队少东",     desc:"拨算盘的手比握剑稳，沙盗的眼睛盯着货。", mods:{int:1,luck:0}, money:800, note:"「算盘精」议价 +5%", place:"东荒 · 云州 · 福源商会货栈" },
-  { grade:"吉", name:"将门遗孤",     desc:"军营里长大的骨头，仇家环伺。", mods:{con:1,str:1}, money:200, note:"「军营长大的骨头」体质成长 +10%", place:"东荒 · 云州 · 城郊军营" },
+  { grade:"吉", name:"商队少东",     desc:"拨算盘的手比握剑稳，沙盗的眼睛盯着货。", mods:{int:1,luck:0}, money:800, note:"「算盘精」议价 +5%", place:"东荒 · 云州 · 青石城 · 福源商会货栈" },
+  { grade:"吉", name:"将门遗孤",     desc:"军营里长大的骨头，仇家环伺。", mods:{con:1,str:1}, money:200, note:"「军营长大的骨头」体质成长 +10%", place:"东荒 · 云州 · 青石城 · 城郊军营" },
   /* ---- 平档 ---- */
   { grade:"平", name:"市井孩童",     desc:"跑街串巷，帮派的保护费比年关难过。", mods:{agi:1}, money:60, note:"「跑街」敏捷成长 +5%", place:"东荒 · 云州 · 青石城 · 市井" },
-  { grade:"平", name:"猎户遗孤",     desc:"山里的鼻子，冬荒夺田的族亲。", mods:{agi:1,con:0}, money:80, note:"「山里的鼻子」野外生存 +10%", place:"东荒 · 云州 · 青石城郊 · 猎户村" },
+  { grade:"平", name:"猎户遗孤",     desc:"山里的鼻子，冬荒夺田的族亲。", mods:{agi:1,con:0}, money:80, note:"「山里的鼻子」野外生存 +10%", place:"东荒 · 云州 · 青石城 · 城外猎户村" },
   { grade:"平", name:"私塾伴读",     desc:"旁听生，主仆名分随时被逐。", mods:{int:1}, money:40, note:"「旁听生」悟性 +5%", place:"东荒 · 云州 · 青石城 · 私塾" },
-  { grade:"平", name:"渔民之子",     desc:"海税、风暴、渔霸，一样比浪凶。", mods:{con:1}, money:50, note:"「浪里白条」水中战力 +20%", place:"东荒 · 云州 · 临河渔村" },
+  { grade:"平", name:"渔民之子",     desc:"海税、风暴、渔霸，一样比浪凶。", mods:{con:1}, money:50, note:"「浪里白条」水中战力 +20%", place:"东荒 · 云州 · 临河镇 · 临河渔村" },
   { grade:"平", name:"铁匠学徒",     desc:"酗酒的师父，催命的军械订单。", mods:{str:1}, money:70, note:"「千锤百炼」炼器熟练度 +5%", place:"东荒 · 云州 · 青石城 · 铁匠铺" },
   /* ---- 劣档 ---- */
   { grade:"劣", name:"奴籍",         desc:"契书在身，赎身天价。", mods:{agi:1}, money:0, note:"「忍字诀」隐匿忍耐 +15%", place:"东荒 · 云州 · 青石城 · 某府柴房" },
-  { grade:"劣", name:"疫村遗孤",     desc:"人人避你如瘟神；你的血对某种毒免疫。", mods:{con:-1,luck:0}, money:10, note:"「病骨」毒抗 +10%、体质成长 -10%", place:"东荒 · 云州 · 郊外废村" },
-  { grade:"劣", name:"弃婴·寺中长大", desc:"寺贫，武僧的拳头比经文硬。", mods:{int:1}, money:0, note:"「佛性」心魔抗性 +10%、道心成长 +10%", place:"东荒 · 云州 · 城外山寺" },
-  { grade:"劣", name:"矿奴",         desc:"地底肺，黑暗中的感知异于常人。", mods:{con:1,int:0}, money:0, note:"「地底肺」黑暗中感知 +15%", place:"东荒 · 云州 · 黑矿窑" },
+  { grade:"劣", name:"疫村遗孤",     desc:"人人避你如瘟神；你的血对某种毒免疫。", mods:{con:-1,luck:0}, money:10, note:"「病骨」毒抗 +10%、体质成长 -10%", place:"东荒 · 云州 · 白蒿镇 · 隔离废村" },
+  { grade:"劣", name:"弃婴·寺中长大", desc:"寺贫，武僧的拳头比经文硬。", mods:{int:1}, money:0, note:"「佛性」心魔抗性 +10%、道心成长 +10%", place:"东荒 · 云州 · 落鸦镇 · 山寺" },
+  { grade:"劣", name:"矿奴",         desc:"地底肺，黑暗中的感知异于常人。", mods:{con:1,int:0}, money:0, note:"「地底肺」黑暗中感知 +15%", place:"东荒 · 云州 · 铁山镇 · 黑矿窑" },
   { grade:"劣", name:"死囚之子",     desc:"烙印贱籍，见惯生死。", mods:{luck:-1,con:1}, money:0, note:"「见惯生死」恐惧判定 +15%", place:"东荒 · 云州 · 青石城 · 城墙根" },
   /* ---- 狱档 ---- */
   { grade:"狱", name:"死囚",         desc:"开局在牢里，秋后问斩，只剩百日。", mods:{con:1}, money:0, note:"「向死而生·伪」濒死战力 +15%（仅此一条，非词条）", place:"东荒 · 云州 · 青石城 · 死囚牢" },
-  { grade:"狱", name:"祭品",         desc:"山村十年一祭，你是今年的「山神新娘/新郎」。", mods:{luck:-1}, money:0, note:"「祭品的镇定」疼痛忍耐 +20%", place:"东荒 · 云州 · 荒祠祭坛" },
-  { grade:"狱", name:"炉鼎苗子",     desc:"被合欢宗外使挑中，已在押送路上。", mods:{agi:1}, money:0, note:"「锁情印」情感波动 -50%", place:"东荒 · 云州 · 押送官道" },
+  { grade:"狱", name:"祭品",         desc:"山村十年一祭，你是今年的「山神新娘/新郎」。", mods:{luck:-1}, money:0, note:"「祭品的镇定」疼痛忍耐 +20%", place:"东荒 · 云州 · 山阴村 · 荒祠祭坛" },
+  { grade:"狱", name:"炉鼎苗子",     desc:"被合欢宗外使挑中，已在押送路上。", mods:{agi:1}, money:0, note:"「锁情印」情感波动 -50%", place:"东荒 · 云州 · 落马驿 · 押送官道" },
   { grade:"狱", name:"渊口守夜人",   desc:"北地界壁裂缝戍卒，上一任疯了。", mods:{con:1}, money:0, note:"「听过渊声」灵感 +20%、理智 -10%", place:"北地 · 渊口戍堡" },
 ];
 
