@@ -462,7 +462,7 @@ function ownedTechs() {
   for (const g of GONGFU) if ((S.inv[g.id] || 0) > 0) out.push(g);
   return out.sort((a, b) => b.tier - a.tier || b.cap - a.cap);
 }
-function mainTechnique() { const o = ownedTechs(); return o.length ? o[0] : null; }
+function mainTechnique() { const o = ownedTechs(); const free = o.filter(g => (S.skills[g.name] || 0) < (TECH_CAPS[g.name] || 100)); const p = free.length ? free : o; return p.length ? p[0] : null; } // 主修优先未满熟练度者；全满则退回最高阶（战斗仍以其为纲）
 /* 打坐参悟（设定·修炼涨幅：每实际修炼一个时辰，熟练度 = 时长 ×（关联主属性 ÷ 当前境界基准值）× 状态系数 0.8~1.2） */
 const REALM_ATTR_BASE = (() => { const t = []; for (let r = 0; r <= 24; r++) t.push(r >= 19 ? 1000 : r >= 13 ? 100 : r >= 7 ? 10 : 5); return t; })(); // 境界属性下限基准：凡阶 5 ｜ 灵泉 10 ｜ 化神 100（设定原文，依此类推）
 function medStateCoef() { // 状态系数：伤病/心魔/疲惫拖累，道心通明提振，心境浮动 ±0.1——钳在设定区间 0.8~1.2
@@ -2686,22 +2686,28 @@ function trainingEvent() {
   let trainNote = null; // 历练之机：三个分支各自记账，喂给下一回合 AI 提示词与离线引擎（用完即焚）
   const ownedGf = GONGFU.filter(g => (S.inv[g.id] || 0) > 0).sort((a, b) => b.tier - a.tier);
   const hasGongfa = ownedGf.length > 0;
-  const sk = hasGongfa ? ownedGf[0].name : "乱拳";
+  const pool = ownedGf.filter(g => (S.skills[g.name] || 0) < (TECH_CAPS[g.name] || 100)); // 已满熟练度的功法不再同修（不空转）
+  const sk = pool.length ? pool[0].name : (hasGongfa ? ownedGf[0].name : "乱拳");
   const cap = TECH_CAPS[sk] || 100;
   const roll = Math.random() * 100;
   if (hasGongfa && roll < 40) {
     /* 功法精研（多线同修：兼修两门时各得 ÷n，摸鱼圣手减罚为 ÷√n） */
     const wxm = wxTrainMult(sk);
-    const bothTech = ownedGf.length >= 2;
+    const tTechs = pool.slice(0, 2).map(g => g.name);
+    const bothTech = tTechs.length >= 2;
     const split = bothTech ? (hasSpecial("moyu") ? 1 / Math.SQRT2 : 0.5) : 1;
     const inc = Math.round((4 + Math.random() * 4) * (1 + (S.mods.trainP || 0) / 100) * wxm * split * 10) / 10;
-    const tTechs = bothTech ? ownedGf.slice(0, 2).map(g => g.name) : [sk];
     for (const t of tTechs) { S.skills[t] = Math.min(TECH_CAPS[t] || 100, (S.skills[t] || 0) + inc); checkSkillMilestone(t); }
     const cultBase = { 0: 4, 1: 6, 2: 10, 3: 18, 4: 36 }[ownedGf[0].tier] || 6; // 高阶功法吞吐灵气更盛
     gainCult(cultBase * wxm); gainAttr("str", 0.05);
-    log(`【历练 · 功法精研】你寻了处背风的石窝，把「${bothTech ? tTechs.join("与") : sk}」一式一式拆开重练。雪沫被劲气卷起，又纷纷落下。`, "dim");
-    sys(`【功法精研】${bothTech ? "双功同修（" + (hasSpecial("moyu") ? "摸鱼减罚 ÷√2" : "多线分心 ÷2") + "），各" : "「" + sk + "」"}熟练度 +${inc}（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}），修为 +${Math.round(cultBase * wxm)}，力量 +0.05。`);
-    trainNote = { kind: "功法精研", techs: tTechs, inc, nearCap: tTechs.some(t => (S.skills[t] || 0) >= (TECH_CAPS[t] || 100) - 15) };
+    if (tTechs.length) {
+      log(`【历练 · 功法精研】你寻了处背风的石窝，把「${bothTech ? tTechs.join("与") : sk}」一式一式拆开重练。雪沫被劲气卷起，又纷纷落下。`, "dim");
+      sys(`【功法精研】${bothTech ? "双功同修（" + (hasSpecial("moyu") ? "摸鱼减罚 ÷√2" : "多线分心 ÷2") + "），各" : "「" + sk + "」"}熟练度 +${inc}（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}），修为 +${Math.round(cultBase * wxm)}，力量 +0.05。`);
+    } else {
+      log(`【历练 · 功法精研】所持功法皆已推演至圆满。你不再空耗招式，转而搬运周天——把每一分灵气都攒进修为里。`, "dim");
+      sys(`【功法精研】功法已满熟练度，熟练不再空涨——修为 +${Math.round(cultBase * wxm)}，力量 +0.05。`);
+    }
+    trainNote = { kind: "功法精研", techs: tTechs, inc: tTechs.length ? inc : 0, nearCap: tTechs.some(t => (S.skills[t] || 0) >= (TECH_CAPS[t] || 100) - 15) };
   } else if (roll < (hasGongfa ? 80 : 70)) {
     /* 五维打熬 */
     const pickAttr = [["str", "力量"], ["agi", "敏捷"], ["int", "智力"], ["con", "体质"]][Math.floor(Math.random() * 4)];
@@ -2920,10 +2926,11 @@ function runSpecial(sp, fx) {
       if (!S.over) advanceSlot();
     });
   } else if (sp === "train") {
-    /* 演练：以所持最高阶功法为主修；兼持多门则两功同修（多线分心各得半份）——谱系通用（data.js GONGFU） */
+    /* 演练：以所持最高阶功法为主修；兼修多门则未满熟练度者同修（多线分心各得半份）——谱系通用（data.js GONGFU） */
     const owned = GONGFU.filter(g => (S.inv[g.id] || 0) > 0).sort((a, b) => b.tier - a.tier);
-    const tTechs = owned.length ? owned.slice(0, 2).map(g => g.name) : ["乱拳"];
-    const sk = tTechs[0];
+    const pool = owned.filter(g => (S.skills[g.name] || 0) < (TECH_CAPS[g.name] || 100)); // 已满熟练度不再同修（不空转）
+    const tTechs = pool.slice(0, 2).map(g => g.name);
+    const sk = tTechs[0] || (owned.length ? owned[0].name : "乱拳");
     const mainG = GONGFU_BY_NAME[sk];
     const wxm = wxTrainMult(sk); // 功法五行修炼速度 = 1 + 亲和×0.005；亲和 <10 强行修炼减半
     const bothTech = tTechs.length >= 2;
@@ -2932,12 +2939,15 @@ function runSpecial(sp, fx) {
     for (const t of tTechs) { S.skills[t] = Math.min(TECH_CAPS[t] || 100, (S.skills[t] || 0) + inc); checkSkillMilestone(t); }
     const cultBase = mainG ? { 0: 4, 1: 7, 2: 12, 3: 20, 4: 40 }[mainG.tier] || 4 : 4; // 高阶功法吞吐灵气更盛
     gainCult(cultBase * wxm); gainAttr("str", 0.05); S.sta = Math.max(0, S.sta - 2);
-    log(`你依着口诀演练「${bothTech ? tTechs.join("·") + "合参" : sk}」（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}）${bothTech ? "——多线分心，各得半份" + (hasSpecial("moyu") ? "（摸鱼减罚 ÷√2）" : "") : ""}。${TECH_EL[sk] ? `此功法属${WX_NAMES[TECH_EL[sk]]}行，你的亲和 ${wxOf()[TECH_EL[sk]] || 0}${wxm < 1 ? "——亲和不足，事倍功半。" : wxm > 1 ? "——亲和加持，修行顺势。" : "。"}` : "气血随招式流转。"}`, "dim");
+    log(tTechs.length
+      ? `你依着口诀演练「${bothTech ? tTechs.join("·") + "合参" : sk}」（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}）${bothTech ? "——多线分心，各得半份" + (hasSpecial("moyu") ? "（摸鱼减罚 ÷√2）" : "") : ""}。${TECH_EL[sk] ? `此功法属${WX_NAMES[TECH_EL[sk]]}行，你的亲和 ${wxOf()[TECH_EL[sk]] || 0}${wxm < 1 ? "——亲和不足，事倍功半。" : wxm > 1 ? "——亲和加持，修行顺势。" : "。"}` : "气血随招式流转。"}`
+      : `所持功法皆已推演至圆满。你不再空耗招式，转而搬运周天，把每一分灵气都攒进修为里。`, "dim");
     advanceSlot();
   } else if (sp === "nighttrain") { // 夜间固定选项：打坐修炼（设定：灵阶起打坐替代睡眠，故灵阶起无睡眠代价）
     const owned = ownedTechs();
-    const tTechs = owned.length ? owned.slice(0, 2).map(g => g.name) : ["乱拳"];
-    const sk = tTechs[0];
+    const pool = owned.filter(g => (S.skills[g.name] || 0) < (TECH_CAPS[g.name] || 100)); // 已满熟练度不再同修（不空转）
+    const tTechs = pool.slice(0, 2).map(g => g.name);
+    const sk = tTechs[0] || (owned.length ? owned[0].name : "乱拳");
     const wxm = sk === "乱拳" ? 1 : wxTrainMult(sk);
     const bothTech = tTechs.length >= 2;
     const split = bothTech ? (hasSpecial("moyu") ? 1 / Math.SQRT2 : 0.5) : 1;
@@ -2951,7 +2961,9 @@ function runSpecial(sp, fx) {
     if (ling && !(S.jinshuWeak > 0)) S.mp = Math.min(mpMax(), S.mp + mpMax() * 0.2 * (S.linggen === "za" ? 1.5 : 1)); // 灵阶：打坐代眠，法力亦随吐纳回补；禁术虚弱期间蓝锁 0
     S.flags.meditateTonight = 1; // 睡不安稳（灵阶起无妨）
     log(`万籁俱寂。你就着残雪月色行功，吐纳绵绵，直至东方泛白。`, "dim");
-    sys(`【夜修】${bothTech ? tTechs.join("·") + "合参（" + (hasSpecial("moyu") ? "摸鱼减罚 ÷√2" : "多线分心 ÷2") + "），各" : "「" + sk + "」"}熟练度 +${inc}（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}），修为 +${Math.round(cultBase * wxm)}${ling ? "。灵阶之躯，打坐即是睡眠——今夜无亏。" : "。代价：睡不安稳——今夜恢复减半，明日睡眠不足（智力敏捷 -10%、体力不满）。"}`);
+    sys(tTechs.length
+      ? `【夜修】${bothTech ? tTechs.join("·") + "合参（" + (hasSpecial("moyu") ? "摸鱼减罚 ÷√2" : "多线分心 ÷2") + "），各" : "「" + sk + "」"}熟练度 +${inc}（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}），修为 +${Math.round(cultBase * wxm)}${ling ? "。灵阶之躯，打坐即是睡眠——今夜无亏。" : "。代价：睡不安稳——今夜恢复减半，明日睡眠不足（智力敏捷 -10%、体力不满）。"}`
+      : `【夜修】所持功法皆已推演至圆满，熟练不再空涨——修为 +${Math.round(cultBase * wxm)}${ling ? "。灵阶之躯，打坐即是睡眠——今夜无亏。" : "。代价：睡不安稳——今夜恢复减半，明日睡眠不足（智力敏捷 -10%、体力不满）。"}`);
     advanceSlot();
   } else if (sp === "gamble") {
     S.stats.gambles++;
