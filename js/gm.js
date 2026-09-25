@@ -109,22 +109,6 @@ const GM = (() => {
       },
     },
     {
-      id: "sell_wood", cond: () => S.inv.wood > 0, w: () => 2,
-      build(r) {
-        const g = Math.round(S.inv.wood * 6 * (1 + (S.mods.moneyP || 0) / 100));
-        return {
-          scene: `你背着 ${S.inv.wood} 捆柴沿街问价。一户人家开了门缝：「雪天柴贵，六文一捆，少一分不要。」`,
-          choices: [
-            { label: "成交", hint: `+${g} 文。`, fx: { money: g, clearWood: 1 } },
-            { label: "再磨一磨，讨个高价", hint: "嘴皮子功夫。", fx: { check: "int*5+d20>30",
-              success: { money: g + 6, clearWood: 1, dao: 0.2 }, fail: { money: g, clearWood: 1, npc: { 路人缘: -2 } },
-              successText: "你把柴火的干湿、雪天的行情说得头头是道。对方咂咂嘴，多给了六文。",
-              failText: "对方把门一关：「爱卖不卖。」你只好按原价出手。" } },
-          ],
-        };
-      },
-    },
-    {
       id: "steal_listen", cond: () => true, w: c => c.realmLow ? 2 : 1,
       build(r) {
         return {

@@ -270,6 +270,23 @@ function setIll(name, days, desc) {
   sys(`【疾病 · ${name}】${desc}（约 ${days} 日可愈）`);
 }
 function illText() { return S.ill ? `${S.ill.name}（余 ${S.ill.days} 日）` : "无疾"; }
+/* ---------- 随身变卖（行囊内成交；价格随本地需求浮动——剧情选项不再出现「卖柴火」类交易） ---------- */
+const SELL_BASE = { wood: 6, heimu: 1, hotnoodle: 3, shaojiu: 8, shengjiang: 2, quzhangcao: 5 };
+const SELL_DEMAND = { // 地域需求倍率：北原柴贵如金、西漠水酒贵、南岭驱瘴草抢手……
+  yunzhou: { wood: 1.2 }, beiyuan: { wood: 1.8, hotnoodle: 1.2, shaojiu: 1.4 },
+  zhongzhou: { wood: 1.1, heimu: 1.2 }, ximo: { wood: 0.6, shaojiu: 1.6, heimu: 1.4, shengjiang: 1.3 },
+  nanling: { quzhangcao: 1.8, wood: 0.9 }, sihai: { wood: 0.8, shaojiu: 1.3 },
+};
+function sellPrice(id) {
+  const base = SELL_BASE[id] || 5;
+  const rg = (typeof regionOf === "function") ? regionOf(S.place) : null;
+  const dm = (rg && SELL_DEMAND[rg.key] && SELL_DEMAND[rg.key][id]) || 1;
+  return Math.max(1, Math.round(base * dm * (1 + (S.mods.moneyP || 0) / 100)));
+}
+function matSellPrice(nm) { // 材料按名取价：品阶关键字定档，气运/词条加成同享
+  const base = /圣/.test(nm) ? 3000 : /玄/.test(nm) ? 600 : /内丹|芝|果|露|心/.test(nm) ? 280 : 60;
+  return Math.max(5, Math.round(base * (1 + (S.mods.moneyP || 0) / 100)));
+}
 function gearText() {
   const g = [];
   if (S.gear && S.gear.xianqi && typeof XIANQI_BY_ID !== "undefined" && XIANQI_BY_ID[S.gear.xianqi]) g.push(`✦ ${XIANQI_BY_ID[S.gear.xianqi].name}（仙器）`);
@@ -1096,6 +1113,7 @@ function renderTab() {
     if (S.inv.dixinru) inv.push(["dixinru", `万年地心乳 ×${S.inv.dixinru}`]);
     if (S.inv.ludian) inv.push(["ludian", "青铜丹炉"]);
     if (S.inv.lianchui) inv.push(["lianchui", "精铁炼锤"]);
+    if ((S.inv.wood || 0) > 0) inv.push(["wood", `柴薪 ×${S.inv.wood}`]);
     if (S.gear && S.gear.weapon) inv.push(["gear", `⚔ ${S.gear.weapon.name}（攻伐 +${S.gear.weapon.dmgP}%）`]);
     if (S.gear && S.gear.xianqiOwned && typeof XIANQI_BY_ID !== "undefined") for (const qid of S.gear.xianqiOwned) { const qx = XIANQI_BY_ID[qid]; if (qx) inv.push(["xq:" + qid, `${S.gear.xianqi === qid ? "✦" : "◇"} ${qx.name}`]); } // 仙器随身（设定集第十六章）：✦ 佩戴中 ◇ 收入体内
     if (S.inv.fangcun && !S.flags.fangcunUsed) inv.push(["fangcun", "方寸戒"]);
@@ -1105,8 +1123,29 @@ function renderTab() {
       : `<div class="empty">两袖清风。破庙神像的裂缝里也许有东西。</div>`; // 技艺已迁入技能栏（curTab 9），行囊只装物
     body.querySelectorAll("[data-item]").forEach(el => el.onclick = () => {
       const id = el.dataset.item;
-      if (id.startsWith("mat:")) { // 材料账（猎杀取材）：只读展示，折算走剧情
-        showInfo(el.textContent, "材料", "妖兽内丹、灵药之流——硬通货。收购、炼丹、炼器的剧情里，它自会折算成该得的东西。", "材料不入轮回：这一世的账，这一世清。", []);
+      const acts = [];
+      const busyGuard = () => {
+        if (gmBusy) { toast("天道推演中，稍候片刻。"); return true; }
+        if (window.__inCombat) { toast("生死相搏，无暇他顾。"); return true; }
+        return false;
+      };
+      const closeAnd = fn => () => { if (busyGuard()) return; $("#infoModal").classList.remove("open"); fn(); computeMods(); renderPanel(); }; // 开局修改：行囊之物随手可用——不再惊动天道推演（不推进时辰，不触发 AI 剧情）
+      if (id.startsWith("mat:")) { // 材料账（猎杀取材）：行囊内直接变卖，价随本地需求浮动
+        const mname = id.slice(4);
+        const cnt = (S.mats && S.mats[mname]) || 0;
+        const p1 = matSellPrice(mname);
+        const mActs = [];
+        if (cnt > 0) {
+          mActs.push({ label: `卖出一件（+${p1} 文）`, fn: closeAnd(() => {
+            S.mats[mname]--; S.money += p1;
+            log(`你把「${mname}」卖给了${regionOf(S.place).name}的收货行，+${p1} 文。`, "good");
+          }) });
+          mActs.push({ label: `全部卖出（+${p1 * cnt} 文）`, fn: closeAnd(() => {
+            S.money += p1 * cnt; S.mats[mname] = 0;
+            log(`你把 ${cnt} 件「${mname}」尽数出手，共 +${p1 * cnt} 文。`, "good");
+          }) });
+        }
+        showInfo(`${mname} ×${cnt}`, "材料", `妖兽内丹、灵药之流——硬通货。本地收货行出价 ${p1} 文/件（随各地需求浮动）。`, "材料不入轮回：这一世的账，这一世清。", mActs);
         return;
       }
       const it = ITEM_INFO[id];
@@ -1115,13 +1154,17 @@ function renderTab() {
         showInfo(w.name, `<span style="color:var(--gold-dim)">${esc(w.pin)} · ${esc(w.q)}品质</span>`, `随身佩用的兵器。攻伐 +${w.dmgP}%（品质效力：瑕疵五~六成、中品十成、绝品二十成）。炼出更好的兵刃会自动替换。`, "器物随身，不入行囊格。", []);
         return;
       }
-      const acts = [];
-      const busyGuard = () => {
-        if (gmBusy) { toast("天道推演中，稍候片刻。"); return true; }
-        if (window.__inCombat) { toast("生死相搏，无暇他顾。"); return true; }
-        return false;
-      };
-      const closeAnd = fn => () => { if (busyGuard()) return; $("#infoModal").classList.remove("open"); fn(); computeMods(); renderPanel(); }; // 开局修改：行囊之物随手可用——不再惊动天道推演（不推进时辰，不触发 AI 剧情）
+      if (id === "wood") { // 柴薪：行囊内变卖，行情随地域需求浮动（剧情选项不再出现卖柴）
+        const n = S.inv.wood || 0;
+        const p = sellPrice("wood");
+        showInfo(`柴薪 ×${n}`, "杂物", `劈好的干柴。本地行情 ${p} 文/捆——北原柴贵如金，西漠贱如土，行情天天变。`, "柴火不耐放，看行情出手。", n > 0 ? [
+          { label: `全部卖掉（+${p * n} 文）`, fn: closeAnd(() => {
+            S.money += p * n; S.inv.wood = 0;
+            log(`你把 ${n} 捆柴卖给了${regionOf(S.place).name}的收货行——${p} 文一捆，共得 ${p * n} 文。`, "good");
+          }) },
+        ] : []);
+        return;
+      }
       if (id.startsWith("xq:")) { // 仙器：佩戴/卸下（入手即随身，不入消耗品格）
         const qx = XIANQI_BY_ID[id.slice(3)];
         if (!qx) return;
@@ -1676,14 +1719,42 @@ function bondSignal(name, before, after, raw, pers) {
   const t0 = npcTier(before), t1 = npcTier(after);
   if (t0 === t1 && Math.abs(raw) < 5) return;
   const up = after > before;
+  const pick = a => a[Math.floor(Math.random() * a.length)]; // 同档多文案，缘分起落不再一句到底
   let line = null;
-  if (t1 >= 3 && t0 < 3) line = `${name}待你，从「认识」变成了「自己人」——有忙必帮，有好东西想着你。`;
-  else if (t1 === 2 && t0 < 2 && up) line = `${name}记住了你的好，笑脸多了几分真心。`;
-  else if (t1 === 0 && t0 > 0 && !up) line = `${name}对你冷了脸——夹枪带棒的寒暄，背后使绊子。`;
-  else if (t1 === -1 && t0 > -1 && !up) line = `${name}开始处处跟你作对——落井下石，还披着「规矩」的皮。`;
-  else if (t1 === -2 && t0 > -2 && !up) line = `${name}表面维持平静，暗中磨刀。你的行踪，可能已经被人标了价。`;
-  else if (t1 === -3 && t0 > -3 && !up) line = `${name}与你，不死不休。见之即杀，不讲场面话。`;
-  else if (Math.abs(raw) >= 5) line = up ? `${name}对你的态度，悄然热络了几分。` : `${name}看你的眼神，凉了下去。`;
+  if (t1 >= 3 && t0 < 3) line = pick([
+    `${name}待你，从「认识」变成了「自己人」——有忙必帮，有好东西想着你。`,
+    `${name}话没多说，只是把家门朝向指给了你。从今往后，你的事，他管。`,
+  ]);
+  else if (t1 === 2 && t0 < 2 && up) line = pick([
+    `${name}记住了你的好，笑脸多了几分真心。`,
+    `${name}待你明显热络起来——留饭、留座，话里话外拿你当了自家人。`,
+    `${name}把你的名字记在了心上。往后再见面，是他先笑的。`,
+  ]);
+  else if (t1 === 0 && t0 > 0 && !up) line = pick([
+    `${name}对你冷了脸——夹枪带棒的寒暄，背后使绊子。`,
+    `${name}把你的情分折成了旧账。再见时，茶是凉的，话是横的。`,
+  ]);
+  else if (t1 === -1 && t0 > -1 && !up) line = pick([
+    `${name}开始处处跟你作对——落井下石，还披着「规矩」的皮。`,
+    `${name}的笑脸收了。往后你走的每一步，都会有一只看不见的手来拌。`,
+  ]);
+  else if (t1 === -2 && t0 > -2 && !up) line = pick([
+    `${name}表面维持平静，暗中磨刀。你的行踪，可能已经被人标了价。`,
+    `${name}看你的眼神像看一个死人。多宝阁的柜台前，有人翻到了你那一页。`,
+  ]);
+  else if (t1 === -3 && t0 > -3 && !up) line = pick([
+    `${name}与你，不死不休。见之即杀，不讲场面话。`,
+    `${name}把刀磨亮了。这一笔血账，他要用你的命来平。`,
+  ]);
+  else if (Math.abs(raw) >= 5) line = up ? pick([
+    `${name}对你的态度，悄然热络了几分。`,
+    `${name}看你时，眼神软了一瞬——这点软，值千金。`,
+    `${name}记下了你这一份好。善缘如存银，利在将来。`,
+  ]) : pick([
+    `${name}看你的眼神，凉了下去。`,
+    `${name}心里给你记了一笔。这一笔，迟早要还。`,
+    `${name}的脸色沉了沉——有些梁子，就是这样一砖一瓦垒起来的。`,
+  ]);
   if (line) log(`【缘分 · ${relText(after)}】${line}${pers === "记仇" && !up ? "（记仇之人，怨加倍记。）" : pers === "重情" && up ? "（重情之人，恩深深记。）" : ""}`, "dim");
 }
 /* 社交判定修正（第四章·2）：生死之交 ±40%、挚友 ±20%、相识 ±10%、记恨 ∓10%；死仇锁死返回 null */
@@ -3661,6 +3732,7 @@ const OPENINGS = [
     lines: [
       "你睁开眼时，正躺在青石城南的破庙里。高烧三天，浑身滚烫，怀里揣着半个冻硬的黑馍。",
       (n) => `庙外有狼嚎。庙里有七个同样衣衫褴褛的乞丐，分食最后一点烤火余温——你是其中之一，排行最末，他们叫你「${n}」。`,
+      (n) => `老丐头把烤火的位置往你这边挪了半寸，浑浊的眼睛在火光里打量你：「${n}，烧成这样都没断气——命硬。命硬的人，老天爷都得多看两眼。」`,
     ],
   },
   {
@@ -3668,6 +3740,7 @@ const OPENINGS = [
     lines: [
       "你在刺骨的寒气里醒来——青石城大牢最深处，死囚牢。高烧三天，浑身滚烫，单衣结着霜。明日立冬，你的名字在秋决漏网的名单上，牢头说，熬不过今晚正好省一刀。",
       (n) => `隔壁的草堆里蜷着个老囚，咳得像具破风箱。他是这座牢里活得最久的人，囚犯们背后叫他「活阎王」——他问你名字，你报了「${n}」，他咧嘴笑了：「好，记住喽，阎王爷簿上添一笔。」`,
+      (n) => `「活阎王」从草堆里摸出半块藏了不知多久的干姜，塞进你手里：「${n}，含上。这牢里死的人多了去了，能熬到开春的没几个——你得做那个例外。」`,
     ],
   },
   {
@@ -3675,6 +3748,7 @@ const OPENINGS = [
     lines: [
       "你在煤尘与血腥气里醒来——城郊黑矿窑昨夜塌方，你被埋在支巷尽头，靠一条裂缝透气。高烧三天，浑身滚烫，怀里揣着半个冻硬的杂面饼。矿主的人在外头清点人数，多一个少一个，没人会知道。",
       (n) => `三步外，同巷的老矿工被压断了腿，正一声一声地念佛。他在这口窑里挖了二十年煤，是矿上唯一肯分你半张饼的人——他哑着嗓子喊你：「${n}，还在吗？」`,
+      (n) => `老矿工从怀里摸出半张饼，掰了一大半给你：「${n}，吃了才有力气等。矿上的人三天后才来扒这条巷——咱爷俩，得比三天长。」`,
     ],
   },
   {
@@ -3682,6 +3756,7 @@ const OPENINGS = [
     lines: [
       "你在香火与血腥味里醒来——城郊荒祠，你被麻绳捆在祭坛上，高烧三天，浑身滚烫，是山民掳来「献给山神」的祭品。庙外大雪，篝火噼啪，守夜的巫祝喝得醉倒了一地。",
       (n) => `祭坛下还蜷着一个人——先你一步被掳来的货郎，腿上挨了一刀，烧得说胡话。巫祝们管你们叫「牲」——货郎迷迷糊糊抓住你的脚踝，唤你：「${n}……跑吗？」`,
+      (n) => `货郎用血手从担子里摸出一把小剪刀，塞进你被捆着的掌心：「${n}，绳子磨了一晚上，就差最后几股了……等巫祝睡死，你先走，往南，别回头。」`,
     ],
   },
   {
@@ -3689,6 +3764,7 @@ const OPENINGS = [
     lines: [
       "你在枷锁的冰冷里醒来——流放押送的队伍昨夜遇袭，解差死绝，押送的文书散了一地。高烧三天，浑身滚烫，你是队列里罪最轻的那个，枷锁钥匙就挂在死去的解差腰上。",
       (n) => `同枷的老犯人还有一口气，脚踝肿得发亮。他是队伍里唯一没欺负过你的人，分过你半壶水——他抬了抬眼皮：「${n}……钥匙……拿了就跑，别管我。」`,
+      (n) => `风雪深处隐有马蹄声——不知是官府的回马枪还是过路行商。老犯人猛地推了你一把：「${n}，跑！往南三十里有座猎户窝棚，报我名儿——他欠我一条命！」`,
     ],
   },
 ];
