@@ -112,6 +112,7 @@ function computeMods() {
   if (S.flags && S.flags.tangzheLazy > S.day) m.trainP = (m.trainP || 0) * 0.5; // 躺者出关动力 -50%：破境成功后三日内修炼收益减半
   if (S.gear && S.gear.weapon) m.dmgP = (m.dmgP || 0) + (S.gear.weapon.dmgP || 0); // 炼器（22:41 补丁）：随身兵器的攻伐加成
   if (S.gear && S.gear.xianqi && typeof XIANQI_BY_ID !== "undefined") { const x = XIANQI_BY_ID[S.gear.xianqi]; if (x && x.mods) for (const k in x.mods) m[k] = (m[k] || 0) + x.mods[k]; } // 仙器（设定集第十六章）：佩戴即全数生效，拒绝空转
+  if (S.pets) for (const pn in S.pets) { const pm = S.pets[pn]; if (pm) for (const k in pm) m[k] = (m[k] || 0) + pm[k]; } // 灵宠血脉：百分比加成永续（设定集第八章）
   S.mods = m;
 }
 function findCard(id) {
@@ -271,11 +272,20 @@ function setIll(name, days, desc) {
 }
 function illText() { return S.ill ? `${S.ill.name}（余 ${S.ill.days} 日）` : "无疾"; }
 /* ---------- 随身变卖（行囊内成交；价格随本地需求浮动——剧情选项不再出现「卖柴火」类交易） ---------- */
-const SELL_BASE = { wood: 6, heimu: 1, hotnoodle: 3, shaojiu: 8, shengjiang: 2, quzhangcao: 5 };
+const SELL_BASE = { wood: 6, heimu: 1, hotnoodle: 3, shaojiu: 8, shengjiang: 2, quzhangcao: 5,
+  yunjinDuan: 45, qingshiYan: 30, sangluoJiu: 10, xuelangPiu: 150, dongyuSui: 60, laosu: 8,
+  guanyinCi: 90, dijiMing: 30, jingtiePei: 110, putaoJiu: 15, huohuanBu: 75, shajinLi: 95,
+  zhangyunCha: 22, guyinShi: 55, baixiangCao: 13, haiZhu: 80, longxianXiang: 140, jiaoxiao: 48 };
 const SELL_DEMAND = { // 地域需求倍率：北原柴贵如金、西漠水酒贵、南岭驱瘴草抢手……
   yunzhou: { wood: 1.2 }, beiyuan: { wood: 1.8, hotnoodle: 1.2, shaojiu: 1.4 },
   zhongzhou: { wood: 1.1, heimu: 1.2 }, ximo: { wood: 0.6, shaojiu: 1.6, heimu: 1.4, shengjiang: 1.3 },
-  nanling: { quzhangcao: 1.8, wood: 0.9 }, sihai: { wood: 0.8, shaojiu: 1.3 },
+  nanling: { quzhangcao: 1.8, wood: 0.9, dijiMing: 1.4, sangluoJiu: 1.2, jingtiePei: 1.3, huohuanBu: 1.1, shajinLi: 1.1 },
+  sihai: { wood: 0.8, shaojiu: 1.3, sangluoJiu: 1.5, yunjinDuan: 1.4, guanyinCi: 1.3, putaoJiu: 1.2, heimu: 1.2 },
+  /* 特产异地行情：产地贱卖（无条目=1.0，已低于买价），远方抢手 */
+  yunzhou: { xuelangPiu: 1.5, putaoJiu: 1.4, haiZhu: 1.4, guanyinCi: 1.2, longxianXiang: 1.3, jiaoxiao: 1.3, dongyuSui: 1.2 },
+  beiyuan: { putaoJiu: 1.6, guanyinCi: 1.3, jiaoxiao: 1.4, sangluoJiu: 1.1, haiZhu: 1.2, huohuanBu: 1.2, laosu: 0.7 },
+  zhongzhou: { xuelangPiu: 1.4, longxianXiang: 1.5, haiZhu: 1.2, shajinLi: 1.1, guyinShi: 1.1, dongyuSui: 1.2, zhangyunCha: 1.3, jiaoxiao: 1.1 },
+  ximo: { xuelangPiu: 1.3, sangluoJiu: 1.5, yunjinDuan: 1.3, qingshiYan: 1.1, haiZhu: 1.1, dijiMing: 1.1, guanyinCi: 1.1 },
 };
 function sellPrice(id) {
   const base = SELL_BASE[id] || 5;
@@ -874,6 +884,25 @@ const ITEM_INFO = {
   zhuJidan: { name: "筑基丹", tier: "南荒奇珍", desc: "南荒流出的奇丹，低阶散修梦寐以求。点开服之（修为 +60）。" },
   paiduDan: { name: "排毒丹", tier: "凡品丹药", desc: "排解药蚀的丹药。点开服之（药蚀 -15）——治标不治本，本身也含微量药蚀，以毒攻毒非长久之计。" },
   fangcun: { name: "方寸戒", tier: "法器", desc: "内蕴一方小空间的储物法器。得此戒者，行囊各 +10。" },
+  /* —— 地区特产（行商）：产地集市贱买，异地收货行贵卖 —— */
+  yunjinDuan: { name: "云锦缎", tier: "特产 · 云州", desc: "一疋流光暗纹的云锦。行商硬通货——北原与四海的需求极旺。" },
+  qingshiYan: { name: "青石砚", tier: "特产 · 云州", desc: "青石城老坑砚。中州文士悬价收购。" },
+  sangluoJiu: { name: "桑落酒", tier: "特产 · 云州", desc: "桑落时开缸的云州米酒。西漠四海缺粮水之地一杯难求。" },
+  xuelangPiu: { name: "雪狼皮裘", tier: "特产 · 北原", desc: "整块雪狼皮裘，轻暖无双。中州显贵冬日必备。" },
+  dongyuSui: { name: "冻玉髓", tier: "特产 · 北原", desc: "冰河暖玉，贴身不凉。南岭炼器师收去镇炉。" },
+  laosu: { name: "酪酥", tier: "特产 · 北原", desc: "牧民奶食，高热耐放。跑商路上的硬干粮。" },
+  guanyinCi: { name: "官窑白瓷", tier: "特产 · 中州", desc: "帝畿官窑细白瓷。四海番商整船收购。" },
+  dijiMing: { name: "帝畿香茗", tier: "特产 · 中州", desc: "贡茶园雨前茶。南岭山寨以蛊银换茶，价翻三倍。" },
+  jingtiePei: { name: "精铁兵胚", tier: "特产 · 中州", desc: "军坊精铁条，炼器好底子。南岭西漠兵器行常年收。" },
+  putaoJiu: { name: "葡萄酒", tier: "特产 · 西漠", desc: "绿洲葡萄酒，窖藏十年。北原寒夜一杯值千金。" },
+  huohuanBu: { name: "火浣布", tier: "特产 · 西漠", desc: "火山奇织，入火不焚。炼器师与权贵抢着要。" },
+  shajinLi: { name: "沙金粒", tier: "特产 · 西漠", desc: "河滩沙金。中州钱庄常年挂牌收购。" },
+  zhangyunCha: { name: "瘴云茶", tier: "特产 · 南岭", desc: "瘴雾野茶，以毒养香。中州药铺收去配解毒丹。" },
+  guyinShi: { name: "蛊银饰", tier: "特产 · 南岭", desc: "苗寨银饰，纹样封微蛊。中州贵妇当异域奇珍买。" },
+  baixiangCao: { name: "百香草", tier: "特产 · 南岭", desc: "百种香草扎束，熏衣防瘴。北原商队过冬必备。" },
+  haiZhu: { name: "海珠", tier: "特产 · 四海", desc: "深海明珠。云州中州首饰行高价收。" },
+  longxianXiang: { name: "龙涎香", tier: "特产 · 四海", desc: "海中异兽所吐，焚之满室生风。显贵与炼丹师皆求之。" },
+  jiaoxiao: { name: "鲛绡", tier: "特产 · 四海", desc: "鲛人轻绡，入水不濡。北原贵女冬宴争裁。" },
   huiLingDan: { name: "回灵丹", tier: "灵品丹药", desc: "灵品丹药，回气养元。点开服之（气血 +25，药蚀 10——灵品 8~12 之数）。" },
   xisuiDan: { name: "洗髓丹", tier: "玄品丹药", desc: "洗经伐髓，清除一道暗伤——玄品丹药中的硬通货，散修梦寐以求。点开服之（药蚀 20，玄品 15~25 之数）。" },
   dixinru: { name: "万年地心乳", tier: "圣品天材地宝", desc: "地脉万载凝一滴，乳白如玉，触手生温。设定集天材地宝名录圣品：重塑道基、修复暗伤药毒。点开服之——【道伤】减一（献祭亏空尽数回补），兼愈一道暗伤、药蚀 -20。此物有价无市，怀璧其罪。" },
@@ -1114,6 +1143,7 @@ function renderTab() {
     if (S.inv.ludian) inv.push(["ludian", "青铜丹炉"]);
     if (S.inv.lianchui) inv.push(["lianchui", "精铁炼锤"]);
     if ((S.inv.wood || 0) > 0) inv.push(["wood", `柴薪 ×${S.inv.wood}`]);
+    if (typeof TRADE_GOODS !== "undefined") for (const tg of TRADE_GOODS) if ((S.inv[tg.id] || 0) > 0) inv.push([tg.id, `${tg.name} ×${S.inv[tg.id]}`]); // 地区特产（行商）
     if (S.gear && S.gear.weapon) inv.push(["gear", `⚔ ${S.gear.weapon.name}（攻伐 +${S.gear.weapon.dmgP}%）`]);
     if (S.gear && S.gear.xianqiOwned && typeof XIANQI_BY_ID !== "undefined") for (const qid of S.gear.xianqiOwned) { const qx = XIANQI_BY_ID[qid]; if (qx) inv.push(["xq:" + qid, `${S.gear.xianqi === qid ? "✦" : "◇"} ${qx.name}`]); } // 仙器随身（设定集第十六章）：✦ 佩戴中 ◇ 收入体内
     if (S.inv.fangcun && !S.flags.fangcunUsed) inv.push(["fangcun", "方寸戒"]);
@@ -1298,6 +1328,17 @@ function renderTab() {
         S.inv.fangcun = 0; // 法器认主即随身
         log("一滴血落在戒面，方寸之间隐约有山川之影。行囊豁然开朗。", "good");
       })});
+      if (typeof TRADE_GOODS !== "undefined" && TRADE_GOODS.some(x => x.id === id) && (S.inv[id] || 0) > 0) { // 特产变卖：行情随地域需求浮动（产地贱、异地贵）
+        const cnt = S.inv[id], p1 = sellPrice(id);
+        acts.push({ label: `卖出一件（+${p1} 文）`, fn: closeAnd(() => {
+          S.inv[id]--; S.money += p1;
+          log(`你把一件「${it.name}」卖给了${regionOf(S.place).name}的收货行，+${p1} 文。`, "good");
+        }) });
+        acts.push({ label: `全部卖出（+${p1 * cnt} 文）`, fn: closeAnd(() => {
+          S.money += p1 * cnt; S.inv[id] = 0;
+          log(`你把 ${cnt} 件「${it.name}」尽数出手，共 +${p1 * cnt} 文。`, "good");
+        }) });
+      }
       showInfo(it.name, it.tier, it.desc,
         "行囊之物，随魂封存——下一世尽数清空，只余千秋录。",
         acts);
@@ -1346,6 +1387,10 @@ function renderTab() {
         <button class="gbtn small" ${afford ? "" : "disabled"}>买下</button></div>`;
     };
     html += SHOP_BASE.map(it => row(it, false)).join("");
+    if (typeof TRADE_GOODS !== "undefined") { // 本地特产：只在本区域集市出现
+      const rgGoods = TRADE_GOODS.filter(x => x.region === (rg && rg.key));
+      if (rgGoods.length) html += `<div class="p-title" style="margin-top:14px"><b>本 地 特 产</b><span>产地价贱，带去远方贵卖</span></div>` + rgGoods.map(it => row(it, false)).join("");
+    }
     html += `<div class="p-title" style="margin-top:14px"><b>辅 材</b><span>坊市通贩 · 入材料账</span></div>`
       + CRAFT_AUX.map(a => { const afford = S.money >= a.price; return `<div class="shop-row" data-aux="${a.id}">
           <div class="shop-head"><b>${esc(a.name)}</b><span class="shop-kind">辅材</span><span class="shop-price">${a.price} 文</span></div>
@@ -1357,7 +1402,7 @@ function renderTab() {
     if (lockedN) html += `<div class="pityline" style="margin-top:10px"><span>尚有 ${lockedN} 件压箱底的东西——你的修为、缘分与身家，还差些火候。</span></div>`;
     body.innerHTML = html;
     body.querySelectorAll("[data-buy]").forEach(el => el.querySelector("button").onclick = () => {
-      const all = SHOP_BASE.concat(SHOP_UNLOCK);
+      const all = SHOP_BASE.concat(SHOP_UNLOCK, (typeof TRADE_GOODS !== "undefined") ? TRADE_GOODS : []);
       const it = all.find(x => x.id === el.dataset.buy);
       if (!it) return;
       const price = priceOf(it);
@@ -2326,7 +2371,7 @@ function applyCore(fx) {
   if (fx.item) { const m = /^([a-zA-Z]+):(-?\d+)$/.exec(fx.item); if (m) { const id = m[1], n = +m[2];
     if (n > 0 && GONGFU_BY_ID[id] && !(S.inv[id] > 0)) techniqueUnlockFx(id); // 首次获得功法：解锁反哺（谱系通用）
     const prev = S.inv[id] || 0; S.inv[id] = Math.max(0, prev + n); const d = S.inv[id] - prev;
-    const nm = (GONGFU_BY_ID[id] ? `《${GONGFU_BY_ID[id].name}》` : null) || {wood:"柴薪",heimu:"黑馍",mianao:"棉袄",shuinang:"水囊",quhanTang:"驱寒汤",huoxiangSan:"藿香正气散",jieduSan:"解毒散",jinchuangYao:"金疮药",shengjiang:"生姜",quzhangcao:"驱瘴草",gancao:"甘草",chaidao:"柴刀",jiansui:"玄铁剑穗",juqiDan:"聚气丹"}[id] || id;
+    const nm = (GONGFU_BY_ID[id] ? `《${GONGFU_BY_ID[id].name}》` : null) || {wood:"柴薪",heimu:"黑馍",mianao:"棉袄",shuinang:"水囊",quhanTang:"驱寒汤",huoxiangSan:"藿香正气散",jieduSan:"解毒散",jinchuangYao:"金疮药",shengjiang:"生姜",quzhangcao:"驱瘴草",gancao:"甘草",chaidao:"柴刀",jiansui:"玄铁剑穗",juqiDan:"聚气丹"}[id] || ((typeof TRADE_GOODS !== "undefined") && (TRADE_GOODS.find(x => x.id === id) || {}).name) || id;
     if (d === 0 && n !== 0) { note(`${nm} 无实际变动（行囊中没有可扣的存量）`); }
     else { const s = `${nm} ${d > 0 ? "+" : ""}${d}`; out.push(s); (d > 0 ? G : L).push(s); } } }
   if (fx.spell) learnSpell(fx.spell); // 具名法术：玉简/传功习得（入法术名册，不占行囊）
@@ -2349,7 +2394,7 @@ function applyCore(fx) {
     const s = `${n} 缘分 ${d > 0 ? "+" : ""}${d}`; out.push(s); (d > 0 ? G : L).push(s);
     if (d !== fx.npc[n]) note(`${n} 缘分 账面 ${fx.npc[n] > 0 ? "+" : ""}${fx.npc[n]}，性格/传播/递减折算实得 ${d > 0 ? "+" : ""}${d}`);
   }
-  if (fx.pet) { S.flags["pet_" + fx.pet] = 1; gain(`「${fx.pet}」缔结灵宠之缘（认魂不认人，缘分至生死之交可跨世等候）`); }
+  if (fx.pet) { S.flags["pet_" + fx.pet] = 1; S.pets = S.pets || {}; if (fx.petmods) { S.pets[fx.pet] = Object.assign({}, S.pets[fx.pet], fx.petmods); computeMods(); } gain(`「${fx.pet}」缔结灵宠之缘——血脉共鸣，属性百分比加成永续生效（认魂不认人，缘分至生死之交可跨世等候）`); }
   if (fx.drop) { S.mats = S.mats || {}; S.mats[fx.drop] = (S.mats[fx.drop] || 0) + 1; gain(`获得材料「${fx.drop}」（一身是宝，硬通货——可在收购/炼丹/炼器剧情中折算）`); }
   if (fx.slay) { // 猎杀有灵众生：道心受损、死仇钉死、认魂断绝
     S.daoXin = Math.max(0, Math.min(100, (S.daoXin || 0) - 2)); // 杀有灵智者，道心必颤（无杀孽计数，罪在道心）

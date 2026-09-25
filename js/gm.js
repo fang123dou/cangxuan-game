@@ -1250,11 +1250,11 @@ const GM = (() => {
       && (!p.luck || attr("luck") >= p.luck) && !S.flags["pet_" + p.id],
     w: () => 3,
     build() {
-      const attrFx = {}; for (const k in p.attr) if (p.attr[k]) attrFx[k] = p.attr[k];
+      const petMods = {}; for (const k in p.pct) if (p.pct[k]) petMods[k] = p.pct[k]; // 百分比血脉加成（永续，写 S.pets）
       const cp = p.card.split("|"); // 「名|品级0~5|效果|mod键:值,…」→ 词条对象（同 ai.js 解析规则）
       const cardMod = {};
       if (cp[3]) for (const kv of cp[3].split(/[,，]/)) { const km = /^([a-zA-Z]+):(-?\d+(?:\.\d+)?)$/.exec(kv.trim()); if (km) cardMod[km[1]] = +km[2]; }
-      const winFx = { pet: p.name, attr: attrFx, newcard: { name: cp[0].trim(), tier: +cp[1].trim(), eff: cp[2].trim().slice(0, 60), mod: cardMod }, flag: "pet_" + p.id, dao: 1 };
+      const winFx = { pet: p.name, petmods: petMods, newcard: { name: cp[0].trim(), tier: +cp[1].trim(), eff: cp[2].trim().slice(0, 60), mod: cardMod }, flag: "pet_" + p.id, dao: 1 };
       const ch = [
         { label: `以心相契——驯养「${p.name}」`, hint: p.ranch.hint, fx: { check: p.ranch.check,
           success: winFx, fail: { hp: -12 }, successText: p.ranch.ok, failText: p.ranch.ng } },
@@ -1265,6 +1265,27 @@ const GM = (() => {
           successText: p.ranch.ok, failText: "它让你知道了什么叫野性——你且战且退，它还站在原地。" } });
       ch.push({ label: "放生，各走各路", hint: "强扭的缘不甜。", fx: { dao: 0.5 } });
       return { scene: p.scene, choices: ch };
+    },
+  });
+
+  /* ---------- 行商奇遇：风物入手（设定集·五域四海）——剧情中生成可售卖特产 ---------- */
+  if (typeof TRADE_GOODS !== "undefined") SITUATIONS.push({
+    id: "trade_find",
+    cond: () => S.day >= 3 && !S.flags.tradeFind,
+    w: () => 4,
+    build() {
+      const rg = regionOf(S.place).key;
+      const local = TRADE_GOODS.filter(x => x.region === rg);
+      const pool = local.length ? local : TRADE_GOODS;
+      const tg = pool[Math.floor(Math.random() * pool.length)];
+      return {
+        scene: `一个跑瘸了腿的货郎拦住你，担子歪在路边：「客官，帮个忙——这担${tg.name}我实在是挑不动了，送你一件，替我带句话给前头的收货行就成。」他掀开油布，${tg.desc}`,
+        choices: [
+          { label: `收下「${tg.name}」`, hint: "白得一件特产，带到远方贵卖。", fx: { item: `${tg.id}:1`, flag: "tradeFind", npc: { "货郎": 5 }, successText: "", failText: "" } },
+          { label: "替他把担子挑到收货行（赚三件谢礼）", hint: "力气与脚程说话（体质/敏捷判定，败则白忙一场）。", fx: { check: "con*4+agi*4+luck*2+d30>50", success: { item: `${tg.id}:3`, flag: "tradeFind", npc: { "货郎": 8 } }, fail: { sta: -6, dao: 0.2 }, successText: "你把担子挑到了收货行。货郎千恩万谢，连油布带三件货都塞给了你。", failText: "担子沉得压肩，你半路歇了三回，货郎不好意思再劳你——塞给你一口干粮了事。" } },
+          { label: "婉拒赶路", hint: "不欠人情，不担货。", fx: { dao: 0.3 } },
+        ],
+      };
     },
   });
 
