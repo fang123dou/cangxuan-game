@@ -3655,7 +3655,7 @@ function startLife() {
     const rr = Math.random();
     let rg = REGIONS.yunzhou, pool = OPENINGS;
     if (rr >= 0.5) {
-      const others = [REGIONS.beiyuan, REGIONS.zhongzhou, REGIONS.ximo, REGIONS.nanling];
+      const others = [REGIONS.beiyuan, REGIONS.zhongzhou, REGIONS.ximo, REGIONS.nanling, REGIONS.sihai];
       rg = others[Math.min(others.length - 1, Math.floor((rr - 0.5) / 0.5 * others.length))];
       pool = rg.openings;
     }
@@ -3741,10 +3741,13 @@ function openSettings() {
   $("#aiBase").value = c.base || "https://api.moonshot.cn/v1";
   $("#aiKey").value = c.key || "";
   $("#aiModel").value = c.model || "kimi-k2-0711-preview";
-  $("#aiStatus").textContent = c.key ? "已启用 AI 天道（Kimi 实时生成剧情）" : "未配置：当前为内置推演引擎。填入 Key 后剧情由 Kimi 实时生成。";
+  $("#aiOff").checked = !!c.off;
+  $("#aiStatus").textContent = c.off ? "API 链接已断开：纯离线模式，剧情与判定全部由内置推演引擎演算（Key 仍保留，取消勾选即恢复）"
+    : c.key ? "已启用 AI 天道（Kimi 实时生成剧情）" : "未配置：当前为内置推演引擎。填入 Key 后剧情由 Kimi 实时生成。";
   $("#settings").classList.add("open");
 }
 async function testAiKey() {
+  if ($("#aiOff").checked) { $("#aiStatus").textContent = "API 链接已断开：如需测试连接，请先取消勾选「断开 API 链接」。"; return; }
   const c = { base: $("#aiBase").value.trim(), key: $("#aiKey").value.trim(), model: $("#aiModel").value.trim() };
   if (!c.key) { $("#aiStatus").textContent = "请先填入 API Key。"; return; }
   $("#aiStatus").textContent = "连接中……"; $("#aiDebug").textContent = "";
@@ -3815,10 +3818,11 @@ document.addEventListener("DOMContentLoaded", () => {
   $("#saveModal").addEventListener("click", e => { if (e.target.id === "saveModal") $("#saveModal").classList.remove("open"); });
   $("#aiSave").onclick = () => {
     const key = $("#aiKey").value.trim();
-    if (key) AI.saveCfg({ base: $("#aiBase").value.trim(), key, model: $("#aiModel").value.trim() });
-    else AI.saveCfg(null);
+    const off = $("#aiOff").checked;
+    if (key) AI.saveCfg({ base: $("#aiBase").value.trim(), key, model: $("#aiModel").value.trim(), off });
+    else AI.saveCfg(off ? { off: true } : null);
     $("#settings").classList.remove("open"); renderPanel();
-    toast(key ? "AI 天道已启用" : "已恢复内置推演引擎");
+    toast(off ? "API 链接已断开（纯离线）" : key ? "AI 天道已启用" : "已恢复内置推演引擎");
   };
   $("#aiTest").onclick = testAiKey;
   $("#btnTianDao").onclick = () => { // 天道视野：把发给模型的东西原样摊开
@@ -3832,6 +3836,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } else { box.style.display = "none"; $("#btnTianDao").textContent = "窥视天道视野"; }
   };
   $("#aiListModels").onclick = async () => {
+    if ($("#aiOff").checked) { $("#aiStatus").textContent = "API 链接已断开：如需查询模型，请先取消勾选「断开 API 链接」。"; return; }
     const c = { base: $("#aiBase").value.trim(), key: $("#aiKey").value.trim(), model: $("#aiModel").value.trim() };
     const box = $("#modelList");
     if (!c.key) { $("#aiStatus").textContent = "请先填入 API Key。"; return; }

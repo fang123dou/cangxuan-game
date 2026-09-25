@@ -43,6 +43,14 @@ const QU = (() => {
   const elderName = () => `${curSect().name}内门长老`; // 卷一后半段的关键引路人（上宗眼线，角色不可知）
   const storyStage = () => { const m = (typeof META !== "undefined") ? META : null; return (m && m.story) ? (m.story.stage || 0) : -1; }; // 卷二跨世进度（灭门之夜里写入 META.story）
   const burntSect = () => { const m = (typeof META !== "undefined") ? META : null; return (REGIONS[(m && m.story && m.story.sectBurnt) || "yunzhou"] || REGIONS.yunzhou).sect; }; // 上一世被灭的宗门
+  const locLex = () => (({ // 卷一终局场景用语随地域（云州味不再穿帮到沙海与冰原）
+    yunzhou: { cross: "渡口", leave: "云州", hide: "雪沟", water: "河" },
+    beiyuan: { cross: "冰桥", leave: "北地", hide: "雪沟", water: "冰河" },
+    zhongzhou: { cross: "城门渡口", leave: "帝畿", hide: "雪沟", water: "护城河" },
+    ximo: { cross: "绿洲井台", leave: "沙海", hide: "沙沟", water: "暗渠" },
+    nanling: { cross: "山溪渡", leave: "南岭", hide: "苇丛", water: "山溪" },
+    sihai: { cross: "礁间浅滩", leave: "这片海", hide: "礁缝", water: "海" },
+  })[(regionOfSafe() || REGIONS.yunzhou).key]);
   const DEFS = {
     /* ===== 主线 · 卷一 潜龙在渊 ===== */
     mq_survive: {
@@ -973,7 +981,7 @@ const QU = (() => {
       { label: "先伏在暗处看清来路", hint: "看清楚是谁再动——智力定生死。", fn: async () => {
         const r = await AI.judge("int*8+d25>40", judgeState());
         if (r.success) {
-          log("你伏在雪沟里看清了：黑衣人进退有序，不伤山下凡人，不劫库房的灵石——专杀人，专烧殿。不是山贼，不是仇家。是灭口。", "good");
+          log(`你伏在${locLex().hide}里看清了：黑衣人进退有序，不伤山下凡人，不劫库房的灵石——专杀人，专烧殿。不是山贼，不是仇家。是灭口。`, "good");
           S.daoXin = Math.max(0, S.daoXin - 1); // 看清了的代价
         } else log("夜太黑，你只看见火光里晃动的人影，数不清，也认不出。", "dim");
         mieCharge(true);
@@ -983,7 +991,7 @@ const QU = (() => {
   function mieCharge(scouted) {
     const elder = elderName();
     log(`一道熟悉的身影从火里撞出来，一把攥住你的手腕——${elder}，道袍烧去半幅，须发皆焦。`, "hurt");
-    log(`「宗门没了。」他把一只储物袋狠狠按进你怀里，推着你往山后的密道去，「你还活着。走密道，去渡口，离开云州——别回头！」`, "dim");
+    log(`「宗门没了。」他把一只储物袋狠狠按进你怀里，推着你往山后的密道去，「你还活着。走密道，去${locLex().cross}，离开${locLex().leave}——别回头！」`, "dim");
     log("你回头的那一刻，看见他转身迎向追来的黑衣人，枯瘦的背影在火光里站得笔直。", "hurt");
     S.stones += 5; addNpc(elder, 20, { special: true });
     chronicle(`${elder}以死断后`, "evt");
@@ -996,7 +1004,7 @@ const QU = (() => {
   }
   function mieDukou() {
     S.flags.mieEsc = 1;
-    log("密道尽头是河。天将亮未亮，渡口的薄雾里立着一个人——斗笠，麻衣，抱刀，像等了你很久。", "dim");
+    log(`密道尽头是${locLex().water}。天将亮未亮，${locLex().cross}的薄雾里立着一个人——斗笠，麻衣，抱刀，像等了你很久。`, "dim");
     log("「井底的东西。」斗笠人开口，声音不高，「留下。你走。」", "hurt");
     sys("【对方战力：？？？（深不可测——系统建议：跑。可你跑得掉吗？）】");
     setChoices([
@@ -1167,6 +1175,14 @@ const QU = (() => {
   function startZhenxiang() {
     sys("【听雨楼，后堂。老执事听完你两世的遭遇，沉默了很久，然后翻出一册落灰的旧档。】");
     log("「百年间，每次天下大乱之前，都有人在收这类『上古信物』。」他的手指点着档上一行小字，「灭门、掘墓、血祭开秘境——手法不同，胃口相同。经手的，都不长命。」", "dim");
+    log(({ // 卷二拼图夹页：各域一条本地旧闻，与本地主线链互证
+      yunzhou: "旧档的夹页里，还有半页关于青岩山枯井的旧闻——三百年前，那口井也冒过一次灵气。也是那位「恰好路过」的长老，亲自压下了记载。",
+      beiyuan: "旧档的夹页里，夹着北原各部千年内乱的旧记录——每一次，最强的两部都「恰好」在极夜斗到两败俱伤。时间点整齐得像有人掐着表。",
+      zhongzhou: "旧档的夹页里，是一册皇朝与上宗的丹药往来账——谁家在收丹、收的到底是什么，账上不敢写，只画了一只鸟。",
+      ximo: "旧档的夹页里，是佛国的香火账与沙盗的买路钱底册——两边记的是同一批货，同一个收货的代号。",
+      nanling: "旧档的夹页里，粘着半页驱兽香的方子——南岭被兽潮踏平的寨子，被踏平之前，总有人先闻到了这股香。",
+      sihai: "旧档的夹页里，抄着龙宫与鲛国旧怨的卷宗——三万年前结下的梁子，每隔几百年就被「恰好」翻出来一回。",
+    })[(regionOfSafe() || REGIONS.yunzhou).key], "dim");
     log("碎片在你心里拼到了一起：掐着时辰的灭门、不存在的买主、喂给大劫的信物——有一只看不见的手，在安排强者相杀，在喂养这场三万年不止的乱。", "hurt");
     setChoices([
       { label: "接受这个真相", hint: "道心受冲击，但从此你的眼睛不一样了。", fn: () => {
