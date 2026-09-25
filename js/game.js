@@ -276,23 +276,21 @@ function illText() { return S.ill ? `${S.ill.name}（余 ${S.ill.days} 日）` :
 const SELL_BASE = { wood: 6, heimu: 1, hotnoodle: 3, shaojiu: 8, shengjiang: 2, quzhangcao: 5,
   yunjinDuan: 45, qingshiYan: 30, sangluoJiu: 10, xuelangPiu: 150, dongyuSui: 60, laosu: 8,
   guanyinCi: 90, dijiMing: 30, jingtiePei: 110, putaoJiu: 15, huohuanBu: 75, shajinLi: 95,
-  zhangyunCha: 22, guyinShi: 55, baixiangCao: 13, haiZhu: 80, longxianXiang: 140, jiaoxiao: 48 };
-const SELL_DEMAND = { // 地域需求倍率：北原柴贵如金、西漠水酒贵、南岭驱瘴草抢手……
-  yunzhou: { wood: 1.2 }, beiyuan: { wood: 1.8, hotnoodle: 1.2, shaojiu: 1.4 },
-  zhongzhou: { wood: 1.1, heimu: 1.2 }, ximo: { wood: 0.6, shaojiu: 1.6, heimu: 1.4, shengjiang: 1.3 },
+  zhangyunCha: 22, guyinShi: 55, baixiangCao: 13, haiZhu: 80, longxianXiang: 140, jiaoxiao: 48,
+  jiangniu: 7, babao: 12, linggu: 28, baiwei: 45 };
+const SELL_DEMAND = { // 地域需求倍率（合并去重：同名地域只留一份，否则后写覆盖前写）：产地贱卖、远方抢手——北原柴贵如金、西漠水酒贵、南岭驱瘴草抢手……
+  yunzhou: { wood: 1.2, xuelangPiu: 1.5, putaoJiu: 1.4, haiZhu: 1.4, guanyinCi: 1.2, longxianXiang: 1.3, jiaoxiao: 1.3, dongyuSui: 1.2 },
+  beiyuan: { wood: 1.8, hotnoodle: 1.2, shaojiu: 1.4, putaoJiu: 1.6, guanyinCi: 1.3, jiaoxiao: 1.4, sangluoJiu: 1.1, haiZhu: 1.2, huohuanBu: 1.2, laosu: 0.7 },
+  zhongzhou: { wood: 1.1, heimu: 1.2, xuelangPiu: 1.4, longxianXiang: 1.5, haiZhu: 1.2, shajinLi: 1.1, guyinShi: 1.1, dongyuSui: 1.2, zhangyunCha: 1.3, jiaoxiao: 1.1 },
+  ximo: { wood: 0.6, shaojiu: 1.6, heimu: 1.4, shengjiang: 1.3, xuelangPiu: 1.3, sangluoJiu: 1.5, yunjinDuan: 1.3, qingshiYan: 1.1, haiZhu: 1.1, dijiMing: 1.1, guanyinCi: 1.1 },
   nanling: { quzhangcao: 1.8, wood: 0.9, dijiMing: 1.4, sangluoJiu: 1.2, jingtiePei: 1.3, huohuanBu: 1.1, shajinLi: 1.1 },
   sihai: { wood: 0.8, shaojiu: 1.3, sangluoJiu: 1.5, yunjinDuan: 1.4, guanyinCi: 1.3, putaoJiu: 1.2, heimu: 1.2 },
-  /* 特产异地行情：产地贱卖（无条目=1.0，已低于买价），远方抢手 */
-  yunzhou: { xuelangPiu: 1.5, putaoJiu: 1.4, haiZhu: 1.4, guanyinCi: 1.2, longxianXiang: 1.3, jiaoxiao: 1.3, dongyuSui: 1.2 },
-  beiyuan: { putaoJiu: 1.6, guanyinCi: 1.3, jiaoxiao: 1.4, sangluoJiu: 1.1, haiZhu: 1.2, huohuanBu: 1.2, laosu: 0.7 },
-  zhongzhou: { xuelangPiu: 1.4, longxianXiang: 1.5, haiZhu: 1.2, shajinLi: 1.1, guyinShi: 1.1, dongyuSui: 1.2, zhangyunCha: 1.3, jiaoxiao: 1.1 },
-  ximo: { xuelangPiu: 1.3, sangluoJiu: 1.5, yunjinDuan: 1.3, qingshiYan: 1.1, haiZhu: 1.1, dijiMing: 1.1, guanyinCi: 1.1 },
 };
 function sellPrice(id) {
   const base = SELL_BASE[id] || 5;
   const rg = (typeof regionOf === "function") ? regionOf(S.place) : null;
   const dm = (rg && SELL_DEMAND[rg.key] && SELL_DEMAND[rg.key][id]) || 1;
-  return Math.max(1, Math.round(base * dm * (1 + (S.mods.moneyP || 0) / 100)));
+  return Math.max(1, Math.round(base * 0.8 * dm * (1 + (S.mods.moneyP || 0) / 100))); // 售卖价=基础价八成
 }
 function matSellPrice(nm) { // 材料按名取价：品阶关键字定档，气运/词条加成同享
   const base = /圣/.test(nm) ? 3000 : /玄/.test(nm) ? 600 : /内丹|芝|果|露|心/.test(nm) ? 280 : 60;
@@ -878,6 +876,10 @@ const ITEM_INFO = {
   yinqi: { name: "《引气诀》", tier: "1 阶功法", desc: "吐纳引气之法诀。修行效率大增，打坐收益远胜寻常吐纳。" },
   juqiDan: { name: "聚气丹", tier: "1 阶丹药", desc: "低阶丹药，服之助涨修为约 30 点。卡在破境门槛前用，恰到好处——点开即可直接服用。" },
   hotnoodle: { name: "热汤面", tier: "凡食", desc: "一碗下肚，从舌尖暖到脚尖。点开即食（饱食 +40，算一顿热食）。" },
+  jiangniu: { name: "酱牛肉", tier: "凡食", desc: "卤透的酱牛肉，撕着吃。点开即食（饱食 +60，算一顿热食）。" },
+  babao: { name: "八宝干粮", tier: "凡食", desc: "行商压箱的八宝干粮，耐放顶饿。点开即食（饱食 +78）。" },
+  linggu: { name: "灵谷饭", tier: "凡食上品", desc: "灵谷蒸的饭，粒粒生香。点开即食（饱食 +92，算一顿热食）。" },
+  baiwei: { name: "百味羹", tier: "凡食极品", desc: "百味斋的招牌羹，凡俗顶级的吃食。点开即食（饱食 +110，算一顿热食）。" },
   shaojiu: { name: "烧刀子", tier: "凡品", desc: "烈酒穿喉。点开饮下（饱食 +10，气血微暖，道心一荡）。" },
   medicine: { name: "跌打药", tier: "凡药", desc: "回春堂金疮药，外伤圣品。点开敷用（气血 +6）。" },
   huobun: { name: "火把", tier: "凡物", desc: "松脂火把。夜探密林时的底气，囤着总没错。" },
@@ -1133,6 +1135,7 @@ function renderTab() {
     if (S.inv.juqiDan) inv.push(["juqiDan", `聚气丹 ×${S.inv.juqiDan}`]);
     if (S.inv.hotnoodle) inv.push(["hotnoodle", `热汤面 ×${S.inv.hotnoodle}`]);
     if (S.inv.shaojiu) inv.push(["shaojiu", `烧刀子 ×${S.inv.shaojiu}`]);
+    for (const fd of FOOD_DEFS) if (fd.id !== "heimu" && fd.id !== "hotnoodle" && (S.inv[fd.id] || 0) > 0) inv.push([fd.id, `${ITEM_INFO[fd.id].name} ×${S.inv[fd.id]}`]);
     if (S.inv.medicine) inv.push(["medicine", `跌打药 ×${S.inv.medicine}`]);
     if (S.inv.huobun) inv.push(["huobun", `火把 ×${S.inv.huobun}`]);
     if (S.inv.gongfuTea) inv.push(["gongfuTea", `凝神香片 ×${S.inv.gongfuTea}`]);
@@ -1207,13 +1210,9 @@ function renderTab() {
         showInfo(qx.name, "仙 器", `${qx.desc}［效力：${modTxt}］`, "仙器随身，随魂封存——下一世仍在。", qActs);
         return;
       }
-      if (id === "heimu" && S.inv.heimu > 0) acts.push({ label: "吃掉（饱食 +22）", fn: closeAnd(() => {
-        S.inv.heimu--;
-        eatFood(22, "你啃完一块黑馍，又冷又硬，但胃里有了底。");
-      })});
-      if (id === "hotnoodle" && (S.inv.hotnoodle || 0) > 0) acts.push({ label: "吃下（饱食 +40）", fn: closeAnd(() => {
-        S.inv.hotnoodle--;
-        eatFood(40, "汤面下肚，你幸福得眯起眼。", true);
+      for (const fd of FOOD_DEFS) if ((S.inv[fd.id] || 0) > 0) acts.push({ label: `${fd.hot ? "吃下" : "吃掉"}（饱食 +${fd.food}）`, fn: closeAnd(() => {
+        S.inv[fd.id]--;
+        eatFood(fd.food, fd.text, fd.hot);
       })});
       if (id === "shaojiu" && (S.inv.shaojiu || 0) > 0) acts.push({ label: "饮下（御寒壮胆）", fn: closeAnd(() => {
         S.inv.shaojiu--;
@@ -1376,57 +1375,68 @@ function renderTab() {
     const lockedN = SHOP_UNLOCK.length - unlocked.length;
     const foodMult = rg ? rg.foodMult : 1;
     const doomP = 1 + doomLevel() * 0.08; // 劫数通胀：灵物逐档涨价（+8%/档），进食断后回落
-    const priceOf = it => { let p = it.kind === "食物" ? Math.round(it.price * foodMult) : it.price; p = Math.round(p * doomP); return hasTitle("caishen") ? Math.ceil(p * 0.9) : p; }; // 地域物价：食物按当地倍率（北原×1.5、中州×1.3、西漠×1.8、南岭×1.2）
+    const FOREIGN_MULT = 1.8; // 外地货色：货郎远道贩来，加价八成
+    const priceOf = (it, foreign) => { let p = it.kind === "食物" ? Math.round(it.price * foodMult) : it.price; if (foreign) p = Math.round(p * FOREIGN_MULT); p = Math.round(p * doomP); return hasTitle("caishen") ? Math.ceil(p * 0.9) : p; }; // 地域物价：食物按当地倍率（北原×1.5、中州×1.3、西漠×1.8、南岭×1.2）
     if (foodMult > 1) html += `<div class="pityline"><span>🗺 ${esc(rg.foodNote)}——本地食物价比云州贵 ${Math.round((foodMult - 1) * 100)}%。</span></div>`;
-    const row = (it, isNew) => {
-      const price = priceOf(it);
+    const row = (it, isNew, foreign) => {
+      const price = priceOf(it, foreign);
       const pay = it.stones ? `${it.stones} 枚灵石${price ? " + " + price + " 文" : ""}` : `${price} 文`;
-      const afford = it.stones ? S.stones >= it.stones && S.money >= price : S.money >= price;
+      const btns = [1, 5, 10].map(qty => {
+        const afford = it.stones ? S.stones >= it.stones * qty && S.money >= price * qty : S.money >= price * qty;
+        return `<button class="gbtn small" data-qty="${qty}" ${afford ? "" : "disabled"}>${qty === 1 ? "买下" : "×" + qty}</button>`;
+      }).join(" ");
       return `<div class="shop-row${isNew ? " new" : ""}" data-buy="${it.id}">
-        <div class="shop-head"><b>${esc(it.name)}</b><span class="shop-kind">${esc(it.kind)}${isNew ? " · 新" : ""}</span><span class="shop-price">${pay}</span></div>
+        <div class="shop-head"><b>${esc(it.name)}</b><span class="shop-kind">${esc(it.kind)}${foreign ? " · 外地" : ""}${isNew ? " · 新" : ""}</span><span class="shop-price">${pay}</span></div>
         <div class="shop-desc">${esc(it.desc)}</div>
-        <button class="gbtn small" ${afford ? "" : "disabled"}>买下</button></div>`;
+        ${btns}</div>`;
     };
     html += SHOP_BASE.map(it => row(it, false)).join("");
-    if (typeof TRADE_GOODS !== "undefined") { // 本地特产：只在本区域集市出现
-      const rgGoods = TRADE_GOODS.filter(x => x.region === (rg && rg.key));
-      if (rgGoods.length) html += `<div class="p-title" style="margin-top:14px"><b>本 地 特 产</b><span>产地价贱，带去远方贵卖</span></div>` + rgGoods.map(it => row(it, false)).join("");
+    if (typeof TRADE_GOODS !== "undefined") {
+      const rgKey = rg && rg.key;
+      const localGoods = TRADE_GOODS.filter(x => x.region === rgKey);
+      if (localGoods.length) html += `<div class="p-title" style="margin-top:14px"><b>本 地 特 产</b><span>产地价贱，带去远方贵卖</span></div>` + localGoods.map(it => row(it, false, false)).join("");
+      const foreignGoods = TRADE_GOODS.filter(x => x.region !== rgKey); // 非本区域商品：货郎贩来，加价八成
+      if (foreignGoods.length) html += `<div class="p-title" style="margin-top:14px"><b>外 地 货 色</b><span>货郎远道贩来 · 加价八成</span></div>` + foreignGoods.map(it => row(it, false, true)).join("");
     }
     html += `<div class="p-title" style="margin-top:14px"><b>辅 材</b><span>坊市通贩 · 入材料账</span></div>`
-      + CRAFT_AUX.map(a => { const afford = S.money >= a.price; return `<div class="shop-row" data-aux="${a.id}">
+      + CRAFT_AUX.map(a => { const btns = [1, 5, 10].map(qty => `<button class="gbtn small" data-qty="${qty}" ${S.money >= a.price * qty ? "" : "disabled"}>${qty === 1 ? "买下" : "×" + qty}</button>`).join(" "); return `<div class="shop-row" data-aux="${a.id}">
           <div class="shop-head"><b>${esc(a.name)}</b><span class="shop-kind">辅材</span><span class="shop-price">${a.price} 文</span></div>
           <div class="shop-desc">${esc(a.desc)}</div>
-          <button class="gbtn small" ${afford ? "" : "disabled"}>买下</button></div>`; }).join("")
+          ${btns}</div>`; }).join("")
       + `<div class="pityline" style="margin-top:8px"><span>辅材随处可买；主材（赤血芝、玄铁之流）坊市无售——只走任务、交易、取材三途。</span></div>`;
     if (unlocked.length) html += `<div class="p-title" style="margin-top:14px"><b>奇 珍</b><span>闻你之名，店家从匣底取出的</span></div>` + unlocked.map(it => row(it, true)).join("")
       + `<div class="pityline" style="margin-top:8px"><span>修士物价与凡俗隔着重山——灵石是硬通货，一枚便值十万文，凡货灵石两不相找。</span></div>`;
     if (lockedN) html += `<div class="pityline" style="margin-top:10px"><span>尚有 ${lockedN} 件压箱底的东西——你的修为、缘分与身家，还差些火候。</span></div>`;
     body.innerHTML = html;
-    body.querySelectorAll("[data-buy]").forEach(el => el.querySelector("button").onclick = () => {
+    body.querySelectorAll("[data-buy]").forEach(el => el.querySelectorAll("button[data-qty]").forEach(btn => btn.onclick = () => {
       const all = SHOP_BASE.concat(SHOP_UNLOCK, (typeof TRADE_GOODS !== "undefined") ? TRADE_GOODS : []);
       const it = all.find(x => x.id === el.dataset.buy);
       if (!it) return;
-      const price = priceOf(it);
-      if (it.stones) { if (S.stones < it.stones) { toast("灵石不足。"); return; } S.stones -= it.stones; }
+      const qty = parseInt(btn.dataset.qty, 10) || 1;
+      const foreign = !!it.region && it.region !== (rg && rg.key); // 外地货色：按加价重算
+      const price = priceOf(it, foreign) * qty, st = (it.stones || 0) * qty;
+      if (S.stones < st) { toast("灵石不足。"); return; }
       if (S.money < price) { toast("铜钱不够。"); return; }
-      S.money -= price;
+      S.stones -= st; S.money -= price;
       const had = (S.inv[it.id] || 0) > 0;
-      S.inv[it.id] = (S.inv[it.id] || 0) + 1;
+      S.inv[it.id] = (S.inv[it.id] || 0) + qty;
       if (!had && (typeof GONGFU_BY_ID !== "undefined") && GONGFU_BY_ID[it.id]) techniqueUnlockFx(it.id); // 功法解锁反哺
-      sys(`【购得】${it.name}（-${it.stones ? it.stones + " 灵石" : ""}${price ? price + " 文" : ""}）`);
-      chronicle(`购得「${it.name}」`, "evt");
+      sys(`【购得】${it.name} ×${qty}（-${st ? st + " 灵石" : ""}${price ? price + " 文" : ""}）`);
+      chronicle(`购得「${it.name}」×${qty}`, "evt");
       S.stats.maxMoney = Math.max(S.stats.maxMoney || 0, S.money);
       computeMods(); renderPanel();
-    });
-    body.querySelectorAll("[data-aux]").forEach(el => el.querySelector("button").onclick = () => {
+    }));
+    body.querySelectorAll("[data-aux]").forEach(el => el.querySelectorAll("button[data-qty]").forEach(btn => btn.onclick = () => {
       const a = CRAFT_AUX.find(x => x.id === el.dataset.aux);
-      if (!a || S.money < a.price) { toast("铜钱不够。"); return; }
-      S.money -= a.price;
+      if (!a) return;
+      const qty = parseInt(btn.dataset.qty, 10) || 1;
+      if (S.money < a.price * qty) { toast("铜钱不够。"); return; }
+      S.money -= a.price * qty;
       S.mats = S.mats || {};
-      S.mats[a.name] = (S.mats[a.name] || 0) + 1;
-      sys(`【购得】${a.name} ×1（-${a.price} 文，入材料账）`);
+      S.mats[a.name] = (S.mats[a.name] || 0) + qty;
+      sys(`【购得】${a.name} ×${qty}（-${a.price * qty} 文，入材料账）`);
       renderPanel();
-    });
+    }));
   } else if (curTab === 5) {
     /* ---------- 时间线（编年史） ---------- */
     let html = "";
@@ -2059,6 +2069,7 @@ function advanceSlot() {
   S.slot++;
   if (S.flags.drunkSlots > 0) S.flags.drunkSlots--; // 酒剑仙：酒意两时辰
   if (S.hunger < 100 && !hasSpecial("bigu")) S.hunger = Math.min(100, S.hunger + 6 * (S.mods.hungerR || 1));
+  autoEatIfHungry();
   if (S.slot >= 4) { night(); return; }
   renderPanel(); gmTurn();
 }
@@ -2070,6 +2081,7 @@ function night() {
   }
   if (S.tempLuckDays > 0) S.tempLuckDays--;
   if (!hasSpecial("bigu")) S.hunger = Math.min(100, S.hunger + 4 * (S.mods.hungerR || 1));
+  autoEatIfHungry();
   const ssCut = hasSpecial("shuishen") ? 0.7 : 1; // 睡神附体：眠中自警，夜间寒气/暑热之苦 -30%
   const cold = S.weather === "大雪" || S.weather === "风雪" || S.flags.coldSnap;
   if (cold && !S.inv.mianao && !S.flags.fireTonight) {
@@ -2933,6 +2945,21 @@ function openEat() {
     { label: "热汤面（5 文）", hint: "一碗下肚，从舌尖暖到脚尖。", disabled: S.money < 5, fn: () => { S.money -= 5; eatFood(40, "汤面下肚，你幸福得眯起眼。", true); advanceSlot(); } },
     { label: "再扛扛", hint: "挨饿抗冻也是一种磨炼。", free: true, fn: () => { gainAttr("con", 0.05); log("你灌了半瓢凉水，把裤腰带又勒紧一格。", "dim"); advanceSlot(); } },
   ]);
+}
+const FOOD_DEFS = [ // 可食之物统一账：自动进食与行囊点吃共用它
+  { id: "heimu", food: 22, hot: false, text: "你啃完一块黑馍，又冷又硬，但胃里有了底。" },
+  { id: "hotnoodle", food: 40, hot: true, text: "汤面下肚，你幸福得眯起眼。" },
+  { id: "jiangniu", food: 60, hot: true, text: "酱牛肉咸香韧口，你撕着吃完一整包。" },
+  { id: "babao", food: 78, hot: false, text: "八宝干粮料足耐嚼，一块顶半天。" },
+  { id: "linggu", food: 92, hot: true, text: "灵谷饭入口生香，暖意顺着四肢百骸散开。" },
+  { id: "baiwei", food: 110, hot: true, text: "百味羹鲜掉眉毛——你把碗底舔得干干净净。" },
+];
+function autoEatIfHungry() { // 低饱食自动进食：饿过六分，摸出行囊里最好的一份吃食
+  if (hasSpecial("bigu") || S.hunger < 60) return;
+  const fd = FOOD_DEFS.filter(f => (S.inv[f.id] || 0) > 0).sort((a, b) => b.food - a.food)[0];
+  if (!fd) return;
+  S.inv[fd.id]--;
+  eatFood(fd.food, `【饥肠辘辘】${fd.text}`, fd.hot);
 }
 function eatFood(amount, text, hot) {
   if (hasSpecial("bigu")) { sys(`【早产辟谷】你早已不食五谷。`); return; }
