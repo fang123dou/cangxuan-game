@@ -497,6 +497,118 @@ const GONGFU_RUMORS = [
   "上古洞天或藏仙品残卷，然洞天接连崩毁，入者十死无生。",
   "三千年前「赤霄大劫」前有圣品功法现世的记载，此后只余传说。",
 ];
+
+/* ============ 具名法术 · 首批名录（每行 2 门：1 阶灵品 + 2 阶玄品） ============
+   威力公式（设定集「法力与技能威力」原文）：威力 = 基础 × 智力系数（智力每高于同境均值一成 +5%）× 存量系数（满蓝 ×1.0，半蓝 ×0.85，残蓝不足 20% ×0.65）。
+   品阶对应功法品级：1 阶灵品（聚气开海可修）｜ 2 阶玄品（灵阶可修）。
+   耗法标定（设定原文）：满蓝约放同阶法术 5~10 次，越阶一两次见底；法力不足放不出，强行催动遭反噬。 */
+const SPELLS = [
+  /* —— 金行 —— */
+  { id: "sp_gengjin", name: "庚金剑气", el: "jin", tier: 1, tierName: "1 阶法术", mp: 6, base: 12, gate: 5,
+    desc: "并指如剑，庚金之气透体而出，锋锐无俦——剑修入门的杀伐第一术。", src: "落霞剑宗传功同授 / 古籍玉简。" },
+  { id: "sp_taibai", name: "太白分光剑", el: "jin", tier: 2, tierName: "2 阶法术", mp: 20, base: 80, gate: 7,
+    desc: "一剑分光，数十道庚金剑气攒射如瀑——剑宗内门真传，方得见此术。", src: "古籍残卷 / 高人指点（灵阶可修）。" },
+  /* —— 木行 —— */
+  { id: "sp_qingteng", name: "青藤绞", el: "mu", tier: 1, tierName: "1 阶法术", mp: 6, base: 12, gate: 5,
+    desc: "木气催生藤蔓破土而出，缠敌手足——百苗巫寨巫徒的护身术。", src: "百苗巫寨传功同授 / 古籍玉简。" },
+  { id: "sp_yimu", name: "乙木天牢", el: "mu", tier: 2, tierName: "2 阶法术", mp: 20, base: 80, gate: 7,
+    desc: "乙木成牢，四面八方藤蔓如墙合围，绞杀于内——中者如陷深林，挣无可挣。", src: "古籍残卷 / 高人指点（灵阶可修）。" },
+  /* —— 水行 —— */
+  { id: "sp_shuijian", name: "水箭术", el: "shui", tier: 1, tierName: "1 阶法术", mp: 6, base: 12, gate: 5,
+    desc: "凝水成箭，破空而至——最稳扎稳打的一门杀伐术。", src: "枯泉寺传功同授 / 古籍玉简。" },
+  { id: "sp_xuanbing", name: "玄冰刺", el: "shui", tier: 2, tierName: "2 阶法术", mp: 20, base: 80, gate: 7,
+    desc: "玄水凝冰，冰锥透骨——中者血缓筋僵，行动迟滞。", src: "古籍残卷 / 高人指点（灵阶可修）。" },
+  /* —— 火行 —— */
+  { id: "sp_huoqiu", name: "火球术", el: "huo", tier: 1, tierName: "1 阶法术", mp: 6, base: 12, gate: 5,
+    desc: "最朴素的杀伐术——一团火球砸过去。俗，但有效。", src: "灰狼图腾殿传功同授 / 古籍玉简。" },
+  { id: "sp_lihuo", name: "离火焚心咒", el: "huo", tier: 2, tierName: "2 阶法术", mp: 20, base: 80, gate: 7,
+    desc: "离火焚心，焰由心生——中术者五脏六腑如遭火燎，由里向外烧。", src: "古籍残卷 / 高人指点（灵阶可修）。" },
+  /* —— 土行 —— */
+  { id: "sp_dici", name: "地刺术", el: "tu", tier: 1, tierName: "1 阶法术", mp: 6, base: 12, gate: 5,
+    desc: "土灵翻涌，地刺突起——青岩门弟子防身的看家本领。", src: "青岩门传功同授 / 古籍玉简。" },
+  { id: "sp_bengshan", name: "崩山印", el: "tu", tier: 2, tierName: "2 阶法术", mp: 20, base: 80, gate: 7,
+    desc: "山形法印凌空砸落，崩山裂石——势大力沉，避无可避。", src: "古籍残卷 / 高人指点（灵阶可修）。" },
+  /* —— 灵根专属（杂灵根 / 变异灵根）：不入古籍玉简池，唯对应灵根可修（quests.js 灵根支线授予） ——
+     trait：randEl 五行轮转（行属随机、不乘生克——五行不克）｜ chain 余雷追加五成 ｜ critUp 暴击 +15%（锋锐）
+     ｜ weaken 敌方下次攻击 -30%（寒意蚀体）｜ noCounter 先制，敌方不反击（极速）｜ bonusDmg 追加五成毒发之伤 ｜ sure 必中（敛息） */
+  { id: "sp_wuxingci", name: "五行刺", el: null, tier: 1, tierName: "1 阶法术", mp: 8, base: 14, gate: 5, linggen: "za", trait: "randEl",
+    desc: "杂灵根专属：五行灵力随指而转，刺出皆成兵——无人可克，也不克人。", src: "杂灵根支线「五份地基」授予。" },
+  { id: "sp_wuchao", name: "五气朝元", el: null, tier: 2, tierName: "2 阶法术", mp: 30, base: 100, gate: 7, linggen: "za",
+    desc: "杂灵根专属：五气朝元，五行归一——前期慢是在打地基；地基之上，一击倾城。", src: "隐藏支线「杂灵根的逆袭」授予。" },
+  { id: "sp_palm", name: "掌心雷", el: "jin", tier: 1, tierName: "1 阶法术", mp: 7, base: 13, gate: 5, linggen: "lei", trait: "chain",
+    desc: "雷灵根专属：雷光自掌心炸开，命中之后再炸一道余雷。", src: "雷灵根试炼支线授予。" },
+  { id: "sp_jianzhi", name: "剑指", el: "jin", tier: 1, tierName: "1 阶法术", mp: 7, base: 13, gate: 5, linggen: "jian", trait: "critUp",
+    desc: "剑灵根专属：万物可为剑，一缕剑气破空——锋锐无匹，更易暴击。", src: "剑灵根试炼支线授予。" },
+  { id: "sp_bingfeng", name: "冰封诀", el: "shui", tier: 1, tierName: "1 阶法术", mp: 7, base: 12, gate: 5, linggen: "bing", trait: "weaken",
+    desc: "冰灵根专属：寒意蚀体，中招者血脉僵滞，出手为之一缓。", src: "冰灵根试炼支线授予。" },
+  { id: "sp_fengren", name: "风刃", el: "mu", tier: 1, tierName: "1 阶法术", mp: 7, base: 12, gate: 5, linggen: "feng", trait: "noCounter",
+    desc: "风灵根专属：风刃无形，去来无踪——先手即杀招，敌不及还手。", src: "风灵根试炼支线授予。" },
+  { id: "sp_duzhang", name: "毒瘴掌", el: "mu", tier: 1, tierName: "1 阶法术", mp: 7, base: 10, gate: 5, linggen: "du", trait: "bonusDmg",
+    desc: "毒灵根专属：掌风带瘴——伤可见，毒难防（命中追加五成毒发之伤）。", src: "毒灵根试炼支线授予。" },
+  { id: "sp_yingxi", name: "影袭", el: "shui", tier: 1, tierName: "1 阶法术", mp: 7, base: 12, gate: 5, linggen: "ying", trait: "sure",
+    desc: "影灵根专属：敛息潜行，自影中暴起——防不胜防，避无可避。", src: "影灵根试炼支线授予。" },
+];
+const SPELLS_BY_ID = {}; for (const sp of SPELLS) SPELLS_BY_ID[sp.id] = sp;
+/* 法术熟练度上限（设定集「等阶划分」：1 阶 200 ｜ 2 阶 400）；瓶颈（最后 10% 获取减半）与小成/圆满反哺对齐功法体系 */
+const SPELL_CAP = { 1: 200, 2: 400 };
+const SPELL_TRAIT_TEXT = { randEl: "五行轮转：行属随机，不乘生克", chain: "余雷：命中追加五成", critUp: "锋锐：暴击 +15%", weaken: "寒意蚀体：敌方下次攻击 -30%", noCounter: "极速：先制，敌方不反击", bonusDmg: "毒发：命中追加五成", sure: "敛息：必中" };
+
+/* ============ 远行（第五章 · 五域四海） ============
+   踏入灵阶（脱凡）解锁远行：启程 → 旅途 N 日（脚程随境界缩短）→ 抵达目标地域枢纽。
+   地域切换后，天气/物价/名录人物/宗门随之而变（regionOf 按地点字符串解析）。 */
+const REGION_HUBS = {
+  yunzhou: "云州 · 青石城",
+  beiyuan: "北地 · 渊口戍堡",
+  zhongzhou: "中州 · 皇朝大城",
+  ximo: "西漠 · 沙海绿洲",
+  nanling: "南岭 · 十万大山 · 苗寨",
+};
+
+/* ============ 世界角色谱（设定集第五、六章 · 名录人物） ============
+   三性：boss（一方最强者，可拜谒/讨教）｜ neutral（中立角色，可攀谈/交易服务）｜ hidden（隐藏角色，只可远观留痕，缘法具足方可接触）。
+   境界按角色定位与地域格局而定：边城小宗掌门止于灵阶，郡域强者入玄阶，圣域老祖级永不现身（只可留痕）。
+   region 为地域 key（data.js REGIONS），"sea" 为四海（远行后）。cond 说明见 gm.js worldcast 场景。 */
+const WORLDCAST = [
+  /* —— 东荒 · 云州（首世活动区，境界压在凡阶~灵阶） —— */
+  { id: "yueqingyan", name: "岳青岩", title: "青岩门掌门", kind: "boss", region: "yunzhou", realm: 8, pers: "豁达",
+    hook: "山门演武场偶见其指点弟子", desc: "三流小宗的掌门人，灵阶气海境。青岩门衰落到只剩一座山门，他却还把山道扫得干干净净。" },
+  { id: "linzhenshan", name: "林镇山", title: "青石城林家家主", kind: "boss", region: "yunzhou", realm: 6, pers: "记仇",
+    hook: "林家坞堡前车马喧阗", desc: "豪族林家之主，凡阶巅峰开元境。青石城三分之二的铺面姓林——他不是修士里的强者，是穷人眼里的天。" },
+  { id: "tingyulouzhu", name: "莫听雨", title: "听雨楼云州分楼主", kind: "neutral", region: "yunzhou", realm: 5, pers: "洒脱",
+    hook: "茶楼后堂，一局没下完的棋", desc: "散修联盟听雨楼的分楼主，聚气境。会费换庇护与情报——草根散修最好的去处，门槛不高，人情要还。" },
+  { id: "tianjiEye", name: "天机楼眼线", title: "青石城账房先生打扮的人", kind: "neutral", region: "yunzhou", realm: 4, pers: "贪婪",
+    hook: "总在城南账房拨算盘", desc: "没人知道他的名字。天机楼买消息，按字计费——他什么都知道一点，什么都不白说。" },
+  { id: "duobaoCi", name: "多宝阁刺客", title: "买命钱收取人", kind: "hidden", region: "yunzhou", realm: 9, pers: "偏激",
+    hook: "屋檐上一闪而逝的影子", desc: "多宝阁的刀。买命去多宝阁——你若看见他，多半是别人的命被买了。", hiddenHint: "只在仇怨或悬赏剧情里现身" },
+  /* —— 北原 —— */
+  { id: "hulangdianzhu", name: "狼主巴图", title: "灰狼图腾殿殿主", kind: "boss", region: "beiyuan", realm: 10, pers: "偏激",
+    hook: "图腾殿前的雪地里，狼群为他让路", desc: "灵阶玄府境，极夜冰原的强者规矩：拳头即道理。崇拜强者的国度里，他是被崇拜的那个。" },
+  { id: "shouyeren", name: "守夜人", title: "渊口裂缝的守望者", kind: "hidden", region: "beiyuan", realm: 15, pers: "豁达",
+    hook: "界壁裂缝边缘，一个从不回头的背影", desc: "没人知道他守了多少年。渊声起时他总在——比戍堡的烽燧还准时。", hiddenHint: "渊兽相关伏笔具足时方可接触" },
+  /* —— 中州 —— */
+  { id: "luoxiaZongzhu", name: "沈落霞", title: "落霞剑宗宗主", kind: "boss", region: "zhongzhou", realm: 12, pers: "洒脱",
+    hook: "剑宗最高的那座峰上，晚霞不散", desc: "灵阶神游境。她的剑挑不出天下第一，但中州的天骄名录里总有她弟子的名字。" },
+  { id: "jianzheng", name: "钦天监监正", title: "皇朝观命者", kind: "hidden", region: "zhongzhou", realm: 13, pers: "重情",
+    hook: "观星台上彻夜不熄的灯", desc: "替皇朝读了四十年命格。有些人的命格他读不出来——比如你的。", hiddenHint: "命格相关剧情具足时方可接触" },
+  /* —— 西漠 —— */
+  { id: "kuquanzhuchi", name: "枯泉寺住持", title: "枯荣禅师", kind: "boss", region: "ximo", realm: 11, pers: "豁达",
+    hook: "寺前枯泉边，一个扫地的老僧", desc: "灵阶紫府境。佛国的香火他没份，沙盗的刀他到——方圆三百里，活人比经文记得他牢。" },
+  { id: "shoumu", name: "守墓人", title: "上古战场的拾骨者", kind: "hidden", region: "ximo", realm: 14, pers: "记仇",
+    hook: "沙暴过后，战场遗迹里独行的佝偻身影", desc: "他在捡三万年前的骨头，也在埋三天前的。别碰他怀里的东西。", hiddenHint: "上古战场探索具足时方可接触" },
+  /* —— 南岭 —— */
+  { id: "dawu", name: "大巫蓝蚩", title: "百苗巫寨大巫", kind: "boss", region: "nanling", realm: 12, pers: "偏激",
+    hook: "瘴林深处，蛊铃先于人至", desc: "灵阶神游境。人妖杂居的地界，规矩是蛊定的——外人进寨先问巫，不问路。" },
+  { id: "xunshanyao", name: "巡山使青塬", title: "妖族巡山者头目", kind: "neutral", region: "nanling", realm: 9, pers: "重情",
+    hook: "山道上拦路的一支短矛", desc: "二阶大妖，已能言。妖族地盘上他算是讲理的——讲理的代价是买路的山货。" },
+  { id: "shujing", name: "老樟", title: "化形未遂的灵族", kind: "hidden", region: "nanling", realm: 16, pers: "重情",
+    hook: "十万大山里一棵会挪位置的古樟", desc: "草木成精的灵族。化形是志怪话本才敢写的事——他写了一半，卡住三千年了。", hiddenHint: "灵族机缘具足时方可接触" },
+  /* —— 四海（远行后） —— */
+  { id: "jiaoguoNv", name: "鲛国女王", title: "南海鲛国之主", kind: "boss", region: "sea", realm: 17, pers: "记仇",
+    hook: "潮起时，海面浮起的王帐", desc: "玄阶合体境。鲛人不落泪，泪落便成珠——她的国库是用葬礼堆起来的。" },
+  { id: "chuixianzhe", name: "垂钓者", title: "归墟边缘的钓叟", kind: "hidden", region: "sea", realm: 20, pers: "豁达",
+    hook: "北海尽头，一根没有线的钓竿", desc: "没人知道他钓什么。归墟相传是仙路断绝之处——他在那里坐了多久，浪知道。", hiddenHint: "终局伏笔，只可远观，不可交互" },
+];
+const CAST_BY_ID = {}; for (const c of WORLDCAST) CAST_BY_ID[c.id] = c;
 /* 敌方五行（按名取，默认土行） */
 const ENEMY_EL = {
   "林中的冬狼": "shui", "野狗": "tu", "饿疯的野狗": "tu",

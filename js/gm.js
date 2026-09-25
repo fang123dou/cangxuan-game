@@ -421,10 +421,13 @@ const GM = (() => {
         const g = GONGFU.find(g => g.line === "sect" && g.tier === 1 && g.sect === S.sect && !(S.inv[g.id] > 0));
         const rg = (typeof regionOf === "function") ? regionOf(S.place) : null;
         const rn = (rg && rg.sect && rg.sect.name === S.sect) ? rg.sect.npc : "传功执事";
+        const SECT_SPELL = { 青岩门: "sp_dici", 灰狼图腾殿: "sp_huoqiu", 落霞剑宗: "sp_gengjin", 枯泉寺: "sp_shuijian", 百苗巫寨: "sp_qingteng" }; // 本门护道法术：随根本法同授（data.js SPELLS）
+        const spId = SECT_SPELL[S.sect];
+        const spNew = spId && (typeof SPELLS_BY_ID !== "undefined") && SPELLS_BY_ID[spId] && !((S.spells || {})[spId] > 0);
         return {
           scene: `${S.sect}传功殿前，${rn}拦住你：「境界已至锻骨，筋骨里却还没有本门心法——空有一身气力，灵气从哪条脉走？」他上下打量你，「按门规，外门弟子锻骨境可领一部根本法。随我来。」`,
           choices: [
-            { label: `拜领《${g.name}》`, hint: `${g.tierName} · ${WX_NAMES[g.el]}行。${g.desc}`, fx: { item: g.id + ":1", dao: 1, npc: { [rn]: 5 } } },
+            { label: `拜领《${g.name}》`, hint: `${g.tierName} · ${WX_NAMES[g.el]}行。${g.desc}${spNew ? "——本门护道法术同授。" : ""}`, fx: Object.assign({ item: g.id + ":1", dao: 1, npc: { [rn]: 5 } }, spNew ? { spell: spId } : {}) },
             { label: "再想想", hint: "功法择一而修，慎重点没错。", fx: { dao: 0.2 } },
           ],
         };
@@ -467,6 +470,25 @@ const GM = (() => {
         };
       },
     },
+    /* ---------- 具名法术 · 古籍玉简（散修线）：气海既开，法术可求 ----------
+       1 阶灵品聚气境可修（铜钱可购）；2 阶玄品灵阶可修（灵石计价）——与功法谱系三源同理（data.js SPELLS 名录） */
+    {
+      id: "spell_tome", cond: () => S.realm >= 5 && (typeof SPELLS !== "undefined") && SPELLS.some(sp => S.realm >= sp.gate && !((S.spells || {})[sp.id] > 0)),
+      w: () => 3,
+      build(r) {
+        const pool = SPELLS.filter(sp => S.realm >= sp.gate && !((S.spells || {})[sp.id] > 0));
+        const sp = pick(pool, r);
+        const isT1 = sp.tier === 1;
+        const canPay = isT1 ? S.money >= 120 : S.stones >= 8;
+        return {
+          scene: `城隍庙外的旧书摊，跛脚掌柜从匣底抽出一枚玉简——${WX_NAMES[sp.el]}行灵气隐隐流动：「『${sp.name}』，${sp.tierName}。气海开了的人，才配谈这个。」他瞥你一眼，「${isT1 ? "一百二十文" : "八枚灵石"}，爱要不要。」`,
+          choices: [
+            { label: `买下「${sp.name}」`, hint: `${sp.tierName} · ${WX_NAMES[sp.el]}行 · 耗法 ${sp.mp}。`, disabled: !canPay, fx: isT1 ? { money: -120, spell: sp.id } : { stones: -8, spell: sp.id } },
+            { label: "看看就走", hint: "玉简不会跑，铜钱会。", fx: { dao: 0.2 } },
+          ],
+        };
+      },
+    },
     /* ---------- 仙品任务「雪泥鸿爪」兜底剧情（第十一章：只留痕，不点破） ----------
        寻信物 → 了断去留；两场景串起目标二、三，AI 在线时亦可自行演绎（fx.flag 同名） */
     {
@@ -502,10 +524,239 @@ const GM = (() => {
         };
       },
     },
+    /* ---------- 宗门日常（第六章 · 外门弟子三千，资源只向强者倾斜） ----------
+       点卯（每日清晨）：到卯记贡献，缺卯三次以上月供减半；
+       宗门任务：执事派活，贡献与赏钱并行；贡献兑换：聚气丹/功法指点/内门推荐。 */
+    {
+      id: "sect_dianmao",
+      cond: c => S.sect && S.slot === 0 && !S.flags.neimen, // 内门弟子不再点卯（规则26c）
+      w: () => 4,
+      build() {
+        const miss = S.flags.dianmaoMiss || 0;
+        const rg = (typeof regionOf === "function") ? regionOf(S.place) : null;
+        const rn = (rg && rg.sect && rg.sect.name === S.sect) ? rg.sect.npc : "外门教习";
+        if (miss >= 3) return { // 缺卯三次：执事房问责（第六章：宗门不养闲人）
+          scene: `${S.sect}执事房前，${rn}把卯簿拍在案上：「这个月，你缺了 ${miss} 次卯。宗门的月供不是雨落的——规矩，你懂。」`,
+          choices: [
+            { label: "认罚，补缴五十文", hint: "破财免灾，卯簿勾销。", disabled: S.money < 50, fx: { money: -50, special: "sectClearMiss" } },
+            { label: "据理力争", hint: "判定：把缺的卯说成情有可原——看口才，也看情面。", fx: { check: "int*6+dao*0.2+d20>34",
+                success: { special: "sectClearMiss", npc: { [rn]: 3 } }, fail: { money: -30, npc: { [rn]: -5 } },
+                successText: "你把缺卯那几日的差事一桩桩报上来，执事听完，哼了一声把簿子合上了。",
+                failText: "执事冷笑：「理由编圆了再来。」罚俸三十文，同门看你眼神都淡了。" } },
+            { label: "低头听着", hint: "挨顿训，记在账上。", fx: { dao: -0.5, npc: { [rn]: -3 } } },
+          ],
+        };
+        return {
+          scene: `${S.sect}演武场的晨钟响了。外门弟子列队点卯，${rn}执簿而立——卯时三刻，过时不候。（当前贡献 ${S.sectGong || 0}）`,
+          choices: [
+            { label: "准时点卯", hint: "到卯记贡献 +1。宗门的账，一日一日攒。", fx: { special: "sectGong", num: 1, npc: { [rn]: 2 } } },
+            { label: "主动代管演武器械", hint: "多出一份力，贡献 +2，耗些体力。", fx: { special: "sectGong", num: 2, sta: -2, npc: { [rn]: 3 } } },
+            { label: "告假一日", hint: "缺卯一次。三次以上，执事房要找你说话。", fx: { dao: -0.3, special: "sectSkip" } },
+          ],
+        };
+      },
+    },
+    {
+      id: "sect_renwu",
+      cond: c => S.sect && S.slot !== 3,
+      w: () => 2.5,
+      build() {
+        return {
+          scene: `${S.sect}执事房外贴了告示：药圃缺人采收、后山需人巡哨、库房需人值守。外门弟子各领一件——办得好，贡献与赏钱都不是虚的。（当前贡献 ${S.sectGong || 0}）`,
+          choices: [
+            { label: "药圃采收一日", hint: "贡献 +2、赏钱 15 文，顺带长点识药。", fx: { special: "sectGong", num: 2, money: 15, skill: "识药:4" } },
+            { label: "后山巡哨缉盗", hint: "判定：撞见盗匪要动手。胜则贡献 +4、赏钱 40 文；败则挂彩。", fx: { check: "str*5+agi*3+d30>42",
+                success: { special: "sectGong", num: 4, money: 40, attr: { str: 0.05 } }, fail: { hp: -8, money: 5 },
+                successText: "你在山道转角截住那两个盗匪，拳脚比他们还熟——捆了送执事房，赏钱当场结清。",
+                failText: "盗匪比你预想的扎手，你挨了两刀才把人惊走。执事房给了五文汤药钱。" } },
+            { label: "库房值守一夜", hint: "清净差事。贡献 +1，值守时吐纳片刻。", fx: { special: "sectGong", num: 1, cult: 2 } },
+          ],
+        };
+      },
+    },
+    {
+      id: "sect_exchange",
+      cond: c => S.sect && (S.sectGong || 0) >= 5,
+      w: () => 1.5,
+      build() {
+        const sk = (typeof GONGFU !== "undefined") ? (GONGFU.filter(g => (S.inv[g.id] || 0) > 0).sort((a, b) => b.tier - a.tier)[0] || {}).name : null;
+        return {
+          scene: `${S.sect}藏经阁的执事拨着算盘：「贡献攒着不下崽。换点什么？丹药、指点、还是——内门的门路？」（当前贡献 ${S.sectGong || 0}）`,
+          choices: [
+            { label: "5 贡献换聚气丹一枚", hint: "破境资粮，硬通货。", disabled: (S.sectGong || 0) < 5, fx: { special: "sectBuy", num: 5, item: "juqiDan:1" } },
+            { label: "10 贡献换传功长老一次指点", hint: sk ? `主修功法「${sk}」熟练 +8。` : "需先修有功法。", disabled: (S.sectGong || 0) < 10 || !sk, fx: { special: "sectBuy", num: 10, skill: sk ? sk + ":8" : "" } },
+            { label: "20 贡献换内门推荐", hint: "内门考核时，教习会手下留两分情面。", disabled: (S.sectGong || 0) < 20 || !!S.flags.neimenRec || !!S.flags.neimen, fx: { special: "sectBuy", num: 20, flag: "neimenRec" } },
+            { label: "再攒攒", hint: "贡献在账上，跑不了。", fx: { dao: 0.2 } },
+          ],
+        };
+      },
+    },
+    /* ---------- 世界角色谱 · 接触剧情（data.js WORLDCAST） ----------
+       boss 可拜谒/讨教（切磋点到为止），中立人物可攀谈结缘，hidden 只可远观留痕——缘法（伏笔≥2）具足方可上前 */
+    {
+      id: "worldcast_meet",
+      cond: c => (typeof castHere === "function") && castHere().some(x => !castMet(x.id) && x.kind !== "hidden"),
+      w: () => 2,
+      build() {
+        const cands = castHere().filter(x => !castMet(x.id) && x.kind !== "hidden");
+        const c = cands[Math.floor(Math.random() * cands.length)];
+        const realmName = (typeof REALM_NAMES !== "undefined") ? REALM_NAMES[c.realm] : "";
+        if (c.kind === "boss") return {
+          scene: `${c.hook}——是「${c.name}」，${c.title}（${realmName}）。${c.desc} 这样的大人物，平日你连远远看一眼的资格都没有。`,
+          choices: [
+            { label: "备一份薄礼上前拜谒", hint: "二十文的礼数。大人物未必收，但会记住懂规矩的人。", disabled: S.money < 20, fx: { flag: "metcast_" + c.id, money: -20, npc: { [c.name]: 6 } } },
+            { label: "请赐教一二", hint: `切磋讨教，点到为止。对方是${realmName}——胜则刮目相看，败亦受教。`, fx: { special: "castduel", castId: c.id } },
+            { label: "绕道走", hint: "大人物的因果，穷人沾不起。", fx: { dao: 0.2 } },
+          ],
+        };
+        return {
+          scene: `${c.hook}——你认出那是${c.title}「${c.name}」（${realmName}）。${c.desc}`,
+          choices: [
+            { label: "上前攀谈，结个善缘", hint: "中立人物的消息与门路，往往比铜钱值钱。", fx: { flag: "metcast_" + c.id, npc: { [c.name]: 6 } } },
+            { label: "敬而远之", hint: "不深交，也不得罪。", fx: { dao: 0.2 } },
+          ],
+        };
+      },
+    },
+    {
+      id: "worldcast_hidden",
+      cond: c => (typeof castHere === "function") && castHere().some(x => x.kind === "hidden" && !castMet(x.id)),
+      w: () => 1, // 隐藏角色可遇不可求：低权重掠过
+      build() {
+        const cands = castHere().filter(x => x.kind === "hidden" && !castMet(x.id));
+        const c = cands[Math.floor(Math.random() * cands.length)];
+        const fateReady = (S.flags.coincidence || 0) >= 2; // 缘法具足：伏笔攒过两笔，方可上前
+        return {
+          scene: `${c.hook}。${c.desc} 你心里莫名一紧——这一眼，像被什么东西隔着很远看了一眼回来。`,
+          choices: [
+            { label: "远远记下这一幕", hint: "有些存在，看见本身就是一笔账。", fx: { flag: "metcast_" + c.id, coincidence: 1 } },
+            { label: "上前搭话", hint: fateReady ? "缘法已具——这一步，也许有人等了很久。" : "缘法未具：你与他之间，还隔着几场机缘。", disabled: !fateReady, fx: { flag: "metcast_" + c.id, npc: { [c.name]: 10 }, coincidence: 1 } },
+            { label: "转身离开", hint: "不该看的别看，长寿之道。", fx: { dao: 0.2 } },
+          ],
+        };
+      },
+    },
+
+    /* ---------- 缘分突破兜底（离线模式） ----------
+       ±80 是凡俗手段的天花板，「缘分突破」大剧情原本只有 AI 会写——离线玩家缘分到 80 后
+       永久 ×0.1 衰减，再无寸进。此处引擎兜底：任一有名 NPC 缘分 ≥80 且未 bondbreak 时，
+       高权重触发共患难 / 托生死 / 解开心结大剧情；完成后 fx.flag="bondbreak_名字" 解锁上限，
+       与 AI 通道同一旗标。突破成功后 cond 自然落空，不再触发。 */
+    {
+      id: "bondbreak",
+      cond: () => bondCandidates().length > 0,
+      w: () => 12,
+      build(r) {
+        const name = pick(bondCandidates(), r);
+        const ta = npcGender(name) === "女" ? "她" : "他";
+        const B = "bondbreak_" + name;
+        const up = v => ({ [name]: v });
+        const v = Math.floor(r() * 3);
+        if (v === 0) return {
+          scene: `长街尽头忽然杀出几条黑影——${name}的旧仇家寻来了，刀刀都冲着${ta}去。${ta}背靠断墙，哑声冲你喊：「走！这事与你无关！」风雪中刀光已至。寻常走动、请客送礼，到这儿就是头了——今日要么并肩，要么陌路。`,
+          choices: [
+            { label: "并肩，战！", hint: "力量/体质判定。胜则共患难，破 80 之限。", fx: { check: "str*6+con*5+luck*2+d30>62",
+              success: { flag: B, npc: up(45), dao: 2, coincidence: 1 },
+              fail: { hp: -12, sta: -4, npc: up(12) },
+              successText: `你替${ta}挡下背后那一刀，反身踹翻为首的汉子。仇家退去时，${ta}捂着伤口看了你很久——什么也没说。但从今日起，这条命有你一半。`,
+              failText: `你冲上去，却被人一刀撂翻。${ta}拖着你杀出重围，替你包扎时手一直在抖：「傻子。」${ta}记得你没有跑。` } },
+            { label: `替${ta}挡刀，以命相托`, hint: "不需判定。气血大损，但生死之义直达 80 之上。", fx: { hp: -16, sta: -6, flag: B, npc: up(35), dao: 2 } },
+            { label: "转身离开", hint: "生死之交，亦有陌路一日。", fx: { npc: up(-10), dao: -1 } },
+          ],
+        };
+        if (v === 1) return {
+          scene: `夜半，${name}拎着酒壶来找你，眼里布满血丝。${ta}讲了许多年不肯讲的事——旧年的亏心债、没能救下的人。讲到天边发白，${ta}把壶一扔：「这些话，我本来打算带进棺材。」心结在此，解不解得开，看你。`,
+          choices: [
+            { label: `陪${ta}守到天亮，把话说透`, hint: "智力/气运判定。解开心结，破 80 之限。", fx: { check: "int*6+luck*4+d30>58",
+              success: { flag: B, npc: up(40), dao: 1 },
+              fail: { sta: -3, npc: up(10) },
+              successText: `你没有劝，只是听。天亮时${ta}长长吐出一口浊气，像卸下了背了半辈子的东西：「原来这话，是可以说的。」`,
+              failText: `你搜肠刮肚的劝慰都显得轻飘。${ta}摆摆手笑笑：「不说了，喝酒。」但${ta}记得你陪了这一夜。` } },
+            { label: "以自身秘密相换", hint: "掏心换心。道心微损，缘分直进。", fx: { dao: -1, flag: B, npc: up(30) } },
+            { label: "岔开话题，只说风月", hint: "", fx: { npc: up(-6), dao: -0.5 } },
+          ],
+        };
+        return {
+          scene: `${name}要走一趟必死之路——${ta}只说「办件事」，你却从${ta}交代后事般的语气里听出来了。${ta}把贴身之物塞给你：「若我回不来，替我烧了它。」寻常人情到此已尽，剩下的，是命与命的事。`,
+          choices: [
+            { label: "「我陪你去。」", hint: "敏捷/气运判定。同赴死地，破 80 之限。", fx: { check: "agi*6+con*4+luck*3+d30>60",
+              success: { flag: B, npc: up(45), dao: 2, coincidence: 1 },
+              fail: { hp: -14, npc: up(12) },
+              successText: `你替${ta}引开了最险的那一路。回来时两人都是一身血，${ta}把那件贴身之物又要了回去——「烧什么烧，晦气。留着。往后每年今日，你我都得喝酒。」`,
+              failText: `事情到底没办成，你俩互相搀着逃回来。${ta}咳着血笑：「让你别来。」可${ta}握着你胳膊的手，一直没松。` } },
+            { label: `接下遗物，守${ta}归来`, hint: "不涉险。守诺，亦是托生死。", fx: { sta: -4, flag: B, npc: up(30), dao: 1 } },
+            { label: `劝${ta}别去`, hint: "", fx: { npc: up(-8), dao: -0.5 } },
+          ],
+        };
+      },
+    },
+
+    /* ---------- 远行（第五章 · 疆域） ----------
+       灵阶(7) 解锁：择一地远行，脚程 6/4/3 日（玄阶 13、地阶 19 提速），
+       旅途中由 travel_road 接管场景；抵达由引擎跨日结算（game.js），落脚该域枢纽。
+       四海需舟楫，暂不开放（设定集第五章：海外仙山在东海之外）。 */
+    {
+      id: "travel_start",
+      cond: () => S.realm >= 7 && !S.travel && S.slot !== 3 && (typeof REGION_HUBS === "object"),
+      w: () => 1.5,
+      build(r) {
+        const cur = regionOf(S.place).key;
+        const dests = Object.keys(REGIONS).filter(k => k !== cur && REGION_HUBS[k]);
+        const days = travelDaysFor("");
+        const choices = dests.map(k => {
+          const rg = REGIONS[k];
+          return { label: `启程 · ${rg.name}`, hint: `约 ${days} 日脚程，路上有村镇补给，也有劫道的。抵达后落脚${REGION_HUBS[k]}。`,
+            fx: { special: "travel:" + k, sta: -4, hunger: 10 } };
+        });
+        choices.push({ label: "再盘桓几日", hint: "此地还有放不下的事。", fx: { dao: 0.1 } });
+        return {
+          scene: `你在${S.place}的驿道口驻足。界碑上刻着四方路引——修行到了你这境界，一城一池已经圈不住了。远方或有功法传承，或有旧识故人，或有命里该见的劫。`,
+          choices,
+        };
+      },
+    },
+    {
+      id: "travel_road",
+      cond: () => !!S.travel,
+      w: () => 10, // 旅途中压过日常场景：人在路上，不能照常过镇上的日子
+      build(r) {
+        const rg = REGIONS[S.travel.to];
+        const v = Math.floor(r() * 3);
+        if (v === 0) return {
+          scene: `驿道上遇着一支往${rg.name}去的商队，骡马打着响鼻，货垛苫布被风掀起一角。押队的汉子打量你：「同路？搭把手，到地头管饭。」`,
+          choices: [
+            { label: "搭把手同行", hint: "饱腹 +20，路人缘 +4。", fx: { hunger: -20, npc: { "路人缘": 4 }, sta: -2 } },
+            { label: "独自赶路", hint: "不欠人情，也不多是非。", fx: { sta: -2 } },
+          ],
+        };
+        if (v === 1) return {
+          scene: `山道拐角，几块滚石拦路——是劫道的。三条汉子从坡上下来，刀尖朝下：「过路的，留买路钱！」他们没看出你是修行中人。`,
+          choices: [
+            { label: "动手打发", hint: "境界/气运判定。胜则吓退，败则破财挂彩。", fx: { check: "realm*10+luck*3+d20>50",
+              success: { npc: { "路人缘": 2 }, dao: 0.5 },
+              fail: { hp: -8, money: -30 },
+              successText: "你只抬了抬手，灵压一放，三条汉子腿肚子转筋，连滚带爬跑了。",
+              failText: "双拳难敌六手，你挨了两刀，被摸走了钱袋。" } },
+            { label: "破财免灾", hint: "给钱脱身，气血不伤。", fx: { money: -20 } },
+          ],
+        };
+        return {
+          scene: `暮色四合，前不着村后不着店。你寻了处背风的山坳打坐——荒郊野岭，灵气反倒比城中清冽几分。`,
+          choices: [
+            { label: "吐纳一夜", hint: "修为 +4，打坐代眠。", fx: { cult: 4, sta: -2 } },
+            { label: "生火睡下", hint: "恢复气血体力。", fx: { special: "rest" } },
+          ],
+        };
+      },
+    },
 
   ];
 
   /* ---------- 上下文 ---------- */
+  /* 缘分突破候选：缘分 ≥80 且尚未 bondbreak 的有名 NPC（「路人缘」是汇总池，除外） */
+  function bondCandidates() {
+    return Object.keys(S.npc || {}).filter(n => n !== "路人缘" && (S.npc[n] || 0) >= 80 && !S.flags["bondbreak_" + n]);
+  }
   function buildCtx() {
     return {
       weather: S.weather,

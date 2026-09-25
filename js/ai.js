@@ -98,6 +98,7 @@ const AI = (() => {
    money(铜钱±≤80) stones(灵石±≤2) hp(气血±) sta(体力±≤5) mp(法力±) hunger(饱食度，正=进食≤45) cult(修为±≤25，玩家无功法时无效)
    dao(道心±≤3) points(万象点±≤50) attr({str|agi|int|con: ±≤0.15}) item("id:数量"，id∈wood,heimu,mianao,chaidao,jiansui,quanpu,yinqi,juqiDan,ludian,lianchui；功法授予用「可求功法」字段给出的功法 id）
    npc({"名字":缘分±≤12}) flag("字符串") ach(成就id，或"名|品级0~4|描述|奖励"生成新成就) card(1=天降随机词条) luckCharm(1~2) wx("jin|mu|shui|huo|tu:1~3"，五行亲和，仅天材地宝/洞天机缘可给)
+   spell("sp_标识"，习得具名法术，名录：1阶 sp_gengjin庚金剑气/sp_qingteng青藤绞/sp_shuijian水箭术/sp_huoqiu火球术/sp_dici地刺术；2阶 sp_taibai太白分光剑/sp_yimu乙木天牢/sp_xuanbing玄冰刺/sp_lihuo离火焚心咒/sp_bengshan崩山印——2阶须灵阶以上剧情方可授予)
    combat("敌人名:战力数字") danger("pickpocket|trace|deep|caught|fleeDog|catchThief")
    pet("名字") drop("材料名") slay("名字")
    newcard("词条名|品级0~5|效果|mod键:值,…") fabao("法宝名|品级0~5|效果|mod键:值,…") wuqi("兵器名|攻伐%|品阶")
@@ -127,7 +128,10 @@ const AI = (() => {
 21. 【钱袋门槛 · 铁律】涉及花钱的选项（购买、请客、行贿、下注、雇车、打点什么），hint 里注明花费，fx.money 写对应负值；玩家铜钱不足以支付时，不得给出该选项，也不要给「钱不够」的废选项——直接不给。引擎会自动拦截付不起的选项（含判定成败两个分支的花费）。
 22. 【承接 · 铁律】本回合 scene 必须直接承接输入的「上回合」：先用一两句话交代玩家上一手选择的直接后果（去了何处、得失如何、对方作何反应），再展开新事件；场景、在场人物、时辰与地点默认延续上回合，唯有 scene 里明确写出动身、换装、时间流逝，才可切换地点或跳时段；同一 NPC 的态度按其缘分值与上轮互动延续。不得每回合另起炉灶、场景跳切。
 23. 【伤病 · 铁律】输入「伤病」字段中疾病或伤势/暗伤非「无」时，本回合剧情必须给出至少一条治病疗伤的路径选项——按「药石」字段对症开方（买药用 money+item 负值、服丹、寻医 special:"seeDoctor"、采药草煎服均可），hint 注明花费与对症；伤势沉重（中伤以上）时给「寻医/敷药/静养」选项。伤病皆无时不许硬塞吃药剧情。疾病痊愈的叙事须与药石字段中的对症药品一致（风寒用驱寒汤/生姜、中暑用藿香正气散、丹毒侵脉用解毒散），不可张冠李戴。
-24. 【功法求法 · 铁律】输入「可求功法」非空时：该功法是玩家当前境界/身份下确凿可求的传承。请检索其获取路径（宗门传功/内门考核/散修求法），在场景中自然引出机缘（传功执事召见、内门考核开台、古籍摊残卷、高人指点等），并在 choices 中给出获取选项：fx.item 用字段给出的功法 id（如 "gfqingyan:1"），可搭配 money 花费或 check 判定；选项文案贴合场景，不生硬报功法名。功法圆满或境界瓶颈时绝不能让玩家无路可求；3 阶圣品以上功法此界难至，只可作「求法风闻」伏笔，绝不可直接授予。`;
+24. 【功法求法 · 铁律】输入「可求功法」非空时：该功法是玩家当前境界/身份下确凿可求的传承。请检索其获取路径（宗门传功/内门考核/散修求法），在场景中自然引出机缘（传功执事召见、内门考核开台、古籍摊残卷、高人指点等），并在 choices 中给出获取选项：fx.item 用字段给出的功法 id（如 "gfqingyan:1"），可搭配 money 花费或 check 判定；选项文案贴合场景，不生硬报功法名。功法圆满或境界瓶颈时绝不能让玩家无路可求；3 阶圣品以上功法此界难至，只可作「求法风闻」伏笔，绝不可直接授予。
+25. 【名录人物 · 铁律】输入「当地人物」列出当前地域在场的一方强者（boss）、中立人物与隐藏角色（设定集第五、六章名录）。(a) 场景可让他们自然登场：一方强者可拜谒/讨教（切磋点到为止，其境界远高于玩家时玩家绝无胜算，须写成指教而非险胜）、中立人物可攀谈/交易服务（听雨楼会费换情报、天机楼买消息按字计费）；(b) 结识用 fx.flag="metcast_<id>" 与 fx.npc 记缘，人物性情（重情/贪婪/偏激/豁达/记仇/洒脱）须与缘分规则16一致；(c) 隐藏角色只可远观留痕（fx.coincidence 记一笔），玩家伏笔计数≥2 时才可安排上前接触的剧情，且接触结果含蓄克制；圣域级隐藏角色（如归墟垂钓者）永不可交互，只可留痕。(d) 人物的境界、名号、来路严格按名录，不得自造一方强者；未列名的小人物可依设定集合理生成，但不可与名录人物冲突。
+26. 【宗门日常 · 铁律】输入「宗门」非空时：玩家是宗门弟子，剧情应呼应其门内身份（点卯、杂务、月供、同门与执事的倾轧）。(a) 宗门资源走贡献与月供两套账：贡献由点卯/差事积攒，用于藏经阁兑换；月供每月初一由引擎发放，缺卯过多减半——你不得凭空让玩家获得宗门资源（灵石/丹药/功法）。(b) 外门弟子三千、资源只向强者倾斜：同门竞争、执事刁难、任务赏功都可以是剧情素材，但结算须走 fx 白名单。(c) 内门弟子不再点卯，其剧情转向内门事务与师承。
+27. 【远行 · 铁律】输入「旅途」非「无」时：玩家正在驿道远行途中，本回合场景必须在路途（驿道/山坳/渡口/客栈通铺），可写商队、劫道、路遇行人、荒野吐纳——绝不可写已抵达目的地，也不可照常过目的地或出发地镇上的日子；抵达由引擎跨日结算，脚程耗尽自会落脚该域枢纽。「旅途」为「无」且玩家境界已达灵阶时，可自然引出远行念头（四方路引、远方风闻），启程由引擎选项执行。四海需舟楫，海外剧情暂不开放。`;
 
   function chronicleSummary() {
     try {
@@ -172,6 +176,9 @@ const AI = (() => {
       可破境: checkBreakthrough(),
       功法: gongfuPrompt(),
       可求功法: gongfuLeadPrompt(),
+      当地人物: castPrompt(),
+      宗门: S.sect ? `${S.sect}${S.flags.neimen ? "（内门弟子）" : "（外门弟子）"}·贡献 ${S.sectGong || 0}·本月缺卯 ${S.flags.dianmaoMiss || 0} 次` : "无（未入宗门）",
+      旅途: S.travel ? `前往${REGIONS[S.travel.to].name}的驿道上（余 ${S.travel.left} 日脚程）——场景须在路途，不得写已抵达，抵达由引擎结算` : "无（未在远行）",
       历练日: (S.day - (S.lastTrainDay || 0)) >= 3 ? "是（三日之期已至：本回合必须安排一次提升实力的机缘，见规则14）" : "否",
       已有职业: (() => { const q = S.professions || {}; const ks = Object.keys(q); return ks.length ? ks.map(pid => { const P = (typeof PROFESSIONS !== "undefined") && PROFESSIONS[pid]; return P ? `${P.name}${q[pid].primary ? "(主)" : "(副)"}Lv${q[pid].lv}` : pid; }).join("、") : "无"; })(),
       伏笔计数: (S.flags.coincidence || 0) + "（幕后阴谋的碎屑：刻意巧合/古怪贵人/上古信物；够数时系统自现仙品任务）",
@@ -180,6 +187,14 @@ const AI = (() => {
       前情引子: (typeof S.echoLine === "string" && S.echoLine) || "无",
       上回合: (S.lastScene ? "剧情:" + S.lastScene + " ｜ 玩家选择:「" + (S.lastPick || "？") + "」" : "无（本回合为开局）"),
     });
+  }
+  function castPrompt() { // 世界角色谱：当前地域在场人物（设定集第五、六章名录）
+    try {
+      if (typeof castHere !== "function") return "无";
+      const list = castHere();
+      if (!list.length) return "无";
+      return list.map(c => `${c.name}(${c.title}·${c.kind === "boss" ? "一方强者" : c.kind === "neutral" ? "中立人物" : "隐藏角色"}·${REALM_NAMES[c.realm]}·${castMet(c.id) ? "已结识" : c.kind === "hidden" ? "只可远观留痕" : "未结识"}：${c.desc})`).join(" ｜ ");
+    } catch (e) { return "无"; }
   }
   function gongfuPrompt() { // 已持功法与熟练度（功法谱系见 data.js GONGFU）
     try {
@@ -223,7 +238,7 @@ const AI = (() => {
   }
 
   /* ---------- 校验 AI 输出 ---------- */
-  const FX_KEYS = ["money","stones","hp","sta","mp","hunger","cult","dao","points","attr","item","npc","flag","ach","card","luckCharm","combat","danger","special","coincidence","clearWood","skill","wx","check","success","fail","successText","failText","checkText","pet","drop","slay","newcard","fabao","wuqi","job"];
+  const FX_KEYS = ["money","stones","hp","sta","mp","hunger","cult","dao","points","attr","item","npc","flag","ach","card","luckCharm","combat","danger","special","coincidence","clearWood","skill","spell","wx","check","success","fail","successText","failText","checkText","pet","drop","slay","newcard","fabao","wuqi","job"];
   const CHECK_RE = /^[a-zA-Z0-9+\-*/().<>=!\s]{1,80}$/;
   function clampFx(src, depth) {
     const fx = {};
@@ -253,6 +268,11 @@ const AI = (() => {
       }
       if (k === "item") { const m = /^([a-zA-Z]+):(-?\d+)$/.exec(v); if (m) fx.item = v; continue; }
       if (k === "wx") { const m = /^(jin|mu|shui|huo|tu):([1-3])$/.exec(v); if (m) fx.wx = v; continue; }
+      if (k === "spell") { // 具名法术：仅放行名录内 id（data.js SPELLS），且境界须达修炼门槛（越阶授予不放行）
+        if (typeof v === "string" && /^sp_[a-z]+$/.test(v) && typeof SPELLS_BY_ID !== "undefined" && SPELLS_BY_ID[v]
+          && (typeof S === "undefined" || !S.realm || S.realm >= SPELLS_BY_ID[v].gate)) fx.spell = v;
+        continue;
+      }
       if (k === "npc" && v && typeof v === "object") {
         const n = {};
         for (const nk in v) if (/^[^"{}\[\]]{1,8}$/.test(nk)) n[nk] = Math.max(-12, Math.min(12, +v[nk] || 0)); // 缘分须从抉择中挣（01:08 补丁：单次≤12）
