@@ -591,6 +591,10 @@ const QU = (() => {
       let since = null, kind = null;
       if (isActive(id) || isFailed(id)) {
         if (d.type !== "main" && !isActive(id)) continue; // 支线失败后不再催
+        if (isFailed(id)) { // 主线失败后不再反复催（搁置计时随失败定格，否则会每两日循环弹窗）
+          // 唯一例外：宗门应试补考窗口开启（失败五日后、且非永久拒录）
+          if (id !== "mq_qingyan" || S.flags.qingyan || S.flags.qy_za_reject || S.day < ((S.flags.qy_failDay || 0) + 5)) continue;
+        }
         since = q.stamp[id] != null ? q.stamp[id] : S.day;
         kind = d.type;
         const lim = d.type === "main" ? MAIN_STALE : SIDE_STALE;

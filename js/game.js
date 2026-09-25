@@ -67,6 +67,7 @@ function newLife() {
     xinmo: META.world > 1 ? 10 : 0, // 心魔（0~100，半隐藏）：前世死亡记忆是它的养料
     quests: { active: [], done: [], failed: [], refused: {} },
     chronicle: [], lifeAch: [], // lifeAch：本世新刻成就（轮回结算用；千秋录本体每世清零，从新人生重新刻起）
+    staged: {}, storyQueue: [], // 分期独特 NPC 注册表与缘分剧情线队列
     stats: { trains: 0, meditates: 0, begs: 0, chops: 0, gambles: 0, spellCasts: 0, maxMoney: money },
   };
   S.wx = genWx(S.linggen); // 先天五行亲和：总和恒 100
@@ -1694,6 +1695,42 @@ function npcGender(name) {
   let h = 0; for (const ch of name) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
   return h % 10 < 4 ? "女" : "男";
 }
+/* ---------- 分期独特 NPC：入册（带初始缘分底色）与阈值剧情线 ---------- */
+function ensureStagedNpcs() { // 每夜调用：踏入对应地域/时期，风闻入册——善缘者初识即有好感，恶缘者初识即结梁子
+  if (!S || S.over || typeof STAGED_NPCS === "undefined") return;
+  S.staged = S.staged || {}; S.storyQueue = S.storyQueue || [];
+  const rg = regionOf(S.place || (S.iden && S.iden.place) || "");
+  for (const n of STAGED_NPCS) {
+    if (S.staged[n.id]) continue;
+    const volOk = n.vol === 1 ? (rg && rg.key === n.region) : (S.realm >= 7); // 卷一按当前地域入册；卷二踏入灵阶即入册
+    if (!volOk) continue;
+    S.staged[n.id] = { met: S.day, fired: [] };
+    if (typeof S.npc[n.name] !== "number") S.npc[n.name] = n.start; // 初识缘分：友者正、敌者负
+    log(`<span class="dim">【风闻 · ${n.title}】${n.intro}</span>`);
+    try { chronicle(`风闻「${n.name}」（${n.pers}）`, "npc"); } catch (e) {}
+  }
+}
+function stagedStoryScan() { // 每夜扫描：缘分跨阈值 → 剧情线排入队列（gmTurn 优先演出）
+  if (!S || S.over || !S.staged) return;
+  for (const n of STAGED_NPCS) {
+    const st = S.staged[n.id];
+    if (!st) continue;
+    const v = S.npc[n.name];
+    if (typeof v !== "number") continue;
+    for (const tier in (n.story || {})) {
+      if (st.fired.includes(tier)) continue;
+      const lim = +tier.slice(1);
+      const hit = tier[0] === "p" ? v >= lim : v <= -lim;
+      if (hit) { st.fired.push(tier); S.storyQueue.push({ id: n.id, tier }); }
+    }
+  }
+}
+function stagedStoryTurn(entry) { // 缘分剧情线回合：优先于 AI/离线推演占满本回合
+  const n = (typeof STAGED_BY_ID !== "undefined") && STAGED_BY_ID[entry.id];
+  const line = n && n.story && n.story[entry.tier];
+  if (!line) return { _src: "gm", _staged: true, scene: "……风过无痕，缘悭一面。", choices: [{ label: "继续赶路", hint: "", fx: {} }] };
+  return { _src: "gm", _staged: true, scene: `【${n.name} · ${n.title}】${line.scene}`, choices: line.choices.map(c => ({ label: c.label, hint: c.hint || "", fx: c.fx || {} })) };
+}
 function addNpc(name, v, opts) {
   opts = opts || {};
   // 【缘分日常 · 每日一次】日常行为（寒暄、帮工、馈赠一类）带来的善缘，同一 NPC 每日只结算一次；
@@ -2195,6 +2232,7 @@ function night() {
   if (S.hp <= 0) { die("冻饿而死。破庙的角落里，你安静地蜷缩成了一尊冰雕。", "冻毙"); return; }
   if (S.day >= 31 && !S.flags.freeRoam) { ending(); return; }
   autoSave(); // 每天清晨自动落笔
+  ensureStagedNpcs(); stagedStoryScan(); // 分期独特 NPC 入册 + 缘分阈值剧情线入队
   const foes = Object.entries(S.npc || {}).filter(([n, v]) => v <= -70); // 记恨以上：暗处等你失足
   if (foes.length && Math.random() < (hasSpecial("xianyan") ? 0.1 : 0.06)) { // 显眼包：仇家也更容易注意到你（6%→10%）
     const [fn, fv] = foes[Math.floor(Math.random() * foes.length)];
@@ -2219,7 +2257,8 @@ async function gmTurn() {
   $("#log").appendChild(loading);
   loading.scrollIntoView({ behavior: "smooth", block: "end" });
   let turn;
-  try { turn = await AI.narrate(); } catch (e) { turn = (AI.getCfg() && AI.getCfg().key) ? { _offline: true, _reason: e && e.message } : GM.compose(); }
+  if (S.storyQueue && S.storyQueue.length) turn = stagedStoryTurn(S.storyQueue.shift()); // 缘分剧情线：优先演出，占满本回合
+  else try { turn = await AI.narrate(); } catch (e) { turn = (AI.getCfg() && AI.getCfg().key) ? { _offline: true, _reason: e && e.message } : GM.compose(); }
   loading.remove();
   gmBusy = false;
   if (S.over) return;
@@ -2238,7 +2277,7 @@ async function gmTurn() {
     return;
   }
   // 填了 Key 但 AI 没接管：明确告知原因，不再静默降级（手动确认过离线的不再重复提示）
-  if (turn._src === "gm" && AI.getCfg() && AI.getCfg().key && !window.__allowOffline) {
+  if (turn._src === "gm" && !turn._staged && AI.getCfg() && AI.getCfg().key && !window.__allowOffline) {
     const why = AI.failInfo && AI.failInfo();
     toast("AI 未接管：" + (why ? esc(why) : "未知原因") + "，本回合由离线引擎推演");
   }
@@ -2555,18 +2594,33 @@ function trainingEvent() {
       con: `【历练 · 淬体】你凿开冰面，把身子埋进刺骨的河水数息再冲出。牙齿打着颤，血脉却像被打通了——寒气再侵不进半分。`,
     };
     gainAttr(pickAttr[0], amt);
-    if (hasGongfa) gainCult(2); // 未修功法者不懂吐纳炼化——打熬只长筋骨，不长修为
+    let bonus = "";
+    if (hasGongfa) {
+      if (S.realm < 7 && (S.skills["乱拳"] || 0) < (TECH_CAPS["乱拳"] || 100)) { // 凡阶：修为 +2 不入流（破境需 60 起），改夯实拳路
+        const prev = S.skills["乱拳"] || 0;
+        S.skills["乱拳"] = Math.min(TECH_CAPS["乱拳"] || 100, prev + 3);
+        checkSkillMilestone("乱拳");
+        bonus = `，「乱拳」熟练度 +${Math.round((S.skills["乱拳"] - prev) * 10) / 10}`;
+      } else { gainCult(2); bonus = "，修为 +2"; }
+    }
     log(scenes[pickAttr[0]], "dim");
-    sys(`【五维打熬】${pickAttr[1]} +${amt}${hasGongfa ? "，修为 +2" : ""}。`);
+    sys(`【五维打熬】${pickAttr[1]} +${amt}${bonus}。`);
     trainNote = { kind: "五维打熬", attr: pickAttr[0], attrName: pickAttr[1], amt };
   } else {
-    /* 武技磨砺 */
-    const inc = 3 + Math.floor(Math.random() * 4);
+    /* 武技磨砺（凡人主修之路：熟练提速，7~12/次） */
+    const inc = 7 + Math.floor(Math.random() * 6);
     S.skills["乱拳"] = Math.min(TECH_CAPS["乱拳"] || 100, (S.skills["乱拳"] || 0) + inc);
     gainAttr("str", 0.08);
-    if (hasGongfa) gainCult(2); // 未修功法者不懂吐纳炼化——磨砺只长拳路与力气，不长修为
+    let bonus3 = "";
+    if (hasGongfa) {
+      if (S.realm < 7 && (S.skills["乱拳"] || 0) < (TECH_CAPS["乱拳"] || 100)) { // 凡阶：修为 +2 不入流，改拳上加拳
+        const prev = S.skills["乱拳"] || 0;
+        S.skills["乱拳"] = Math.min(TECH_CAPS["乱拳"] || 100, prev + 2);
+        bonus3 = `，「乱拳」熟练度再加 +${Math.round((S.skills["乱拳"] - prev) * 10) / 10}`;
+      } else { gainCult(2); bonus3 = "，修为 +2"; }
+    }
     log(`【历练 · 武技】你对着庙后老槐树出拳一千次。树皮上的霜震落又凝上，拳面渗血，拳路却越来越直。`, "dim");
-    sys(`【武技磨砺】「乱拳」熟练度 +${inc}（${Math.round(S.skills["乱拳"])}/${TECH_CAPS["乱拳"] || 100}），力量 +0.08${hasGongfa ? "，修为 +2" : ""}。`);
+    sys(`【武技磨砺】「乱拳」熟练度 +${inc}（${Math.round(S.skills["乱拳"])}/${TECH_CAPS["乱拳"] || 100}），力量 +0.08${bonus3}。`);
     checkSkillMilestone("乱拳");
     trainNote = { kind: "武技磨砺", inc };
   }

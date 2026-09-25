@@ -1023,3 +1023,284 @@ const NPC_CHAR_FLAVOR = {
   "重情": "他记恩记得深。", "贪婪": "他心里拨的是利益算盘。", "偏激": "他认定的事，十头牛拉不回。",
   "豁达": "他不与人计较，但也看得通透。", "记仇": "他记仇记得牢——恩打折，怨加倍。", "洒脱": "他笑笑，不往心里去。",
 };
+
+/* ============ 分期独特 NPC（卷一·凡阶各域 ／ 卷二·灵阶） ============
+   每个地域/时期各有独特人物：善缘者结交、恶缘者结仇；缘分跨过阈值即解锁对应剧情线
+   （gmTurn 优先演出， Scene 与选项见 story）。friendly 线：p20 相识 / p40 相助 / p80 生死之交；
+   hostile 线：m40 冲突升级 / m70 杀局逼近。 */
+const STAGED_NPCS = [
+  /* ———— 卷一 · 东荒云州 ———— */
+  { id:"xinggu", vol:1, region:"yunzhou", name:"杏姑", pers:"重情", realm:0, el:"shui", start:10,
+    title:"城隍庙口茶棚的女博士", intro:"风闻：城隍庙口的茶棚换了新主人，是个爱笑的年轻寡妇，姓杏。她的茶比别家热三分。",
+    story:{
+      p20:{ scene:"杏姑认出你是常来蹭茶气的破庙客，多舀了半勺姜蓉进你的碗里：「大雪天的，喝口热的再赶路。」她的茶棚不大，却干净得像新雪。",
+        choices:[
+          { label:"帮她挑满一缸水", hint:"手脚勤快人，到哪儿都饿不死。", fx:{ npc:{ "杏姑":6 }, attr:{ con:0.06 }, item:"heimu:1" } },
+          { label:"把仅有的铜钱拍在桌上", hint:"穷归穷，不白受人热茶。", fx:{ npc:{ "杏姑":8 }, money:-3 } },
+        ]},
+      p40:{ scene:"杏姑的茶棚最近总有个醉汉赖着不走。她见你来，眼里亮了一下：「小哥，替我坐坐堂？」——她信你比信城里的差役多。",
+        choices:[
+          { label:"替她坐镇茶棚，赶走强讨钱的", hint:"量力而行：那醉汉背后或有帮衬。", fx:{ npc:{ "杏姑":10 }, dao:1, flag:"xinggu_guard", danger:"fleeDog" } },
+          { label:"教她自己应付的门道", hint:"授人以渔。", fx:{ npc:{ "杏姑":8 }, attr:{ int:0.08 } } },
+        ]},
+      p80:{ scene:"夜里茶棚打烊，杏姑把门板上好，从灶灰里扒出个小布包推给你：「我男人留下的——他说，交给敢为陌生人挑水的人。」布包里是一枚温润的玉扣。",
+        choices:[
+          { label:"收下。生死之交，不言谢。", hint:"缘分至重，系统将其刻进命格。", fx:{ npc:{ "杏姑":10 }, luckCharm:2, points:30, flag:"bond_xinggu" } },
+          { label:"推辞，让她留着念想", hint:"她怔了怔，笑里有点湿。", fx:{ npc:{ "杏姑":5 }, dao:3 } },
+        ]},
+    }},
+  { id:"laiwu", vol:1, region:"yunzhou", name:"癞五", pers:"偏激", realm:0, el:"tu", start:-15,
+    title:"城南一霸的泼皮头目", intro:"风闻：城南癞五收「过路钱」收到破庙来了。他背后站着林家的管事。",
+    story:{
+      m40:{ scene:"癞五带人堵了你三次，这次把柴刀架在你讨饭的碗沿上：「要么交钱，要么交腿。」他的眼睛里有种不讲理的狠。",
+        choices:[
+          { label:"破财免灾", hint:"好汉不吃眼前亏。", fx:{ money:-40, npc:{ "癞五":6 } } },
+          { label:"掀了他的刀", hint:"硬顶到底——他会记你一辈子。", fx:{ hp:-6, npc:{ "癞五":-15 }, attr:{ str:0.1 } } },
+        ]},
+      m70:{ scene:"你刚落脚，屋顶就落下个黑影——癞五买通了城外的闲汉，价码是你的两条腿。他这次是动了真火。",
+        choices:[
+          { label:"连夜遁出城去", hint:"忍一时，断尾求生。", fx:{ hp:-4, hunger:10, cult:-3, npc:{ "癞五":5 } } },
+          { label:"放话：我等他亲自来", hint:"道心不动，仇怨加倍。", fx:{ dao:2, npc:{ "癞五":-10 } } },
+        ]},
+    }},
+  /* ———— 卷一 · 北原 ———— */
+  { id:"wuen", vol:1, region:"beiyuan", name:"乌恩", pers:"豁达", realm:1, el:"mu", start:10,
+    title:"极夜冰原的老猎户", intro:"风闻：灰狼部外的雪林里住着个老猎户乌恩，他的篝火从不为狼灭，也不为客人灭。",
+    story:{
+      p20:{ scene:"你在雪窝里冻得神志不清，是乌恩把你拖回他的兽皮棚。他往火里丢了块油脂：「北原不收冻死鬼。喝。」",
+        choices:[
+          { label:"替他缝补破了的皮裘", hint:"针脚换命，不亏。", fx:{ npc:{ "乌恩":6 }, attr:{ con:0.06 }, item:"heimu:2" } },
+          { label:"替他守半夜的火", hint:"老人的耳朵不如从前了。", fx:{ npc:{ "乌恩":8 }, attr:{ int:0.05 } } },
+        ]},
+      p40:{ scene:"乌恩的猎犬伤在冰缝里了，他蹲在旁边抽了一宿的烟斗。「它跟我二十年了。」——他这样的人，不开口求人。",
+        choices:[
+          { label:"下冰缝救犬", hint:"险地。体质定成败。", fx:{ npc:{ "乌恩":10 }, flag:"wuen_dog", danger:"deep" } },
+          { label:"进山寻替代的草药", hint:"稳路，费脚力。", fx:{ npc:{ "乌恩":7 }, attr:{ agi:0.08 }, sta:-4 } },
+        ]},
+      p80:{ scene:"开春前夜，乌恩把跟了他半辈子的角弓挂在你肩上：「我老了，它不认老。你带着它——比跟着我强。」他转身回棚，再没出来送。",
+        choices:[
+          { label:"受弓。北原的规矩：长辈赐，不敢辞。", hint:"生死之交，器重于山。", fx:{ npc:{ "乌恩":10 }, points:30, flag:"bond_wuen", wuqi:"角弓|10|传承" } },
+          { label:"陪他喝完最后一袋奶酒", hint:"有些告别不需要物件。", fx:{ npc:{ "乌恩":5 }, dao:3, hp:3 } },
+        ]},
+    }},
+  { id:"huoya", vol:1, region:"beiyuan", name:"豁牙", pers:"贪婪", realm:1, el:"shui", start:-15,
+    title:"白夜里出没的雪盗", intro:"风闻：雪盗豁牙专劫病倒的旅人——在他看来，冻僵的手指是最好摘的钱袋。",
+    story:{
+      m40:{ scene:"豁牙的弯刀又架到你脖子上了，这次他笑得露出豁口：「上回让你跑了。这一回，价翻倍。」",
+        choices:[
+          { label:"交出半数铜钱", hint:"买命钱，先记账。", fx:{ money:-60, npc:{ "豁牙":5 } } },
+          { label:"把滚烫的炭火泼过去", hint:"北原人教你的。", fx:{ hp:-5, npc:{ "豁牙":-15 }, attr:{ str:0.08 } } },
+        ]},
+      m70:{ scene:"你的雪橇辙印被人一路缀着——豁牙叫上了整个马队。白夜里，狼嚎声都避着他们走。",
+        choices:[
+          { label:"弃货遁入冰雾", hint:"留得命在。", fx:{ money:-50, hp:-4, npc:{ "豁牙":5 } } },
+          { label:"在冰湖上设下假踪", hint:"智斗雪盗。", fx:{ npc:{ "豁牙":-5 }, attr:{ int:0.1 }, cult:2 } },
+        ]},
+    }},
+  /* ———— 卷一 · 中州 ———— */
+  { id:"shenmo", vol:1, region:"zhongzhou", name:"沈墨", pers:"洒脱", realm:2, el:"shui", start:10,
+    title:"大城书铺的女掌柜", intro:"风闻：城南「墨斋」的沈掌柜收旧书不论贵贱，却总在闭店后点灯抄一册没人买的山水志。",
+    story:{
+      p20:{ scene:"沈墨翻着你拿去典当的半册残书，忽然笑出声：「这抄书人的笔误，和我爹一模一样。」她多给了三倍价钱。",
+        choices:[
+          { label:"用多出的钱赎两册拳谱残页", hint:"开卷有益。", fx:{ skill:"乱拳:6", npc:{ "沈墨":6 } } },
+          { label:"请她讲讲那册山水志", hint:"她眼睛一亮。", fx:{ npc:{ "沈墨":8 }, attr:{ int:0.08 } } },
+        ]},
+      p40:{ scene:"墨斋夜里遭了「翻书贼」——不偷钱，专撕内页。沈墨抱着残书直叹气：「书得罪谁了？」你看出那撕法是有讲究的。",
+        choices:[
+          { label:"蹲守三夜捉贼", hint:"耗神，但会有答案。", fx:{ npc:{ "沈墨":10 }, flag:"shenmo_thief", danger:"fleeDog" } },
+          { label:"替她补抄残页", hint:"慢功夫，暖人心。", fx:{ npc:{ "沈墨":8 }, attr:{ int:0.1 }, skill:"读书:5" } },
+        ]},
+      p80:{ scene:"沈墨把抄了十年的那册山水志塞进你手里：「夹页里是我爹画的灵脉草图——读书人用不上，你要走的路用得上。」她笑得像卸下了一副担子。",
+        choices:[
+          { label:"收下灵脉图", hint:"生死之交，所赠非轻。", fx:{ npc:{ "沈墨":10 }, wx:"shui:4", points:30, flag:"bond_shenmo" } },
+          { label:"只在店里替她抄一冬的书", hint:"她以墨会友。", fx:{ npc:{ "沈墨":5 }, attr:{ int:0.2 }, dao:2 } },
+        ]},
+    }},
+  { id:"gunzhang", vol:1, region:"zhongzhou", name:"棍儿张", pers:"记仇", realm:2, el:"jin", start:-15,
+    title:"城南地痞的头目", intro:"风闻：棍儿张的棍下记着你——你在脚店前挡了他收保护费的路。他记仇，记一辈子。",
+    story:{
+      m40:{ scene:"棍儿张的人把你的铺盖从通铺里扔了出来，他抱着棍坐在门槛上笑：「中州地界，骨头比铺盖硬才行。」",
+        choices:[
+          { label:"忍下这口气，另寻住处", hint:"退一步，记一笔。", fx:{ money:-30, npc:{ "棍儿张":5 } } },
+          { label:"当众折断他的棍", hint:"血性。他这辈子都不会忘你。", fx:{ hp:-6, npc:{ "棍儿张":-15 }, dao:1 } },
+        ]},
+      m70:{ scene:"你工钱还没焐热，巷口就转出三条棍影——棍儿张这次出了双倍的价。帝畿的规矩：欠账不行，欠仇更不行。",
+        choices:[
+          { label:"报官", hint:"中州的差役，只要钱到位。", fx:{ money:-50, npc:{ "棍儿张":-10 } } },
+          { label:"以棍还棍，夜里寻他", hint:"一战了恩怨。", fx:{ hp:-8, npc:{ "棍儿张":-10 }, attr:{ str:0.15 } } },
+        ]},
+    }},
+  /* ———— 卷一 · 西漠 ———— */
+  { id:"xiaodeng", vol:1, region:"ximo", name:"小灯", pers:"重情", realm:1, el:"huo", start:10,
+    title:"枯泉寺挑水的小沙弥", intro:"风闻：小寺的沙弥小灯，把化缘来的最后半袋米熬成了粥，施给沙暴里逃出来的人——寺里的师父骂他，他笑笑。",
+    story:{
+      p20:{ scene:"你在沙暴里迷了路，是小灯提着一盏防风灯把你领回寺前。灯苗只有豆大，却怎么吹都不灭。",
+        choices:[
+          { label:"替寺里挑满三日的水", hint:"滴水之恩。", fx:{ npc:{ "小灯":6 }, attr:{ con:0.07 }, sta:-3 } },
+          { label:"把怀里的干粮分他一半", hint:"他都舍不得吃。", fx:{ npc:{ "小灯":8 }, hunger:-8, dao:1 } },
+        ]},
+      p40:{ scene:"小灯偷偷告诉你：寺后的石窟里夜里有光。「师父说不能看。」他的眼睛在黑暗里亮得吓人。",
+        choices:[
+          { label:"陪他去看个究竟", hint:"好奇害死猫，也渡有缘人。", fx:{ npc:{ "小灯":10 }, flag:"xiaodeng_cave", danger:"deep" } },
+          { label:"劝住他，给他讲佛国的故事", hint:"把光留在故事里。", fx:{ npc:{ "小灯":8 }, attr:{ int:0.08 }, dao:2 } },
+        ]},
+      p80:{ scene:"分别那日，小灯把那盏防风灯塞给你：「灯给你——你走的路，风比我这儿大。」他合十，念了声佛。灯芯里竟有一丝暖意，怎么也吹不灭。",
+        choices:[
+          { label:"收下不灭灯", hint:"生死之交，佛前作证。", fx:{ npc:{ "小灯":10 }, points:30, flag:"bond_xiaodeng", luckCharm:3 } },
+          { label:"把灯留在佛前，磕了三个头", hint:"礼不在物，在心。", fx:{ npc:{ "小灯":5 }, dao:5 } },
+        ]},
+    }},
+  { id:"yaozi", vol:1, region:"ximo", name:"鹞子", pers:"偏激", realm:2, el:"huo", start:-15,
+    title:"沙盗马队的头目", intro:"风闻：沙盗鹞子的马队收「买路钱」从不讲价——他说沙海的路是他拿命蹚出来的。",
+    story:{
+      m40:{ scene:"鹞子的马队把你围在残丘上，他拨转马头绕你三圈：「上回你让我在弟兄们面前丢了脸。沙漠里，脸比水贵。」",
+        choices:[
+          { label:"交出买路钱双倍", hint:"破财保脸。", fx:{ money:-50, npc:{ "鹞子":5 } } },
+          { label:"指着他身后的沙暴冷笑", hint:"沙漠会替你说话。", fx:{ hp:-5, npc:{ "鹞子":-15 }, attr:{ int:0.08 } } },
+        ]},
+      m70:{ scene:"商队里的人看你的眼神变了——鹞子放了话：谁载你，谁沉沙。西漠的路，一夜之间都对你关上了。",
+        choices:[
+          { label:"孤身走沙海，不走商道", hint:"最险的路，没人拦。", fx:{ hp:-6, hunger:8, attr:{ con:0.12 } } },
+          { label:"备一份重礼托高僧说和", hint:"佛面还是要给的。", fx:{ money:-80, npc:{ "鹞子":10 } } },
+        ]},
+    }},
+  /* ———— 卷一 · 南岭 ———— */
+  { id:"amua", vol:1, region:"nanling", name:"阿苜", pers:"重情", realm:1, el:"mu", start:10,
+    title:"巫寨里采药的苗女", intro:"风闻：巫寨的阿苜识得十万大山每一味草药，她的蛊不为害人——只为给寨里的孩子镇惊。",
+    story:{
+      p20:{ scene:"瘴雨里你栽倒在溪边，醒来时嘴里嚼着苦涩的草汁。阿苜蹲在一边捣药：「命大。再晚半个时辰，瘴气就进脉了。」",
+        choices:[
+          { label:"帮她背三日药篓", hint:"山里人认脚力。", fx:{ npc:{ "阿苜":6 }, attr:{ con:0.06 }, item:"quzhangcao:2" } },
+          { label:"学认三味驱瘴草", hint:"技多不压身。", fx:{ npc:{ "阿苜":8 }, skill:"读书:3" } },
+        ]},
+      p40:{ scene:"阿苜的蛊铃丢了——那是她娘留下的。她不说，但你看见她整夜在溪边翻石头。",
+        choices:[
+          { label:"下溪摸了三夜，找回蛊铃", hint:"溪里有东西在看你。", fx:{ npc:{ "阿苜":10 }, flag:"amua_bell", danger:"deep" } },
+          { label:"用山藤仿一只新铃", hint:"心意到了。", fx:{ npc:{ "阿苜":7 }, attr:{ int:0.06 }, dao:1 } },
+        ]},
+      p80:{ scene:"阿苜把一只小竹筒系上你的手腕：「情蛊。寨里的规矩——给过心的人，虫认得。」她红着脸跑开了。腕上的竹筒温热，虫鸣细细。",
+        choices:[
+          { label:"收下情蛊", hint:"生死之交，蛊为证。", fx:{ npc:{ "阿苜":10 }, points:30, flag:"bond_amua", attr:{ con:0.3 } } },
+          { label:"郑重回礼，许她一个踏实的诺", hint:"不负，不欺。", fx:{ npc:{ "阿苜":5 }, dao:4 } },
+        ]},
+    }},
+  { id:"shanxiaoke", vol:1, region:"nanling", name:"山魈客", pers:"贪婪", realm:3, el:"mu", start:-15,
+    title:"占着古栈道收命的散修", intro:"风闻：山魈客占着出山的古栈道，过路的散修要么留下买命财，要么留下命——妖族都懒得管他。",
+    story:{
+      m40:{ scene:"山魈客倒挂在栈道的古藤上，冲你咧嘴一笑：「又是你。你这条命，在我账上已经值一株灵草了。」",
+        choices:[
+          { label:"交出灵材买路", hint:"他认货不认人。", fx:{ money:-40, npc:{ "山魈客":5 } } },
+          { label:"折了他的藤", hint:"栈道之下是万丈深渊。", fx:{ hp:-6, npc:{ "山魈客":-15 }, attr:{ agi:0.1 } } },
+        ]},
+      m70:{ scene:"你歇脚的寨子半夜起了火——山魈客放的。他在火光外的瘴雾里笑着喊：「山里的规矩，比城里的刀快！」",
+        choices:[
+          { label:"连夜攀崖绕出大山", hint:"险路保命。", fx:{ hp:-5, hunger:8, attr:{ agi:0.12 } } },
+          { label:"请巫寨出面,按山规了断", hint:"寨老的规矩,他不敢破。", fx:{ money:-60, npc:{ "山魈客":-20 }, flag:"shanxiao_judged" } },
+        ]},
+    }},
+  /* ———— 卷一 · 四海 ———— */
+  { id:"xiniang", vol:1, region:"sihai", name:"汐娘", pers:"豁达", realm:1, el:"shui", start:10,
+    title:"埠头补网的渔女", intro:"风闻：汐娘的男人死在海税上，她一个人撑船补网，见谁都笑——只是再不肯交「平安钱」。",
+    story:{
+      p20:{ scene:"风浪里你的舢板翻了，是汐娘的渔网把你捞上来的。她拧着头发上的水笑：「海收人，不挑日子。多活一天是一天。」",
+        choices:[
+          { label:"帮她补三日的网", hint:"手上的活计，心上的交代。", fx:{ npc:{ "汐娘":6 }, attr:{ agi:0.06 }, item:"heimu:2" } },
+          { label:"听她讲一夜海上的事", hint:"她的故事比酒暖。", fx:{ npc:{ "汐娘":8 }, attr:{ int:0.06 } } },
+        ]},
+      p40:{ scene:"渔霸的人来收「平安钱」，汐娘抄起撑篙挡在船头：「我男人的命，就是买了平安丢的。」对方有三条船。",
+        choices:[
+          { label:"和她并肩站着", hint:"四对三，气势不输。", fx:{ npc:{ "汐娘":10 }, hp:-4, flag:"xiniang_stand", dao:2 } },
+          { label:"去埠头喊人来评理", hint:"潮间埠头，理比拳头硬。", fx:{ npc:{ "汐娘":7 }, attr:{ int:0.08 } } },
+        ]},
+      p80:{ scene:"汐娘把你拉到船尾，掀开舱板——里面是一套她男人留下的分水刺和一张手绘的海图。「他没能走完的海，你替他走。别回来说你冷了，我不收尸。」她笑着，眼睛却是红的。",
+        choices:[
+          { label:"收下分水刺与海图", hint:"生死之交，所托甚重。", fx:{ npc:{ "汐娘":10 }, points:30, flag:"bond_xiniang", wuqi:"分水刺|8|遗物" } },
+          { label:"立誓替她男人讨回海税的债", hint:"一诺出海。", fx:{ npc:{ "汐娘":5 }, dao:4, flag:"xiniang_oath" } },
+        ]},
+    }},
+  { id:"heilu", vol:1, region:"sihai", name:"黑橹", pers:"贪婪", realm:2, el:"shui", start:-15,
+    title:"埠头收海税的渔霸", intro:"风闻：黑橹的橹下压着半条埠头——海税、码头、干货行，样样抽头。他看谁都是欠他钱的。",
+    story:{
+      m40:{ scene:"黑橹的人把你拦在栈桥上，皮笑肉不笑：「生面孔。泊船钱、上岸钱、喘气钱——三样，一样不能少。」",
+        choices:[
+          { label:"交了这三样冤枉钱", hint:"忍字诀。", fx:{ money:-45, npc:{ "黑橹":5 } } },
+          { label:"当众摔了他的算盘", hint:"埠头的人都会记住这一天。", fx:{ hp:-5, npc:{ "黑橹":-15 }, dao:1 } },
+        ]},
+      m70:{ scene:"你的船底被人凿了个洞——黑橹的手笔。他站在码头上喊：「这海里，我说了算！」",
+        choices:[
+          { label:"泅水夜渡,弃船上岸", hint:"船没了,人还在。", fx:{ hp:-5, hunger:6, money:-30 } },
+          { label:"搜集他吞税的把柄,递到听潮坞", hint:"坞主正愁没有由头动他。", fx:{ money:-20, npc:{ "黑橹":-20 }, flag:"heilu_evidence", dao:2 } },
+        ]},
+    }},
+  /* ———— 卷二 · 灵阶（五域皆遇） ———— */
+  { id:"xiewuyi", vol:2, region:null, name:"谢无衣", pers:"洒脱", realm:9, el:"jin", start:10,
+    title:"无门无派的散修剑客", intro:"风闻：灵阶散修里有个谢无衣，剑快，人更快意。他不拜宗门，说「剑就是门」。",
+    story:{
+      p20:{ scene:"酒楼里有人起哄要看散修的笑话，谢无衣把剑往桌上一放，拉你坐下同饮：「他们看戏，我们喝酒——同是天涯无门人。」",
+        choices:[
+          { label:"与他论剑三日", hint:"剑理即道理。", fx:{ npc:{ "谢无衣":6 }, skill:"乱拳:8", cult:4 } },
+          { label:"把酒言欢,不论文武", hint:"酒逢知己。", fx:{ npc:{ "谢无衣":8 }, dao:2, hp:4 } },
+        ]},
+      p40:{ scene:"谢无衣惹上了器火一脉的追讨——他打赌赢走了人家一柄灵剑。对方三个同阶堵在他落脚的山神庙。",
+        choices:[
+          { label:"与他并肩应局", hint:"三对二,义气当先。", fx:{ npc:{ "谢无衣":10 }, hp:-8, flag:"xiewuyi_sword", attr:{ str:0.15 } } },
+          { label:"出面斡旋,以物易物", hint:"破财平事。", fx:{ money:-80, npc:{ "谢无衣":7 }, attr:{ int:0.1 } } },
+        ]},
+      p80:{ scene:"谢无衣要远行了——去追一道他追了十年的剑光。临别他把那柄赢来的灵剑抛给你：「剑随人,人随缘。我的缘到头了,你的才开头。」他大笑出门,再没回头。",
+        choices:[
+          { label:"收下灵剑", hint:"生死之交,剑意长存。", fx:{ npc:{ "谢无衣":10 }, points:50, flag:"bond_xiewuyi", wuqi:"无衣剑|14|灵器" } },
+          { label:"只送他一程,剑让他带走", hint:"各修各的剑。", fx:{ npc:{ "谢无衣":5 }, dao:5, cult:6 } },
+        ]},
+    }},
+  { id:"wenniang", vol:2, region:null, name:"温娘子", pers:"贪婪", realm:8, el:"mu", start:5,
+    title:"游方四海的药商", intro:"风闻：温娘子的货担里什么都有——丹药、消息、来路不明的玉简。她的规矩：价高者得,概不赊欠。",
+    story:{
+      p20:{ scene:"温娘子眯着眼打量你半晌,忽然笑了：「客官身上有股子穷酸气,倒是合我眼缘。」她从担底摸出个小瓷瓶。",
+        choices:[
+          { label:"花灵石买她的养神丹", hint:"贵,但真货。", fx:{ money:-60, item:"juqiDan:1", npc:{ "温娘子":4 } } },
+          { label:"给她讲讲路上的见闻", hint:"消息也是钱。", fx:{ npc:{ "温娘子":8 }, cult:3 } },
+        ]},
+      p40:{ scene:"温娘子压低嗓子：「有桩买卖——护送我的货担过黑风峡,酬劳是一卷古籍玉简。」她的眼睛在算盘上转。",
+        choices:[
+          { label:"接下这桩买卖", hint:"富贵险中求。", fx:{ npc:{ "温娘子":8 }, flag:"wenniang_escort", danger:"deep" } },
+          { label:"替她另寻可靠的镖师", hint:"赚个介绍钱,不沾险。", fx:{ money:40, npc:{ "温娘子":5 }, attr:{ int:0.06 } } },
+        ]},
+      p80:{ scene:"温娘子把账本一合,头一次没谈钱：「跑江湖这么多年,你是唯一一个没在我账上亏过心的人。」她把一本手抄的丹方推过来——上面是她三十年攒下的真东西。",
+        choices:[
+          { label:"收下丹方手抄", hint:"市侩人的真心,最贵。", fx:{ npc:{ "温娘子":10 }, points:40, flag:"bond_wenniang", skill:"读书:10" } },
+          { label:"与她合伙开个丹铺", hint:"生意长久做。", fx:{ npc:{ "温娘子":5 }, money:120, flag:"wenniang_shop" } },
+        ]},
+    }},
+  { id:"peijue", vol:2, region:null, name:"裴绝", pers:"记仇", realm:10, el:"jin", start:-20,
+    title:"夺宝修士,灵阶狠角色", intro:"风闻：裴绝的成名之路是踩出来的——每个踩过的人,他都记得。你身上有件他想要的东西。",
+    story:{
+      m40:{ scene:"裴绝拦在云路上,笑得温和：「道友那件东西,借我看看?」他身后的飞剑已经出了半鞘——他不是来借的。",
+        choices:[
+          { label:"弃财保命,舍了那件物件", hint:"他得了想要的,暂时会退。", fx:{ money:-100, points:-20, npc:{ "裴绝":5 } } },
+          { label:"祭出底牌与他死磕", hint:"灵阶之争,不死不休的起点。", fx:{ hp:-12, npc:{ "裴绝":-15 }, attr:{ str:0.2 }, cult:4 } },
+        ]},
+      m70:{ scene:"你闭关的山头被人用阵法围了——裴绝请了帮手。他在阵外朗声笑道：「道友,裴某借东西,从来借到手为止。」",
+        choices:[
+          { label:"闭死关,以静制动", hint:"阵有尽时,耐心无价。", fx:{ hp:-6, cult:-5, npc:{ "裴绝":-5 }, dao:3 } },
+          { label:"连夜破阵遁走", hint:"留得青山。", fx:{ hp:-10, hunger:8, attr:{ agi:0.15 } } },
+        ]},
+    }},
+  { id:"fengjian", vol:2, region:null, name:"疯剑客", pers:"偏激", realm:11, el:"huo", start:0,
+    title:"无名无姓的疯剑客", intro:"风闻：灵阶有个疯剑客,逢人便问「你的剑呢」。答得上来,他请你喝酒;答不上来,他让你出剑。",
+    story:{
+      m40:{ scene:"疯剑客抱着剑蹲在你的去路上,眼睛血红：「他们都说你的剑快。让我看看——不然,你就留下用剑的手。」",
+        choices:[
+          { label:"与他全力一战", hint:"疯子敬疯子。", fx:{ hp:-10, npc:{ "疯剑客":-10 }, attr:{ str:0.2 }, flag:"fengjian_dueled" } },
+          { label:"以「剑在何处」反问到底", hint:"陪他疯一场,论剑不论胜负。", fx:{ npc:{ "疯剑客":10 }, attr:{ int:0.15 }, dao:2 } },
+        ]},
+      p60:{ scene:"疯剑客追了你三座城,最后在山巅坐下了,忽然大笑：「你的剑,不在手上——在骨头里。我找了十年,总算找到一个。」他把酒葫芦抛给你。",
+        choices:[
+          { label:"与他结为酒友", hint:"亦敌亦友,惺惺相惜。", fx:{ npc:{ "疯剑客":15 }, points:40, flag:"bond_fengjian", luckCharm:2 } },
+          { label:"劝他放下剑,回人间去", hint:"疯子的病,疯话医。", fx:{ npc:{ "疯剑客":5 }, dao:5, flag:"fengjian_rest" } },
+        ]},
+    }},
+];
+const STAGED_BY_ID = {}; for (const n of STAGED_NPCS) STAGED_BY_ID[n.id] = n;
+/* 性格底色随 NPC 入册（缘分/求饶/传播等系统统一按此性格结算） */
+for (const n of STAGED_NPCS) NPC_CHAR[n.name] = n.pers;
