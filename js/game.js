@@ -2373,6 +2373,8 @@ async function resolveFx(fx, label) {
         if (S.over) return;
         if (res === "win" || res === "cheated") {
           S.flags[m[3]] = 1;
+          const BA = { bossVol1: "bossSiyi", bossVol2: "bossLuocha", bossVol3: "bossFengzun", bossVol4: "bossTiandao" }; // 讨伐入千秋录
+          try { if (BA[m[3]]) gainAch(BA[m[3]]); } catch (e) {}
           const out2 = applyCore(fx.success || {});
           if (fx.successText) log(fx.successText, "good");
           try { chronicle("讨伐章节 Boss：" + m[1].trim(), "quest"); } catch (e) {}

@@ -339,6 +339,11 @@ const ACHIEVEMENTS = {
   /* —— 禁术成就（设定集·千秋录：与虎谋皮 / 倾天一击） —— */
   hupi:     { name:"与虎谋皮",   tier:2, desc:"首次使用献祭禁术且生还", reward:"称号「刀口舔蜜」：禁术【虚弱】 -1 日" },
   qingtian: { name:"倾天一击",   tier:3, desc:"以禁术击杀高于自己一个小境以上的对手", reward:"万象点 ×500，称号「孤注」：禁术威力 +10%" },
+  /* —— Boss 讨伐（章节 Boss 战；随魂封存，死亡不回收） —— */
+  bossSiyi:    { name:"灭门者授首", tier:2, desc:"讨伐章节 Boss「皂衣执令」——灭门之仇，血债血偿", reward:"万象点 ×80" },
+  bossLuocha:  { name:"罗刹让路",   tier:2, desc:"讨伐章节 Boss「血河教少主」——夺信因果，就此两讫", reward:"万象点 ×120" },
+  bossFengzun: { name:"疯尊解脱",   tier:3, desc:"讨伐章节 Boss「问薪疯尊」——替天下人斩断一只爪", reward:"万象点 ×180" },
+  bossTiandao: { name:"弑天者",     tier:4, desc:"讨伐终 Boss「天道化身」——古往今来，第一个让它说不出口的人", reward:"万象点 ×500，轮回馈赠：初始气运 +1", secret:true },
   /* —— 结局名录（第十一章 · 五结局；终局场景结算，随魂封存，死亡不回收） —— */
   endShoujie: { name:"守界人",     tier:3, desc:"一般结局：斩了吞世者，接过镇守归墟的担子。天还是那个天。", reward:"轮回馈赠：初始万象点 +150" },
   endLuding:  { name:"炉鼎",       tier:3, desc:"坏结局：赢了吞世者，死在天道温柔的「恭喜」里。最坏的结局，离最好只差一步。", reward:"轮回馈赠：伴生残影必得", secret:true },
