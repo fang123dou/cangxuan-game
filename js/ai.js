@@ -84,7 +84,7 @@ const AI = (() => {
 {"scene":"场景描写（80~160字，第二人称，有画面感，符合修仙世界与当前季节/天气）","choices":[{"label":"选项（≤14字）","hint":"提示（≤20字，可含概率/代价）","fx":{...}}, ...]}
 2. choices 给 3~5 个，其中一个可以是修炼/谋生类的日常选项。不要给「查看面板」类元选项。
 3. fx 字段只允许这些键（都是可选，数值要克制）：
-   money(铜钱±≤80) stones(灵石±≤2) hp(气血±) sta(体力±≤5) mp(法力±) hunger(饱食+≤45) cult(修为±≤25，无功法时无效) dao(道心±≤3) points(万象点±≤50) attr({str|agi|int|con}±≤0.15) item("id:数量"，id∈wood,heimu,mianao,chaidao,jiansui,quanpu,yinqi,juqiDan,ludian,lianchui；功法授予用「可求功法」字段给出的功法 id）
+   money(铜钱±≤80) stones(灵石±≤2) hp(气血±) sta(体力±≤5) mp(法力±) hunger(饱食+≤45) cult(修为±≤25，无功法时无效) dao(道心±≤3) points(万象点±≤50) attr({str|agi|int|con}±≤0.15) item("id:数量"，id∈wood,heimu,jiangniu,babao,linggu,baiwei,mianao,chaidao,jiansui,quanpu,yinqi,juqiDan,ludian,lianchui；功法授予用「可求功法」字段给出的功法 id）
    npc({名字:缘分±≤12}) flag(字符串) ach(成就id，或"名|品级0~4|描述|奖励"生成新成就) card(1=天降随机词条) luckCharm(1~2) wx("jin|mu|shui|huo|tu:1~3"，仅天材地宝/洞天机缘可给)
    spell(sp_标识，习得具名法术；名录：1阶 sp_gengjin/sp_qingteng/sp_shuijian/sp_huoqiu/sp_dici/sp_jinzhen/sp_chansi/sp_shuidan/sp_huomiao/sp_feishi；2阶（须灵阶以上剧情）sp_taibai/sp_yimu/sp_xuanbing/sp_lihuo/sp_bengshan；灵根专属（唯对应灵根剧情可授，引擎强制）sp_wuxingci/sp_wuchao/sp_palm/sp_jianzhi/sp_bingfeng/sp_fengren/sp_duzhang/sp_yingxi；禁术（代价惨重，授予前剧情须明示代价）sp_jin_ranfa/sp_jin_xianji/sp_jin_ranyun/sp_jin_tonggui)
    combat("敌人名:战力") danger("pickpocket|trace|deep|caught|fleeDog|catchThief") pet(名字) drop(材料名) slay(名字)
