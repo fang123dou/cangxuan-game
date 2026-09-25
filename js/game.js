@@ -3009,17 +3009,17 @@ function openEat() {
     { label: "再扛扛", hint: "挨饿抗冻也是一种磨炼。", free: true, fn: () => { gainAttr("con", 0.05); log("你灌了半瓢凉水，把裤腰带又勒紧一格。", "dim"); advanceSlot(); } },
   ]);
 }
-const FOOD_DEFS = [ // 可食之物统一账：自动进食与行囊点吃共用它
-  { id: "heimu", food: 22, hot: false, text: "你啃完一块黑馍，又冷又硬，但胃里有了底。" },
-  { id: "hotnoodle", food: 40, hot: true, text: "汤面下肚，你幸福得眯起眼。" },
-  { id: "jiangniu", food: 60, hot: true, text: "酱牛肉咸香韧口，你撕着吃完一整包。" },
-  { id: "babao", food: 78, hot: false, text: "八宝干粮料足耐嚼，一块顶半天。" },
-  { id: "linggu", food: 92, hot: true, text: "灵谷饭入口生香，暖意顺着四肢百骸散开。" },
-  { id: "baiwei", food: 110, hot: true, text: "百味羹鲜掉眉毛——你把碗底舔得干干净净。" },
+const FOOD_DEFS = [ // 可食之物统一账：自动进食与行囊点吃共用它；price=商铺基准价，自动进食只吃 30 文以下常备粮——灵谷饭/百味羹是应急囤粮，绝不自动动
+  { id: "heimu", food: 22, hot: false, price: 2, text: "你啃完一块黑馍，又冷又硬，但胃里有了底。" },
+  { id: "hotnoodle", food: 40, hot: true, price: 5, text: "汤面下肚，你幸福得眯起眼。" },
+  { id: "jiangniu", food: 60, hot: true, price: 15, text: "酱牛肉咸香韧口，你撕着吃完一整包。" },
+  { id: "babao", food: 78, hot: false, price: 28, text: "八宝干粮料足耐嚼，一块顶半天。" },
+  { id: "linggu", food: 92, hot: true, price: 60, text: "灵谷饭入口生香，暖意顺着四肢百骸散开。" },
+  { id: "baiwei", food: 110, hot: true, price: 99, text: "百味羹鲜掉眉毛——你把碗底舔得干干净净。" },
 ];
 function autoEatIfHungry() { // 低饱食自动进食：饿过六分，摸出行囊里最好的一份吃食
   if (hasSpecial("bigu") || S.hunger < 60) return;
-  const fd = FOOD_DEFS.filter(f => (S.inv[f.id] || 0) > 0).sort((a, b) => b.food - a.food)[0];
+  const fd = FOOD_DEFS.filter(f => (S.inv[f.id] || 0) > 0 && (f.price || 0) <= 30).sort((a, b) => b.food - a.food)[0]; // 只吃常备粮：30 文以上的应急囤粮不动
   if (!fd) return;
   S.inv[fd.id]--;
   eatFood(fd.food, `【饥肠辘辘】${fd.text}`, fd.hot);

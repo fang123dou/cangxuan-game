@@ -1268,12 +1268,15 @@ const GM = (() => {
     },
   });
 
+  const mobMonth = () => Math.floor((S.day - 1) / 30) + 1; // 游戏历法：三十日一月（冬三十日而春）
   /* ---------- 野怪猎杀（MOBS 表驱动）：真实战斗，胜则随机掉落（修为/功法/宝物随等阶涨） ---------- */
   if (typeof MOBS !== "undefined") for (const mb of MOBS) SITUATIONS.push({
     id: "mob_" + mb.id,
-    cond: () => (!mb.region || regionOf(S.place).key === mb.region) && S.realm >= mb.realm,
+    cond: () => (!mb.region || regionOf(S.place).key === mb.region) && S.realm >= mb.realm
+      && (mb.tier < 4 || !S.flags["mobm_" + mb.id + "_" + mobMonth()]), // 四阶妖圣：每月仅现身一次
     w: () => 2 + mb.tier,
     build() {
+      if (mb.tier >= 4) S.flags["mobm_" + mb.id + "_" + mobMonth()] = 1; // 本月已现身（遭遇即记，猎杀与否都算）
       const pw = Math.max(mb.power, Math.round(mb.power + S.realm * 1.5)); // 战力随境界水涨船高
       return { scene: mb.scene, choices: [
         { label: `猎杀「${mb.name}」`, hint: `战力约 ${pw}。胜则取其材、翻其巢——修为功法灵丹随机掉落（${["一阶", "二阶", "三阶", "四阶"][mb.tier - 1]}货色）。`, fx: { boss: `${mb.name}:${pw}:mob_${mb.id}`, canBeg: false, el: mb.el,
