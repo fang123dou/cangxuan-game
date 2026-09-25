@@ -107,6 +107,7 @@ function computeMods() {
     const mult = (P.tier || 0) === 0 ? lv : 1;
     for (const k in P.traitMod) m[k] = (m[k] || 0) + P.traitMod[k] * mult;
   }
+  if (S.flags && S.flags.tangzheLazy > S.day) m.trainP = (m.trainP || 0) * 0.5; // 躺者出关动力 -50%：破境成功后三日内修炼收益减半
   if (S.gear && S.gear.weapon) m.dmgP = (m.dmgP || 0) + (S.gear.weapon.dmgP || 0); // 炼器（22:41 补丁）：随身兵器的攻伐加成
   S.mods = m;
 }
@@ -1634,6 +1635,28 @@ function night() {
     const stolen = Math.max(1, Math.floor(S.stones * 0.1)); S.stones -= stolen;
     lines.push(`<span style="color:var(--blood-hi)">【怀璧其罪】夜里有人摸进了破庙——灵石少了 ${stolen} 枚。财不外露，古人不欺你。</span>`);
   }
+  /* 大冤种：被坑后三日内必有补偿机缘 */
+  if (hasSpecial("yuanchang") && S.flags.yuanchangDay && S.day - S.flags.yuanchangDay <= 3) {
+    const comp = 8 + Math.floor(Math.random() * 16); S.money += comp; delete S.flags.yuanchangDay;
+    lines.push(`<span style="color:var(--gold-dim)">【大冤种 · 补偿机缘】应了「吃亏是福」那句老话——你白捡了一桩小机缘，铜钱 +${comp}。</span>`);
+  }
+  /* 气运之子：走路捡钱（每日 10%） */
+  if (hasSpecial("lucky") && Math.random() < 0.1) {
+    const g = 3 + Math.floor(Math.random() * 13); S.money += g;
+    lines.push(`<span style="color:var(--gold-dim)">【气运之子】墙角一只鼓囊囊的钱袋在等人认领——你等了三息，没人来。铜钱 +${g}。</span>`);
+  }
+  /* 真香定律：醒来恰逢月末（30 日）必然当众真香一次——气运临时 +1（三日），道心 -1 */
+  if (hasSpecial("zhenxiang") && (S.day + 1) % 30 === 0) {
+    S.tempLuckDays = 3; S.daoXin = Math.max(0, S.daoXin - 1);
+    lines.push(`<span style="color:var(--gold-dim)">【真香定律】月初你立誓「宁死也不……」——今天你在众目睽睽之下做得比谁都香。气运临时 +1（三日），道心 -1。</span>`);
+  }
+  /* 我要验牌：每三日强制重检天道判定（醒来的这一日） */
+  if (hasSpecial("yanpai") && (S.day + 1) % 3 === 0 && !S.flags["yp_d" + (S.day + 1)]) {
+    S.flags["yp_d" + (S.day + 1)] = 1;
+    const ok = attr("int") * 2 + Math.random() * 20 > 22;
+    if (ok) { S.points += 5; lines.push(`<span style="color:var(--gold-dim)">【我要验牌】你掐诀重检了三日来的天道判定——账实相符。万象点 +5。</span>`); }
+    else { S.daoXin = Math.max(0, S.daoXin - 1); lines.push(`<span style="color:var(--blood-hi)">【我要验牌】验牌的手势掐错了半式——你对自己起了疑。道心 -1。</span>`); }
+  }
   // 药蚀（设定集）：每月自然代谢 -5、境界越高越快；60+ 蚀体损体；90+ 丹毒爆发，可能暴毙
   if (S.day % 30 === 0 && (S.yaoshi || 0) > 0) {
     const drain = 5 + S.realm;
@@ -1822,7 +1845,7 @@ function applyCore(fx) {
     applyNum(k, fx[k]); const s = `${name} ${fx[k] > 0 ? "+" : ""}${fx[k]}${unit || ""}`; out.push(s); (fx[k] > 0 ? G : L).push(s);
   };
   function applyNum(k, v) {
-    if (k === "money") S.money = Math.max(0, S.money + v);
+    if (k === "money") { S.money = Math.max(0, S.money + v); if (v <= -10 && hasSpecial("yuanchang")) { S.flags.yuanchangDay = S.day; } } // 大冤种：被坑 ≥10 文，三日内必有补偿机缘
     if (k === "stones") S.stones = Math.max(0, S.stones + v);
     if (k === "hp") S.hp = Math.min(hpMax(), S.hp + v); // 气血回复不得溢出上限
     if (k === "sta") S.sta = Math.max(0, Math.min(staMax(), S.sta + v));
@@ -2041,7 +2064,7 @@ function runSpecial(sp, fx) {
     S.stats.gambles++;
     S.money -= 10;
     if (Math.random() < 0.25 + attr("luck") * 0.03) { const g = 15 + Math.floor(Math.random() * 10); S.money += g; log(`骰子落定——你赢了 ${g} 文！庄家脸黑得像锅底。`, "good"); } // 赌坊十赌九输：气运高者才博个微利
-    else if (hasSpecial("dayuan")) log(`输光了。但走出巷口时，你捡到一张完整的饼——【大冤种】的补偿机缘到了。`, "dim"), S.hunger = Math.max(0, S.hunger - 15);
+    else if (hasSpecial("yuanchang")) { S.flags.yuanchangDay = S.day; log(`输光了。但你摸了摸胸口——【大冤种】的账，天道记着：三日之内，必有一桩补偿机缘。`, "dim"); } // 被坑记账，夜间结算补偿
     else log(`骰子落定。你输得干脆。`, "hurt");
     S.flags.gambled = 1; advanceSlot();
   } else if (sp === "yaopu") {
@@ -2173,6 +2196,11 @@ function freeAction() { // 已弃用（保留以防旧档引用）
 /* ================= 战斗 ================= */
 function combat(enemy, onEnd) {
   window.__inCombat = true;
+  if (hasSpecial("laosou") && S.flags.laosouBounty) { // 虐菜过多：真正的强者寻上门（战力 +15%）
+    delete S.flags.laosouBounty;
+    enemy = Object.assign({}, enemy, { power: Math.round(enemy.power * 1.15) });
+    sys(`【老叟戏顽童 · 报应】你欺凌弱小的名声传了出去——有位真正的强者，循声寻来了。（对方战力 +15%）`);
+  }
   const done = res => { window.__inCombat = false; onEnd && onEnd(res); };
   const eEl = enemy.el || ENEMY_EL[enemy.name] || "tu";
   // 系统评估：由战力推演五维轮廓（同名敌人评估恒定）
@@ -2237,6 +2265,7 @@ function resolveCombat(enemy, mode, onEnd) {
   else if (WX_KE[eEl] === myEl && !za) { myDmg *= 0.8; foeDmg *= 1.2; }
   if (hasTitle("yike") && enemy.power > myP) myDmg *= 1.05; // 称号「以下克上」：对高于己者伤害 +5%
   if (hasTitle("xisheng") && S.hp < hpMax() * 0.1) myDmg *= 1.3; // 「向死而生」：濒死攻伐 +30%
+  let wudeFirst = hasSpecial("wude"); // 不讲武德：战斗首记出手伤害 +30%（偷袭抢先手）
   foeDmg *= Math.max(0.7, 1 - (wxOf()[eEl] || 0) * 0.003);
   if (S.weather === "大雪" || S.weather === "风雪" || S.flags.coldSnap) { // 环境即五行：雪天水旺火衰
     if (myEl === "shui") myDmg *= 1.1;
@@ -2254,6 +2283,7 @@ function resolveCombat(enemy, mode, onEnd) {
   const skillMult = TABLES.COMBAT.skillMultBase + S.realm * TABLES.COMBAT.skillMultPerRealm; // 技能伤害：功法加成，浮动不大
   const fl = TABLES.JUDGE.dmgFloat;
   const seen = enemy.power / Math.max(1, myP) <= 1.2; // 可见规则：超 1.2 倍则气血只显状态（设定：深不可测）
+  const laosouWeak = hasSpecial("laosou") && myP >= enemy.power * 2; // 老叟戏顽童：战力碾压（≥2 倍）承伤减半
   const eHpState = () => { const r = eHp / eHpMax; return r >= 0.999 ? "毫发无损" : r > 0.7 ? "受了些伤" : r > 0.4 ? "伤势不轻" : r > 0.1 ? "摇摇欲坠" : "只剩一口气"; };
   let round = 0, myHp = S.hp, eHp = trickWin ? 0 : eHpMax; // 智取完胜：敌血直接归零，跳过回合战
   const lines = [`【气血】${enemy.name}：${seen ? `${eHpMax}/${eHpMax}` : "？？？（" + eHpState() + "）"} ｜ 你：${Math.round(myHp)}/${hpMax()} ｜ 你的攻击力=${atkP}（等同战力；不运功法，每记普攻皆此数）${technique ? ` ｜ 可运「${technique}」（运功另有伤害公式）` : ""}`];
@@ -2276,31 +2306,34 @@ function resolveCombat(enemy, mode, onEnd) {
   while (round < 8 && myHp > 0 && eHp > 0) {
     round++;
     const parts = [];
+    let lashTurn = false; // 五连鞭：快若闪电，出鞭之合敌方无暇反击
     const j1 = judge({ agi: myAgi, int: myInt, luck: myLuck }, { agi: eAgi, int: eInt, luck: eLuck }); // 你出手
     const isSpell = technique && technique.indexOf("引气") >= 0; // 引气诀系属功法（耗法 5）；锻骨拳是武技，不耗蓝
     const cast = technique && Math.random() < 0.35 && (!isSpell || S.mp >= 5); // 法力不足则退为普攻
     if (cast && isSpell) S.mp = Math.max(0, S.mp - 5);
     if (j1.kind === "dodge") parts.push(`你的${cast ? "一式「" + technique + "」" : "攻势"}被它闪开`);
-    else if (!cast && hasSpecial("wubian") && Math.random() < 0.35) {
-      /* 闪电五连鞭：五鞭各 30% 攻击力、逐鞭独立命中（50%+敏捷差×5%，20%~95%），全中=150% 总伤 */
+    else if (!cast && hasSpecial("wubian") && Math.random() < 0.4) {
+      /* 闪电五连鞭（良品·强化）：出鞭概率 40%；五鞭各 35% 攻击力、逐鞭独立命中（55%+敏捷差×6%，25%~95%），全中=175% 总伤；出鞭之合敌方无法反击 */
+      lashTurn = true;
       let hits = 0, total = 0;
-      const lashP = Math.max(0.2, Math.min(0.95, 0.5 + (myAgi - eAgi) * 0.05));
-      for (let w = 0; w < 5; w++) if (Math.random() < lashP) { total += Math.max(1, Math.round(atkP * 0.3)); hits++; }
-      total = Math.round(total * myDmg);
+      const lashP = Math.max(0.25, Math.min(0.95, 0.55 + (myAgi - eAgi) * 0.06));
+      for (let w = 0; w < 5; w++) if (Math.random() < lashP) { total += Math.max(1, Math.round(atkP * 0.35)); hits++; }
+      total = Math.round(total * myDmg * (wudeFirst ? 1.3 : 1)); wudeFirst = false;
       eHp -= total;
-      parts.push(`【闪电五连鞭】五连击，中 ${hits}/5 鞭（单鞭命中 ${Math.round(lashP * 100)}%），共 ${total} 点伤害${hits === 0 ? "——五鞭全空" : hits === 5 ? "，鞭鞭到肉" : ""}，${enemy.name} ${seen ? `余 ${Math.max(0, Math.round(eHp))}/${eHpMax}` : `【${eHpState()}】`}`);
+      parts.push(`【闪电五连鞭】五连击快若闪电，中 ${hits}/5 鞭（单鞭命中 ${Math.round(lashP * 100)}%），共 ${total} 点伤害${hits === 0 ? "——五鞭全空" : hits === 5 ? "，鞭鞭到肉" : ""}，${enemy.name} ${seen ? `余 ${Math.max(0, Math.round(eHp))}/${eHpMax}` : `【${eHpState()}】`}`);
     }
     else {
-      let dmg = (cast ? myStr * skillMult : atkP) * (fl[0] + Math.random() * (fl[1] - fl[0])) * myDmg * j1.mult; // 普攻＝攻击力；运功另有公式（myStr×功法倍率）
+      let dmg = (cast ? myStr * skillMult : atkP) * (fl[0] + Math.random() * (fl[1] - fl[0])) * myDmg * j1.mult * (wudeFirst ? 1.3 : 1); // 普攻＝攻击力；运功另有公式（myStr×功法倍率）
+      wudeFirst = false;
       dmg = Math.max(1, Math.round(dmg));
       eHp -= dmg;
       parts.push(`${cast ? `你运转「${technique}」，${isSpell ? "法力 -5，" : ""}` : ""}造成 ${dmg} 点伤害${j1.kind === "crit" ? "（暴击×2）" : j1.kind === "weak" ? "（命中弱点×1.5）" : j1.kind === "crit+weak" ? "（暴击+弱点×3）" : ""}，${enemy.name} ${seen ? `余 ${Math.max(0, Math.round(eHp))}/${eHpMax}` : `【${eHpState()}】`}`);
     }
-    if (eHp > 0) {
+    if (eHp > 0 && !lashTurn) {
       const j2 = judge({ agi: eAgi, int: eInt, luck: eLuck }, { agi: myAgi, int: myInt, luck: myLuck }); // 它出手
       if (j2.kind === "dodge") parts.push(`你侧身避过它的反击`);
       else {
-        let dmg = eStr * (fl[0] + Math.random() * (fl[1] - fl[0])) * foeDmg * j2.mult * (enemyTier >= 1 && Math.random() < TABLES.COMBAT.enemySkillChance ? TABLES.COMBAT.enemySkillMult : 1) * (1 - (S.mods.defP || 0) / 100);
+        let dmg = eStr * (fl[0] + Math.random() * (fl[1] - fl[0])) * foeDmg * j2.mult * (enemyTier >= 1 && Math.random() < TABLES.COMBAT.enemySkillChance ? TABLES.COMBAT.enemySkillMult : 1) * (1 - (S.mods.defP || 0) / 100) * (laosouWeak ? 0.5 : 1); // 老叟戏顽童：碾压局承伤减半
         dmg = Math.max(1, Math.round(dmg));
         myHp -= dmg;
         parts.push(`它${j2.kind === "crit" ? "暴击" : j2.kind === "weak" ? "打中你的破绽" : j2.kind === "crit+weak" ? "暴击正中你的破绽" : "反击"}，你受 ${dmg} 点伤害，气血 ${Math.max(0, Math.round(myHp))}/${hpMax()}`);
@@ -2324,6 +2357,10 @@ function resolveCombat(enemy, mode, onEnd) {
   if (eHp <= 0) {
     log(`<span style="color:#9fc3a5">【胜】${enemy.name}倒下了。你扶着膝盖喘气，手心全是汗。</span>`);
     S.kills++; gainAch("firstBlood");
+    if (laosouWeak) { // 老叟戏顽童：虐菜记账，每胜 5 名弱者引来一名强者
+      S.stats.bully = (S.stats.bully || 0) + 1;
+      if (S.stats.bully % 5 === 0) { S.flags.laosouBounty = 1; sys(`【老叟戏顽童】你又戏耍了一个不如你的对手（累计 ${S.stats.bully}）。名声这东西——快传到不该传的人耳朵里了。`); }
+    }
     if (enemy.power >= myP * 1.3) { gainAch("yuejie"); S.stats.yuejieN = (S.stats.yuejieN || 0) + 1; } // 跨越一个小境界取胜（轮回结算：越阶战绩加成）
     if (startHp <= hpMax() * 0.2 && enemy.power >= myP) gainAch("juejing"); // 濒死反杀强敌
     if (enemy.loot) enemy.loot();
@@ -2420,18 +2457,21 @@ function resolveBreakthrough(rate) {
     if (S.realm === 19) sys(`【涅槃入圣】旧躯尽焚，道体重塑——${TABLES.REALMS.tierNames[19]}大能，当世明面上的巅峰行列，有了你一个位置。`);
     if (S.realm === REALM_TOP) sys(`【传说之巅】登仙境——此界三万载无人踏足的层次。天道的目光，落在了你身上。`);
     S.hp = hpMax(); S.sta = staMax();
+    if (hasSpecial("tangzhe")) { S.flags.tangzheLazy = S.day + 3; sys(`【躺者】破境虽成，一身懒骨却使不出劲——三日内修炼收益减半。`); } // 出关动力 -50%
   } else {
     S.realmBreaks++;
     if (hasSpecial("ding")) { S.cult *= TABLES.BREAK.failCultKeepDing; sys(`【破境失败——「助我破鼎」生效：道基未损，只折了些积累。】`); }
     else {
       S.debuff = "weak"; S.debuffDays = TABLES.BREAK.weakDays; S.cult *= TABLES.BREAK.failCultKeep; S.hp = Math.max(1, S.hp - hpMax() * 0.3);
       log(`<span style="color:var(--blood-hi)">气血逆冲，喉头一甜。【破境失败 · 元气大伤】全属性暂时 -20%，静养三日。</span>`);
-      if ((S.yaoshi || 0) >= 60 && Math.random() < 0.25) { // 药蚀 60+：破境走火入魔概率上升
+      const zouhuoP = hasSpecial("tangzhe") ? 0.05 : 0.25; // 躺者：走火入魔率大降（25%→5%）
+      if ((S.yaoshi || 0) >= 60 && Math.random() < zouhuoP) { // 药蚀 60+：破境走火入魔概率上升
         S.base.int = Math.max(1, Math.round((S.base.int - 0.3) * 10) / 10); S.daoXin = Math.max(0, S.daoXin - 6);
         sys(`【走火入魔】药蚀淤堵经脉，真气逆行——智力受损，道心震荡。（药蚀 ${Math.round(S.yaoshi)}/100，是时候排毒了）`);
         computeMods();
       }
     }
+    if (hasSpecial("tangzhe")) S.cult = Math.min(S.cult * 1.2, S.cultNeed || Infinity); // 躺者：失败保留的修为 +20%（不越破境前存量）
   }
   computeMods(); renderPanel(); advanceSlot();
 }
