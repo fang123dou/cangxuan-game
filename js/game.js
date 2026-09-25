@@ -111,6 +111,7 @@ function computeMods() {
   }
   if (S.flags && S.flags.tangzheLazy > S.day) m.trainP = (m.trainP || 0) * 0.5; // 躺者出关动力 -50%：破境成功后三日内修炼收益减半
   if (S.gear && S.gear.weapon) m.dmgP = (m.dmgP || 0) + (S.gear.weapon.dmgP || 0); // 炼器（22:41 补丁）：随身兵器的攻伐加成
+  if (S.gear && S.gear.xianqi && typeof XIANQI_BY_ID !== "undefined") { const x = XIANQI_BY_ID[S.gear.xianqi]; if (x && x.mods) for (const k in x.mods) m[k] = (m[k] || 0) + x.mods[k]; } // 仙器（设定集第十六章）：佩戴即全数生效，拒绝空转
   S.mods = m;
 }
 function findCard(id) {
@@ -271,6 +272,7 @@ function setIll(name, days, desc) {
 function illText() { return S.ill ? `${S.ill.name}（余 ${S.ill.days} 日）` : "无疾"; }
 function gearText() {
   const g = [];
+  if (S.gear && S.gear.xianqi && typeof XIANQI_BY_ID !== "undefined" && XIANQI_BY_ID[S.gear.xianqi]) g.push(`✦ ${XIANQI_BY_ID[S.gear.xianqi].name}（仙器）`);
   if (S.gear && S.gear.weapon) g.push(`⚔ ${S.gear.weapon.name}（攻伐 +${S.gear.weapon.dmgP}%）`);
   if (S.inv.mianao) g.push("老棉袄（御寒）");
   if (S.inv.shuinang) g.push("水囊（防暑）");
@@ -1095,6 +1097,7 @@ function renderTab() {
     if (S.inv.ludian) inv.push(["ludian", "青铜丹炉"]);
     if (S.inv.lianchui) inv.push(["lianchui", "精铁炼锤"]);
     if (S.gear && S.gear.weapon) inv.push(["gear", `⚔ ${S.gear.weapon.name}（攻伐 +${S.gear.weapon.dmgP}%）`]);
+    if (S.gear && S.gear.xianqiOwned && typeof XIANQI_BY_ID !== "undefined") for (const qid of S.gear.xianqiOwned) { const qx = XIANQI_BY_ID[qid]; if (qx) inv.push(["xq:" + qid, `${S.gear.xianqi === qid ? "✦" : "◇"} ${qx.name}`]); } // 仙器随身（设定集第十六章）：✦ 佩戴中 ◇ 收入体内
     if (S.inv.fangcun && !S.flags.fangcunUsed) inv.push(["fangcun", "方寸戒"]);
     if (S.mats) for (const m in S.mats) if (S.mats[m] > 0) inv.push(["mat:" + m, `${m} ×${S.mats[m]}`]);
     body.innerHTML = inv.length
@@ -1119,6 +1122,17 @@ function renderTab() {
         return false;
       };
       const closeAnd = fn => () => { if (busyGuard()) return; $("#infoModal").classList.remove("open"); fn(); computeMods(); renderPanel(); }; // 开局修改：行囊之物随手可用——不再惊动天道推演（不推进时辰，不触发 AI 剧情）
+      if (id.startsWith("xq:")) { // 仙器：佩戴/卸下（入手即随身，不入消耗品格）
+        const qx = XIANQI_BY_ID[id.slice(3)];
+        if (!qx) return;
+        const XQ_MOD_NAMES = { strP:"力量%", agiP:"敏捷%", intP:"智力%", conP:"体质%", allP:"全属性%", luckFlat:"气运", trainP:"修炼%", pityR:"保底%", defP:"承伤减免%", dmgP:"攻伐%", escapeP:"逃脱%", coldRes:"冻寒判定", heatRes:"暑热判定", poiRes:"瘴毒判定", xinmoRes:"心魔减免%", yaoRes:"药蚀减免%", hpRegenP:"夜间恢复%", foodP:"进食效果%", moneyP:"挣钱%", socialP:"人缘%", staRegen:"体力恢复", hungerR:"饥饿速率" };
+        const modTxt = Object.entries(qx.mods).map(([k, v]) => `${XQ_MOD_NAMES[k] || k} +${v}${/P$|Res$/.test(k) ? "%" : ""}`).join("，");
+        const qActs = [];
+        if (S.gear.xianqi !== qx.id) qActs.push({ label: `佩戴「${qx.name}」`, fn: closeAnd(() => { S.gear.xianqi = qx.id; log(`「${qx.name}」入手即入心脉——你换了佩器。`, "good"); }) });
+        else qActs.push({ label: "卸下（收入体内）", fn: closeAnd(() => { S.gear.xianqi = null; log(`「${qx.name}」化光没入眉心，只余一线凉意。`, "dim"); }) });
+        showInfo(qx.name, "仙 器", `${qx.desc}［效力：${modTxt}］`, "仙器随身，随魂封存——下一世仍在。", qActs);
+        return;
+      }
       if (id === "heimu" && S.inv.heimu > 0) acts.push({ label: "吃掉（饱食 +22）", fn: closeAnd(() => {
         S.inv.heimu--;
         eatFood(22, "你啃完一块黑馍，又冷又硬，但胃里有了底。");
@@ -2048,7 +2062,7 @@ function night() {
       const v = S.npc[n];
       if (Math.abs(v) >= 40 || v === 0) continue;
       const nv = Math.round(v * 0.9 * 10) / 10;
-      if (Math.abs(nv - v) >= 0.5) { S.npc[n] = nv; faded++; }
+      if (nv !== v) { S.npc[n] = nv; faded++; }
     }
     if (faded) log(`【岁月】久不往来，${faded} 段恩怨淡了下去。深仇与生死之交，从不随时间褪色。`, "dim");
   }
@@ -2286,6 +2300,7 @@ function applyCore(fx) {
   if (fx.newcard) { const c = gainDynCard(fx.newcard); if (c) gain(`新词条「${c.name}」入手（${TIERS[c.tier].name}）——${c.eff}`); }
   if (fx.fabao) { const d = Object.assign({}, fx.fabao, { name: String(fx.fabao.name || "").slice(0, 6) + "·法宝", eff: "【法宝·已认主入体】" + fx.fabao.eff }); const c = gainDynCard(d); if (c) gain(`法宝「${fx.fabao.name}」认主（${TIERS[c.tier].name}）——系统将其效力折算入命格（天机独闻，旁人之眼只见你气息微变）`); }
   if (fx.wuqi) { const m = /^([^|｜]{1,8})[|｜](-?\d{1,2})[|｜]([^|｜]{1,4})$/.exec(String(fx.wuqi)); if (m) { S.gear = S.gear || {}; S.gear.weapon = { name: m[1].trim(), baseDmg: 0, q: m[3].trim(), dmgP: Math.max(1, Math.min(40, +m[2])) }; computeMods(); gain(`随身兵器「${S.gear.weapon.name}」（${S.gear.weapon.q} · 攻伐 +${S.gear.weapon.dmgP}%）`); } }
+  if (fx.xianqi) { const x = (typeof XIANQI_BY_ID !== "undefined") && XIANQI_BY_ID[fx.xianqi]; if (x) { S.gear = S.gear || {}; S.gear.xianqiOwned = S.gear.xianqiOwned || []; if (!S.gear.xianqiOwned.includes(x.id)) S.gear.xianqiOwned.push(x.id); S.gear.xianqi = x.id; computeMods(); chronicle(`仙器入手：${x.name}`, "quest"); gain(`仙器「${x.name}」入手——已入装备栏，随身佩戴`); } }
   if (fx.card) { const r = pullOnce(1); gain(`天降词条「${r.card.name}」（${TIERS[r.t].name}）`); }
   if (fx.luckCharm) { S.tempLuckDays = Math.max(S.tempLuckDays, fx.luckCharm * 2); gain(`气运临时 +1（数日）`); }
   if (fx.coincidence) {
@@ -2429,6 +2444,19 @@ function doomLevel() {
   return S.day >= 480 ? 4 : S.day >= 360 ? 3 : S.day >= 240 ? 2 : S.day >= 120 ? 1 : 0;
 }
 function runSpecial(sp, fx) {
+  if (sp.indexOf("xianqi:") === 0) { // 仙器入手（设定集第十六章）：入随身、入装备栏、佩戴生效
+    const x = (typeof XIANQI_BY_ID !== "undefined") && XIANQI_BY_ID[sp.slice(7)];
+    if (x) {
+      S.gear = S.gear || {};
+      S.gear.xianqiOwned = S.gear.xianqiOwned || [];
+      if (!S.gear.xianqiOwned.includes(x.id)) S.gear.xianqiOwned.push(x.id);
+      S.gear.xianqi = x.id;
+      computeMods(); renderPanel();
+      chronicle(`仙器入手：${x.name}`, "quest");
+      log(`仙器「${x.name}」入手——已入装备栏，随身佩戴。`, "good");
+    }
+    advanceSlot(); return;
+  }
   if (sp.indexOf("end:") === 0) { // 终局抉择（第十一章 · 五结局）：由终局场景给出，endGame 结算
     const kind = sp.slice(4);
     if (ENDINGS[kind] && !S.flags.endingDone) { S.flags.endingDone = kind; endGame(kind); }
@@ -2934,8 +2962,8 @@ function resolveCombat(enemy, mode, onEnd) {
           const j2 = judge({ agi: eAgi, int: eInt, luck: eLuck }, { agi: myAgi, int: myInt, luck: myLuck });
           if (j2.kind === "dodge") lines.push(`你侧身避过它的反击`);
           else {
-            const eSpell = enemy.power >= 30 && Math.random() < 0.25; // 敌方施法：强敌以术法攻伐（伤害 ×1.4，可闪避）
-            let dmg = eStr * (eSpell ? 1.4 : 1) * (fl[0] + Math.random() * (fl[1] - fl[0])) * foeDmg * j2.mult * (enemyTier >= 1 && Math.random() < TABLES.COMBAT.enemySkillChance ? TABLES.COMBAT.enemySkillMult : 1) * (1 - (S.mods.defP || 0) / 100) * (laosouWeak ? 0.5 : 1) * (spellWeaken ? 0.7 : 1);
+            const eSpell = enemy.power >= 30 && Math.random() < TABLES.COMBAT.enemySkillChance; // 敌方施法：强敌以术法攻伐（倍率见判定表，可闪避）
+            let dmg = eStr * (eSpell ? TABLES.COMBAT.enemySkillMult : 1) * (fl[0] + Math.random() * (fl[1] - fl[0])) * foeDmg * j2.mult * (enemyTier >= 1 && Math.random() < TABLES.COMBAT.enemySkillChance ? TABLES.COMBAT.enemySkillMult : 1) * (1 - (S.mods.defP || 0) / 100) * (laosouWeak ? 0.5 : 1) * (spellWeaken ? 0.7 : 1);
             if (spellWeaken) { lines.push(`【冰封】它血脉僵滞，这一击缓了三成。`); spellWeaken = false; }
             dmg = Math.max(1, Math.round(dmg));
             myHp -= dmg;
@@ -3024,8 +3052,8 @@ function resolveCombat(enemy, mode, onEnd) {
       const j2 = judge({ agi: eAgi, int: eInt, luck: eLuck }, { agi: myAgi, int: myInt, luck: myLuck }); // 它出手
       if (j2.kind === "dodge") parts.push(`你侧身避过它的反击`);
       else {
-        const eSpell = enemy.power >= 30 && Math.random() < 0.25; // 敌方施法：强敌以术法攻伐（伤害 ×1.4，可闪避）
-        let dmg = eStr * (eSpell ? 1.4 : 1) * (fl[0] + Math.random() * (fl[1] - fl[0])) * foeDmg * j2.mult * (enemyTier >= 1 && Math.random() < TABLES.COMBAT.enemySkillChance ? TABLES.COMBAT.enemySkillMult : 1) * (1 - (S.mods.defP || 0) / 100) * (laosouWeak ? 0.5 : 1) * (spellWeaken ? 0.7 : 1); // 老叟戏顽童：碾压局承伤减半
+        const eSpell = enemy.power >= 30 && Math.random() < TABLES.COMBAT.enemySkillChance; // 敌方施法：强敌以术法攻伐（倍率见判定表，可闪避）
+        let dmg = eStr * (eSpell ? TABLES.COMBAT.enemySkillMult : 1) * (fl[0] + Math.random() * (fl[1] - fl[0])) * foeDmg * j2.mult * (enemyTier >= 1 && Math.random() < TABLES.COMBAT.enemySkillChance ? TABLES.COMBAT.enemySkillMult : 1) * (1 - (S.mods.defP || 0) / 100) * (laosouWeak ? 0.5 : 1) * (spellWeaken ? 0.7 : 1); // 老叟戏顽童：碾压局承伤减半
         if (spellWeaken) { parts.push(`【冰封】它血脉僵滞，这一击缓了三成。`); spellWeaken = false; }
         dmg = Math.max(1, Math.round(dmg));
         myHp -= dmg;
@@ -3130,6 +3158,7 @@ function askBreakthrough() {
   ]);
 }
 function resolveBreakthrough(rate) {
+  const cultBefore = S.cult;
   if (Math.random() * 100 < rate) {
     S.realm++; S.cult = 0; S.realmBreaks = 0;
     if (S.lastBreakDay && S.day - S.lastBreakDay <= TABLES.BREAK.yushiWindowDays) gainAch("yushi"); // 与天争时：十日之内连破两境
@@ -3159,6 +3188,7 @@ function resolveBreakthrough(rate) {
     if (hasSpecial("ding")) { S.cult *= TABLES.BREAK.failCultKeepDing; sys(`【破境失败——「助我破鼎」生效：道基未损，只折了些积累。】`); }
     else {
       S.debuff = "weak"; S.debuffDays = TABLES.BREAK.weakDays; S.cult *= TABLES.BREAK.failCultKeep; S.hp = Math.max(1, S.hp - hpMax() * 0.3);
+      if (hasSpecial("tangzhe")) S.cult = Math.min(S.cult * 1.2, cultBefore); // 躺者：失败保留的修为 +20%（不越破境前存量；「助我破鼎」分支道基未损，不再叠加）
       log(`<span style="color:var(--blood-hi)">气血逆冲，喉头一甜。【破境失败 · 元气大伤】全属性暂时 -20%，静养三日。</span>`);
       const zouhuoP = hasSpecial("tangzhe") ? 0.05 : 0.25; // 躺者：走火入魔率大降（25%→5%）
       if ((S.yaoshi || 0) >= 60 && Math.random() < zouhuoP) { // 药蚀 60+：破境走火入魔概率上升
@@ -3167,7 +3197,6 @@ function resolveBreakthrough(rate) {
         computeMods();
       }
     }
-    if (hasSpecial("tangzhe")) S.cult = Math.min(S.cult * 1.2, S.cultNeed || Infinity); // 躺者：失败保留的修为 +20%（不越破境前存量）
   }
   computeMods(); renderPanel(); advanceSlot();
 }

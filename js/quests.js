@@ -482,6 +482,20 @@ const QU = (() => {
     },
   });
 
+  /* ---------- 十大仙器 · 前置任务（设定集第十六章；表驱动，自 XIANQI 生成） ----------
+     统一门槛：卷二真相已破（META.story.stage>=4）录入卷宗；目标=境界门槛+因果痕迹；达成后于对应地域触发寻器场景。 */
+  if (typeof XIANQI !== "undefined") for (const x of XIANQI) DEFS["xq_" + x.id] = {
+    name: `仙器前置：${x.name}`, type: "xian", passive: true,
+    get desc() { return `「${x.name}」——${x.desc} 得器者从不靠找，靠走到那一步：境界到了，因果攒了，器自会应你。`; },
+    auto: () => storyStage() >= 4,
+    objectives: [
+      { text: () => `境界门槛（${x.name}应主：${REALM_NAMES[x.realm]}，当前 ${REALM_NAMES[S.realm]}）`, done: () => S.realm >= x.realm },
+      { text: () => x.flagText, done: () => !!S.flags[x.flag] },
+    ],
+    reward: { points: 150, luckCharm: 1 },
+    get doneText() { return `卷宗上「${x.name}」四字自焚成灰——尘尽光生。去${x.region ? REGIONS[x.region].name : "命该指引之处"}寻它吧。`; },
+  };
+
   /* ---------- 状态 ---------- */
   function ensure() {
     if (!S.quests) S.quests = { active: [], done: [], failed: [], refused: {} };

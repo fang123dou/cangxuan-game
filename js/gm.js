@@ -1152,6 +1152,24 @@ const GM = (() => {
 
   ];
 
+  /* ---------- 十大仙器 · 寻器场景（设定集第十六章：卷二留名 → 卷三现世） ----------
+     前置任务完成 + 未入手 + 地域相符（region 为 null 者随处可遇）→ 器应主而动。 */
+  if (typeof XIANQI !== "undefined") for (const x of XIANQI) SITUATIONS.push({
+    id: "xq_get_" + x.id,
+    cond: () => (!x.region || regionOf(S.place).key === x.region) && (typeof QU !== "undefined") && QU.isDone("xq_" + x.id)
+      && !(S.gear && (S.gear.xianqiOwned || []).includes(x.id)),
+    w: () => 6,
+    build() {
+      return {
+        scene: x.scene,
+        choices: [
+          { label: `取之——「${x.name}」`, hint: "仙器入手，随身入装备栏；佩戴之益即刻生效。", fx: { special: "xianqi:" + x.id, coincidence: 1, dao: 2 } },
+          { label: "还不是时候", hint: "器已应你，跑不了。", fx: { dao: 0.5 } },
+        ],
+      };
+    },
+  });
+
   /* ---------- 上下文 ---------- */
   /* 缘分突破候选：缘分 ≥80 且尚未 bondbreak 的有名 NPC（「路人缘」是汇总池，除外） */
   function bondCandidates() {

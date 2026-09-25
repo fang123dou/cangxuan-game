@@ -169,6 +169,8 @@ const NOTE_FX = {
   "猎户遗孤": { escapeP: 5, hungerR: 0.95 },
   "私塾伴读": { trainP: 5 },
   "渔民之子": { agiP: 2, escapeP: 5 },
+  "海商账徒": { moneyP: 5 },
+  "渔家子": { agiP: 2, escapeP: 5 },
   "铁匠学徒": { strP: 2 },
   "奴籍": { escapeP: 8 },
   "疫村遗孤": { poiRes: 10, conP: -3 },
@@ -676,6 +678,54 @@ const WORLDCAST = [
     hook: "北海尽头，一根没有线的钓竿", desc: "没人知道他钓什么。归墟相传是仙路断绝之处——他在那里坐了多久，浪知道。", hiddenHint: "终局伏笔，只可远观，不可交互" },
 ];
 const CAST_BY_ID = {}; for (const c of WORLDCAST) CAST_BY_ID[c.id] = c;
+
+/* ============ 十大仙器（设定集第十六章 · 仙器录） ============
+   不入品——圣品已是人间极，仙器是天理本身的碎片。获取链：卷二真相破（META.story.stage>=4）录入卷宗 →
+   前置达成（境界门槛 + 因果痕迹）→ 对应地域「寻器」场景入手。入手即随身（S.gear.xianqiOwned），
+   装备栏佩戴其一（S.gear.xianqi），mods 全数注入 computeMods——每一行都是真加成，拒绝空转。 */
+const XIANQI = [
+  { id:"liangtianchi", name:"鸿蒙量天尺", region:null, realm:19, flag:"sysQuestioned", flagText:"问天：向「系统」问出那句话",
+    mods:{ allP:12, trainP:20, pityR:30, luckFlat:1 },
+    desc:"量劫之器，轮回系统的骨。佩戴时大道刻度自明——万法精进，天机与你同频。",
+    scene:"问天的当夜，识海里的光幕第一次「活」了过来：一柄尺影横陈其上，刻度缓缓流转。它量过三万年的劫，此刻默许你借刻度一观——这不是赐予，是天道把刀递给了握得住的人。" },
+  { id:"guiXuAnchor", name:"归墟锚", region:"beiyuan", realm:19, flag:"devourWhisper", flagText:"听完渊口裂缝里的「低语」",
+    mods:{ conP:20, defP:20, coldRes:30, xinmoRes:20 },
+    desc:"上古真仙以全身道行铸的锚，钉在仙路断口。佩戴时渊声不侵，如负山镇海。",
+    scene:"渊口裂缝前，守夜人让开了三步——锚就钉在冰层里，三万年浪打不动，锚身已被咬穿一半。你握住锚身的一瞬，裂缝深处三万年的咀嚼声，停了半拍。" },
+  { id:"wangchuanZhan", name:"忘川盏", region:null, realm:17, flag:"pioneer_fen", flagText:"祭过荒野里那座无名坟",
+    mods:{ intP:15, xinmoRes:40, escapeP:15 },
+    desc:"永远斟不满的盏，盏中忘川水洗的不是情，是因果。佩戴时神魂自清，心魔不染。",
+    scene:"无名坟前，你上过的三炷香的香灰无风自动，聚成一盏之形。盏底沉着一勺黑水，映不出你的脸——映出来的是一行没有来源的小字：「喝了它，你种下的东西就找不到你了。」" },
+  { id:"zhanjieDao", name:"斩界刀", region:null, realm:17, flag:"pioneer_kezi", flagText:"见过牢城里那行刻字：「别信它的恭喜」",
+    mods:{ strP:15, agiP:10, dmgP:30 },
+    desc:"上一任宿主留下的刀。他斩了吞世者的口器，没能斩到天。佩戴时刃意自发，攻伐无双。",
+    scene:"循着刻字的笔意，你在牢城塌了半边的地宫里找到了它——三尺崩刃插在石中，三万年的灰落上去，竟无一丝锈蚀。你握上刀柄的那一刻，整面牢墙的刻字同时亮了一瞬，像一群人在黑暗里睁开了眼。" },
+  { id:"zhenshiDing", name:"镇世鼎", region:"zhongzhou", realm:15, flag:"l2Tianji", flagText:"买过天机楼那条「不存在的人」的消息",
+    mods:{ conP:15, defP:25, hpRegenP:30 },
+    desc:"四大皇朝共祭的鼎，鼎在则气运不散。佩戴时龙脉护体，伤势自愈于呼吸之间。",
+    scene:"帝畿地宫，失而复得的鼎耳在你掌心发烫。钦天监的灯彻夜不熄——监正隔着观星台的方向朝你拱了拱手，什么都没说。鼎认你的那一刻，万里龙脉轻轻震了一震，像翻了个身。" },
+  { id:"qingmingDeng", name:"青冥灯", region:"yunzhou", realm:15, flag:"l2Duobao", flagText:"查过多宝阁灭门当夜的销赃旧档",
+    mods:{ intP:15, dmgP:15, trainP:10 },
+    desc:"青冥大劫焚宗之灯，焰不烧草木，专烧传承。佩戴时灵台灯焰长明，悟性如炬。",
+    scene:"青岩山枯井之底，半块灯座碎屑在你怀里微烫了三百年那么久。你把它放回井底原处——灯，自己亮了。一豆青焰浮在井口，照得满山雪色发青：烧了五千年的火，今日认了新主。" },
+  { id:"tingchaoLuo", name:"听潮螺", region:"sihai", realm:15, flag:"seaGuixuHeard", flagText:"听闻北海归墟的禁忌（老船主的禁语）",
+    mods:{ agiP:15, escapeP:20, luckFlat:1 },
+    desc:"东海龙宫镇海之物，螺鸣一起万里潮汐听令。佩戴时身随潮势，趋避如意。",
+    scene:"龙宫与鲛国旧怨的卷宗里夹着一枚灰白的螺——三万年前那份和约的「押注」。龙王退朝时多看了你一眼：「它三万年前就该响的。」螺入手无声，可万里海疆之内，每一朵浪花的去向，你忽然都听得见。" },
+  { id:"zhaoguJing", name:"照骨镜", region:null, realm:15, flag:"pioneer_xinwu", flagText:"见过旧货摊上那半张「邪性」的上古信物",
+    mods:{ intP:20, luckFlat:1, socialP:15 },
+    desc:"天机楼镇楼之镜，不照人，照因果线。佩戴时六识洞明，人缘与先机自来。",
+    scene:"天机楼的最高一层，没有楼梯的一层。老楼主把镜子推给你，镜面上灰鹭的那一页缺口毛茸茸的：「撕页的人查了三十年，查不到。」镜子不重，可你端平它的那一刻，满楼买命、销赃、悬赏的单子，在你眼里都变成了清清楚楚的因果线。" },
+  { id:"wanguLing", name:"万蛊铃", region:"nanling", realm:15, flag:"l2Resolve", flagText:"了断过「夺信」那桩因果（战/交易/嫁祸/放手皆算）",
+    mods:{ poiRes:40, dmgP:15, conP:10 },
+    desc:"百苗巫寨祖器，铃音一起十万大山蛊虫俯首。佩戴时百毒辟易，杀伐附蛊。",
+    scene:"百苗巫寨的蛊林深处，大巫蓝蚩亲手解下铃来递给你，铃柄上那行没人认得的小字在你眼中自行译出——人妖最后一盟。他躬身退入瘴雾：「铃认外人的日子，寨子里等了三千年。别让盟约再输一回。」" },
+  { id:"kurouBeye", name:"枯荣贝叶", region:"ximo", realm:15, flag:"shengYaoDone", flagText:"取到过那滴万年地心乳（重塑道基）",
+    mods:{ yaoRes:40, hpRegenP:25, xinmoRes:20, foodP:15 },
+    desc:"枯泉寺镇寺之叶，一叶枯一叶荣。佩戴时心脉与叶同频，伤病药毒皆缓。",
+    scene:"枯泉寺的枯泉，今夜涨水了。老僧枯荣禅师把贝叶从泉眼里捞出来，叶上枯纹在你心口一一对应：「叶枯则人荣——你渡得过自己，它渡得过你。」叶背那半句刻字，在泉水里显出了下一半：「守门人的路，就是仙路。」" },
+];
+const XIANQI_BY_ID = {}; for (const x of XIANQI) XIANQI_BY_ID[x.id] = x;
 /* 敌方五行（按名取，默认土行） */
 const ENEMY_EL = {
   "林中的冬狼": "shui", "野狗": "tu", "饿疯的野狗": "tu",
