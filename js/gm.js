@@ -1268,6 +1268,24 @@ const GM = (() => {
     },
   });
 
+  /* ---------- 野怪猎杀（MOBS 表驱动）：真实战斗，胜则随机掉落（修为/功法/宝物随等阶涨） ---------- */
+  if (typeof MOBS !== "undefined") for (const mb of MOBS) SITUATIONS.push({
+    id: "mob_" + mb.id,
+    cond: () => (!mb.region || regionOf(S.place).key === mb.region) && S.realm >= mb.realm,
+    w: () => 2 + mb.tier,
+    build() {
+      const pw = Math.max(mb.power, Math.round(mb.power + S.realm * 1.5)); // 战力随境界水涨船高
+      return { scene: mb.scene, choices: [
+        { label: `猎杀「${mb.name}」`, hint: `战力约 ${pw}。胜则取其材、翻其巢——修为功法灵丹随机掉落（${["一阶", "二阶", "三阶", "四阶"][mb.tier - 1]}货色）。`, fx: { boss: `${mb.name}:${pw}:mob_${mb.id}`, canBeg: false, el: mb.el,
+          success: { mobloot: mb.tier, drop: mb.mat, dao: mb.tier >= 3 ? -0.5 : 0 }, // 三阶以上大妖灵智不逊于人，杀之微损道心
+          fail: { hp: -(4 + mb.tier * 4) },
+          successText: `【${mb.name}】轰然倒地。你割取其材，又于巢穴里翻检一番。`,
+          failText: `「${mb.name}」的凶性远超预想——你且战且退，浑身挂彩。` } },
+        { label: "退避三舍", hint: "野兽无仇。人不犯它，它不犯人。", fx: { dao: 0.2 } },
+      ] };
+    },
+  });
+
   /* ---------- 行商奇遇：风物入手（设定集·五域四海）——剧情中生成可售卖特产 ---------- */
   if (typeof TRADE_GOODS !== "undefined") SITUATIONS.push({
     id: "trade_find",

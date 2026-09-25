@@ -855,6 +855,40 @@ const PETS = [
     force:{ base:20, per:3, hint:"武力收服：对白泽动手？你连它的影子都摸不到（战力随境界而涨）。" } },
 ];
 const PETS_BY_ID = {}; for (const p of PETS) PETS_BY_ID[p.id] = p;
+
+/* ============ 野怪（猎杀遭遇）：击杀得修为/功法/宝物随机掉落，掉落随等阶而涨 ============
+   tier 对齐境界：一阶凡（realm0+）｜二阶灵（7+）｜三阶玄（13+）｜四阶圣（19+）。region 为 null 者五域四海皆可遇。 */
+const MOBS = [
+  /* 一阶 · 凡俗野兽（未开智，猎杀无道心负担） */
+  { id:"tuzai", name:"獠牙土豨", tier:1, region:null, realm:0, el:"tu", power:6, mat:"土豨獠牙",
+    scene:"灌木丛里一阵山响——一头半人高的土豨红着眼睛撞出来，獠牙上挂着枯藤。它把你当成了抢食的对头。" },
+  { id:"bingzhi", name:"雪原冰雉", tier:1, region:"beiyuan", realm:0, el:"shui", power:7, mat:"冰雉尾羽",
+    scene:"雪窝子里扑棱棱炸起一团白影——冰雉。北原的孩子捡它一根尾羽能换十文钱。它受惊了，尖喙直取你眼窝。" },
+  { id:"shachai", name:"沙豺", tier:1, region:"ximo", realm:0, el:"huo", power:7, mat:"沙豺皮",
+    scene:"沙丘背风处亮起三对幽绿的眼睛——沙豺群跟了你半日。头豺喉咙里滚出一声低吼，当先扑到。" },
+  /* 二阶 · 通灵妖兽 */
+  { id:"yediao", name:"夜眼貂", tier:2, region:null, realm:7, el:"mu", power:15, mat:"夜眼貂灵魄",
+    scene:"暮色里两点幽绿的眸子缀着你——夜眼貂，二阶妖兽，吞吐灵雾，快得只剩残影。它把你当成了闯入领地的猎物。" },
+  { id:"tiebei", name:"铁背猿", tier:2, region:"nanling", realm:7, el:"tu", power:17, mat:"铁背猿脊骨",
+    scene:"瘴林深处一声猿啼，一头肩背泛着青铁光泽的老猿拦在道上——铁背猿，双臂有千斤力，正捶着胸口向你示威。" },
+  { id:"hanlin", name:"寒鳞蟒", tier:2, region:"beiyuan", realm:7, el:"shui", power:16, mat:"寒鳞蟒胆",
+    scene:"冰河裂开的声响里，一条覆满霜鳞的巨蟒昂起半截身子——寒鳞蟒，吐息成雾，方圆十丈冻得刺骨。" },
+  /* 三阶 · 玄阶大妖（灵智不逊于人，杀之微损道心） */
+  { id:"chiyan", name:"赤焰狮", tier:3, region:"zhongzhou", realm:13, el:"huo", power:28, mat:"赤焰狮内丹",
+    scene:"旱地的热浪凝成一头丈高的火狮——赤焰狮，三阶大妖，鬃毛间火星四溅。它开口，是人言：「人族，留下买路的气血。」" },
+  { id:"duyanjiu", name:"毒眼鹫", tier:3, region:"nanling", realm:13, el:"mu", power:26, mat:"毒眼鹫元核",
+    scene:"瘴云里掠下一道灰影——毒眼鹫，翼展三丈，独眼里转着幽紫的毒光。它盘旋半晌，认定你是可口的一餐。" },
+  { id:"leiwen", name:"雷纹貂皇", tier:3, region:null, realm:13, el:"jin", power:30, mat:"雷纹貂皇内丹",
+    scene:"荒原上雷云压顶，一头金纹貂皇立于焦木之巅，皮毛间电弧游走——三阶大妖中的霸主，它先动了，雷光比你眨眼还快。" },
+  /* 四阶 · 圣阶妖圣（非大世不可开罪，杀了它，它的族群会来） */
+  { id:"bingqiu", name:"冰渊虬龙", tier:4, region:"beiyuan", realm:19, el:"shui", power:48, mat:"冰渊虬龙圣核",
+    scene:"冰渊的水面无声分开，一颗虬首自寒水中昂起——冰渊虬龙，圣阶妖圣，一双竖瞳里凝着万载玄冰。它看了你一眼，你识海里的万象轮盘第一次安静了。" },
+  { id:"tianhuo", name:"天火朱厌", tier:4, region:"ximo", realm:19, el:"huo", power:50, mat:"天火朱厌圣核",
+    scene:"沙海深处一座「火山」站了起来——天火朱厌，圣阶妖圣，周身白焰流窜。它捶地，百里流沙为之一沉。" },
+  { id:"jincheng", name:"金翅大鹏", tier:4, region:"sihai", realm:19, el:"jin", power:52, mat:"金翅大鹏圣核",
+    scene:"海天一线上掠来一片遮天的金云——金翅大鹏，圣阶妖圣，双翼一展便是九万里。它没有俯冲，只是看着你：敢对它亮剑的人，它记得。" },
+];
+const MOBS_BY_ID = {}; for (const m of MOBS) MOBS_BY_ID[m.id] = m;
 /* 敌方五行（按名取，默认土行） */
 const ENEMY_EL = {
   "林中的冬狼": "shui", "野狗": "tu", "饿疯的野狗": "tu",

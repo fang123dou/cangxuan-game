@@ -2532,6 +2532,28 @@ function applyCore(fx) {
   }
   if (fx.pet) { S.flags["pet_" + fx.pet] = 1; S.pets = S.pets || {}; if (fx.petmods) { S.pets[fx.pet] = Object.assign({}, S.pets[fx.pet], fx.petmods); computeMods(); } gain(`「${fx.pet}」缔结灵宠之缘——血脉共鸣，属性百分比加成永续生效（认魂不认人，缘分至生死之交可跨世等候）`); }
   if (fx.drop) { S.mats = S.mats || {}; S.mats[fx.drop] = (S.mats[fx.drop] || 0) + 1; gain(`获得材料「${fx.drop}」（一身是宝，硬通货——可在收购/炼丹/炼器剧情中折算）`); }
+  if (fx.mobloot) { // 野怪随机掉落：修为/铜钱必得，灵石·丹药·食物·功法按等阶概率（掉落随怪物等阶增长）
+    const t = Math.max(1, Math.min(4, parseInt(fx.mobloot, 10) || 1));
+    const prev = S.cult; const cult = t * 8 + Math.floor(Math.random() * (t * 4 + 1)); // 一阶 8~12 ｜ 四阶 32~48（对齐聚气丹 +30/筑基丹 +60 的物价锚）
+    if (gainCult(cult)) gain(`修为 +${fmt1(S.cult - prev)}`);
+    const money = 10 * t + Math.floor(Math.random() * 15 * t); S.money += money; S.stats.maxMoney = Math.max(S.stats.maxMoney || 0, S.money); gain(`铜钱 +${money}`);
+    if (t >= 2 && Math.random() < 0.5) { const st = 1 + Math.floor(Math.random() * t); S.stones += st; gain(`灵石 +${st}`); }
+    if (t >= 2 && Math.random() < 0.3) { const did = t >= 4 ? "xisuiDan" : t === 3 ? "huiLingDan" : "juqiDan"; const n = t >= 3 ? 2 : 1; S.inv[did] = (S.inv[did] || 0) + n; gain(`丹药「${ITEM_INFO[did].name}」×${n}`); }
+    if (Math.random() < 0.4) { const fid = t >= 3 ? "linggu" : t === 2 ? "jiangniu" : (Math.random() < 0.5 ? "heimu" : "jiangniu"); S.inv[fid] = (S.inv[fid] || 0) + 1; gain(`食物「${ITEM_INFO[fid].name}」×1`); }
+    const GF_T = [ // 功法池：低阶给入门传承，高阶给散修玄品/宗门内篇——已习得者不再重复
+      ["quanpu", "yinqi"],
+      ["yinqi", "gfqingyan", "gfhuilang", "gfluoxia", "gfkuquan", "gfbaimiao"],
+      ["gfruijin", "gfqingmu", "gfxuanshui", "gflihuo", "gfhoutu", "gfqingyannei", "gfhuilangnei", "gfluoxianei", "gfkuquannei", "gfbaimiaonei"],
+      ["gfruijin", "gfqingmu", "gfxuanshui", "gflihuo", "gfhoutu"],
+    ];
+    const chance = [0.06, 0.1, 0.16, 0.25][t - 1];
+    if (Math.random() < chance) {
+      const pool = GF_T[t - 1].filter(id => !(S.inv[id] > 0));
+      if (pool.length) { const gid = pool[Math.floor(Math.random() * pool.length)]; techniqueUnlockFx(gid); S.inv[gid] = (S.inv[gid] || 0) + 1; gain(`功法玉简《${GONGFU_BY_ID[gid].name}》×1`); }
+      else { const ex = 10 * t, p2 = S.cult; if (gainCult(ex)) gain(`修为 +${fmt1(S.cult - p2)}（功法已满卷，折作感悟）`); }
+    }
+    chronicle(`猎杀妖兽取宝（${["一阶", "二阶", "三阶", "四阶"][t - 1]}）`, "evt");
+  }
   if (fx.slay) { // 猎杀有灵众生：道心受损、死仇钉死、认魂断绝
     S.daoXin = Math.max(0, Math.min(100, (S.daoXin || 0) - 2)); // 杀有灵智者，道心必颤（无杀孽计数，罪在道心）
     S.npc[fx.slay] = -100;
