@@ -1034,20 +1034,25 @@ const GM = (() => {
         const bonds = Object.values(S.npc || {}).filter(v => v >= 80).length;
         const broad = Object.values(S.npc || {}).filter(v => v >= 60).length;
         const hiddenAll = ["duobaoCi", "shouyeren", "jianzheng", "shoumu", "shujing", "chuixianzhe"].every(id => (typeof castMet === "function") && castMet(id));
-        const beyond = (S.flags.coincidence || 0) >= 10 && hiddenAll && known;
+        /* 仙器归局（设定集第十六章 · 仙器录）：卷四各归其局——持器者终局判定点松动 */
+        const hasZhanjie = S.gear && S.gear.xianqi === "zhanjieDao";   // 斩界刀：弑天残刃在手，听没听过低语都要弑
+        const hasLiangtian = S.gear && S.gear.xianqi === "liangtianchi"; // 量天尺：天道同源，弑天的门槛里它也算一证
+        const hasWangchuan = S.gear && S.gear.xianqi === "wangchuanZhan"; // 忘川盏：洗过因果的人，系统推演不到——界外之路的近道
+        const hasAnchor = S.gear && S.gear.xianqi === "guiXuAnchor";  // 归墟锚：负过锚的人，界壁认他——登仙羁绊门槛减一
+        const beyond = ((S.flags.coincidence || 0) >= 10 && hiddenAll && known) || (hasWangchuan && known && (S.flags.coincidence || 0) >= 6);
         const choices = [
           { label: "承接战果，听它道一声「恭喜」", hint: known ? "你已经知道这句话意味着什么。" : "赢了吞世者，天道该论功行赏了。", fx: { special: "end:luding" } },
           { label: "留在归墟，做新一任守夜人", hint: "不拆穿，也不离开。世界续命，你镇裂缝。", fx: { special: "end:shoujie" } },
-          { label: "识破回炉之局，修补界壁，重开仙路", hint: `需要：已知真相 + 生死羁绊×3（当前 ${bonds}）+ 伏笔≥8（当前 ${S.flags.coincidence || 0}）。完美结局。`,
-            disabled: !(known && bonds >= 3 && (S.flags.coincidence || 0) >= 8), fx: { special: "end:dengxian" } },
-          { label: "反手，弑天", hint: `需要：已知真相 + 听过低语 + 道心 60+（当前 ${Math.round(S.daoXin)}）。古往今来无人做到。`,
-            disabled: !(known && S.flags.devourWhisper && S.daoXin >= 60), fx: { special: "end:sitian" } },
+          { label: "识破回炉之局，修补界壁，重开仙路", hint: `需要：已知真相 + 生死羁绊×3（当前 ${bonds}，持归墟锚者×2）+ 伏笔≥8（当前 ${S.flags.coincidence || 0}）。完美结局。`,
+            disabled: !(known && (bonds >= 3 || (hasAnchor && bonds >= 2)) && (S.flags.coincidence || 0) >= 8), fx: { special: "end:dengxian" } },
+          { label: "反手，弑天", hint: `需要：已知真相 + 听过低语（持斩界刀/量天尺可代）+ 道心 60+（当前 ${Math.round(S.daoXin)}）。古往今来无人做到。`,
+            disabled: !(known && (S.flags.devourWhisper || hasZhanjie || hasLiangtian) && S.daoXin >= 60), fx: { special: "end:sitian" } },
           { label: "打碎棋盘，让众生共掌天道", hint: `需要：已知真相 + 广结善缘×5（缘分 60+，当前 ${broad}）。从此没有棋手。`,
             disabled: !(known && broad >= 5), fx: { special: "end:huantian" } },
         ];
-        if (beyond) choices.push({ label: "什么也不选——转身，向「外面」走一步", hint: "面板上的字开始乱。这条路，它推演不到。", fx: { special: "end:beyond" } });
+        if (beyond) choices.push({ label: "什么也不选——转身，向「外面」走一步", hint: hasWangchuan ? "忘川盏在你怀里轻轻一晃——因果既洗，此界留不住你。这条路，它推演不到。" : "面板上的字开始乱。这条路，它推演不到。", fx: { special: "end:beyond" } });
         return {
-          scene: `进食断了。归墟深处静得能听见界壁的裂纹在合拢。这时，天道的声音落下来——三万年来它第一次这么近、这么温和：「做得好。承接它的因果吧，那是你应得的。」${known ? "你听得懂这句话。刀用完了，是要回炉的。" : "有什么东西在你心底一闪而过，快得抓不住。"} 终局在此，路在你脚下。`,
+          scene: `进食断了。归墟深处静得能听见界壁的裂纹在合拢。这时，天道的声音落下来——三万年来它第一次这么近、这么温和：「做得好。承接它的因果吧，那是你应得的。」${known ? "你听得懂这句话。刀用完了，是要回炉的。" : "有什么东西在你心底一闪而过，快得抓不住。"}${hasLiangtian ? " 怀里那柄量天尺烫得惊人——量过你的尺子，此刻正贴着天道的掌纹。" : ""}${hasAnchor ? " 归墟锚在你背上低鸣，界壁的裂纹在向它合拢。" : ""} 终局在此，路在你脚下。`,
           choices,
         };
       },
