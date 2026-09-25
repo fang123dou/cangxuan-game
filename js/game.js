@@ -2474,7 +2474,7 @@ function die(reason, cause) {
       quote: comment,
       stats: [["修行高度", st.dims[0]], ["任务绩效", st.dims[1]], ["千秋录", st.dims[2]], ["因果质量", st.dims[3]], ["道心活法", st.dims[4]], ["寿数", st.dims[5]], ["加权总分", st.total]],
       note: `词条回收中……保底计数清零。称号与评语随魂封存；千秋录成就一笔勾销——新一世，重新刻起。<br>下一世：${rb.identity.name}（${rb.identity.grade}档）· 初始万象点 ${rb.points}${rb.attrMalus ? " · 属性折损 ×" + rb.attrMalus : ""}${rb.echo ? " · 伴生残影「" + echoCard.name + "」（半效）" : ""}`,
-      btns: [{ label: "再入轮回", fn: () => { closeEnd(); newLife(); startLife(); } }],
+      btns: [{ label: "再入轮回", fn: () => { META.ach = []; META.dynAch = []; saveMeta(); closeEnd(); newLife(); startLife(); } }], // 开局修改：死亡再入轮回同样一笔勾销千秋录成就（此前漏清，成就跨世残留）
     });
     renderPanel();
   };
@@ -2857,7 +2857,7 @@ function resetToFirstLife() {
     for (const k of Object.values(SAVE_KEYS)) localStorage.removeItem(k); // 所有存档槽
     localStorage.removeItem(META_KEY);
   } catch (e) {}
-  META = { world: 1, deaths: 0, ach: [], rebirth: null, sysLv: 1, totalPulls: 0 };
+  META = { world: 1, deaths: 0, ach: [], dynAch: [], titles: [], rebirth: null, sysLv: 1, totalPulls: 0 }; // titles 必须显式初始化：gainTitle 直接 push，缺字段会崩
   // 内存痕迹一并抹去：AI 词条出盘、动态称号除名——重开即彻底重开，成就（机械与 AI）无一残留
   try {
     for (const id in oldDyn) {
