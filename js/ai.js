@@ -124,7 +124,8 @@ const AI = (() => {
 19. 【物品门槛 · 铁律】选项若要使用行囊物品（服丹、吃存货、以物换物、燃柴生火），仅当玩家行囊里确有该物品时才可提供这个选项；玩家没有的东西，不得出现「用它」的选项（引擎会自动拦截，给了也会被移除）。
 20. 【结算一致 · 铁律】选项 fx 里的每个收获/损失都必须能在剧情里找到来路：scene（或 successText/failText）写明了这份得失的缘由，结算栏里才会出现它——禁止剧情里什么都没给、结算却 +铜钱/修为/物品；反过来，剧情里写了得了赏钱、受了伤、吃了东西、得了物件，选项 fx 就要给出对应的 money/hp/hunger/item（数值与剧情一致：赏钱说二十文就 money:20，说捡了捆柴就 item="wood:1"）。判定分支的得失写进 success/fail 内，并用 successText/failText 点明。
 21. 【钱袋门槛 · 铁律】涉及花钱的选项（购买、请客、行贿、下注、雇车、打点什么），hint 里注明花费，fx.money 写对应负值；玩家铜钱不足以支付时，不得给出该选项，也不要给「钱不够」的废选项——直接不给。引擎会自动拦截付不起的选项（含判定成败两个分支的花费）。
-22. 【承接 · 铁律】本回合 scene 必须直接承接输入的「上回合」：先用一两句话交代玩家上一手选择的直接后果（去了何处、得失如何、对方作何反应），再展开新事件；场景、在场人物、时辰与地点默认延续上回合，唯有 scene 里明确写出动身、换装、时间流逝，才可切换地点或跳时段；同一 NPC 的态度按其缘分值与上轮互动延续。不得每回合另起炉灶、场景跳切。`;
+22. 【承接 · 铁律】本回合 scene 必须直接承接输入的「上回合」：先用一两句话交代玩家上一手选择的直接后果（去了何处、得失如何、对方作何反应），再展开新事件；场景、在场人物、时辰与地点默认延续上回合，唯有 scene 里明确写出动身、换装、时间流逝，才可切换地点或跳时段；同一 NPC 的态度按其缘分值与上轮互动延续。不得每回合另起炉灶、场景跳切。
+23. 【伤病 · 铁律】输入「伤病」字段中疾病或伤势/暗伤非「无」时，本回合剧情必须给出至少一条治病疗伤的路径选项——按「药石」字段对症开方（买药用 money+item 负值、服丹、寻医 special:"seeDoctor"、采药草煎服均可），hint 注明花费与对症；伤势沉重（中伤以上）时给「寻医/敷药/静养」选项。伤病皆无时不许硬塞吃药剧情。疾病痊愈的叙事须与药石字段中的对症药品一致（风寒用驱寒汤/生姜、中暑用藿香正气散、丹毒侵脉用解毒散），不可张冠李戴。`;
 
   function chronicleSummary() {
     try {
@@ -157,6 +158,8 @@ const AI = (() => {
       五维: `力${attr("str")}敏${attr("agi")}智${attr("int")}体${attr("con")}运${attr("luck")}`,
       五行亲和: WX_ELS.map(e => WX_NAMES[e] + (wxOf()[e] || 0)).join("/") + `（主行:${WX_NAMES[dominantWxEl()]}）`,
       状态: `气血${Math.round(S.hp)}/${hpMax()} 体力${Math.round(S.sta)} 饱食${Math.round(100 - S.hunger)} 道心${Math.round(S.daoXin)} 心魔${Math.round(S.xinmo || 0)}/100(${xinmoStage().name}) 战力${combatPower()} 康健${injuryTier().name} 药蚀${Math.round(S.yaoshi || 0)}/100`,
+      伤病: `疾病:${S.ill ? S.ill.name + "（余" + S.ill.days + "日，" + S.ill.desc + "）" : "无"} 伤势:${typeof woundText === "function" ? woundText() : "未知"}${(() => { const d = Object.keys(S.darkWounds || {}).filter(k => S.darkWounds[k] > 0); return d.length ? " 暗伤:" + d.map(k => k + "-" + S.darkWounds[k]).join("、") : ""; })()}`,
+      药石: "对症药品（商铺有售，行囊可用）：驱寒汤→风寒、藿香正气散→中暑、解毒散→丹毒侵脉、金疮药/跌打药→外伤回血、生姜→风寒病程-1日、甘草→调和（药蚀-2）；寻医诊治 fx.special=\"seeDoctor\"（30文，病除+气血+8）",
       钱财: `${S.money}文/${S.stones}灵石/${S.points}万象点`,
       词条: cardNames.join("、") || "无", 物品: JSON.stringify(S.inv),
       职业: S.job || "无", 灵根: linggen().name, 称号: (META.titles || []).map(t => TITLES[t].name + (S.wornTitle === t ? "(佩戴中)" : "")).join("、") || "无", 系统等级: "Lv" + ((typeof META !== "undefined" && META.sysLv) || 1), 缘分: npcs, 伏笔标记: flags, 近期剧情脉络: recent,

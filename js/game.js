@@ -648,6 +648,12 @@ const ITEM_INFO = {
   wood: { name: "柴薪", tier: "凡物", desc: "城外矮林砍来的干柴。雪天柴贵，市集六文一捆；夜里生火可御风寒（柴薪 ×2）。" },
   mianao: { name: "老棉袄", tier: "凡物", desc: "厚实的老棉袄，浆洗得发硬。穿上它，风雪与寒潮夜不再冻伤气血。" },
   shuinang: { name: "水囊", tier: "凡物", desc: "牛皮水囊，西市杂货 40 文。带着它，西漠酷热、热风、沙暴之夜不再暑热伤气，也不会中暑。" },
+  quhanTang: { name: "驱寒汤", tier: "凡药", desc: "姜桂熬的浓汤，一碗下肚寒气尽出。点开趁热喝下——对症【风寒】可立即痊愈；无病则暖胃（气血 +2）。" },
+  huoxiangSan: { name: "藿香正气散", tier: "凡药", desc: "解暑化湿的散剂。点开温水送服——对症【中暑】可立即痊愈；无病则醒神（气血 +2）。" },
+  jieduSan: { name: "解毒散", tier: "凡药", desc: "以毒攻毒的解毒散。点开服之——对症【丹毒侵脉】立即痊愈，兼化药蚀 -10；无病则清热解毒（气血 +3，药蚀 -5）。" },
+  jinchuangYao: { name: "金疮药", tier: "凡药", desc: "外伤圣药，比跌打药更猛。点开敷用（气血 +10，重伤之人尤宜）。" },
+  shengjiang: { name: "生姜", tier: "药草", desc: "辛温解表的药草，生食辛辣。点开嚼服——【风寒】病程 -1 日；无病则暖胃（气血 +1）。" },
+  gancao: { name: "甘草", tier: "药草", desc: "调和百药的甜草根。点开嚼服（气血 +2，药蚀 -2）。" },
   chaidao: { name: "豁口柴刀", tier: "凡物", desc: "一柄磨得只剩半个豁口的柴刀。砍柴效率 +1，关键时刻也能当兵器使。" },
   jiansui: { name: "玄铁剑穗", tier: "来历不明", desc: "一截乌沉沉的剑穗，非金非铁，坠手冰凉。识货的人见了会变色——它不该出现在一个乞丐手里。" },
   quanpu: { name: "《锻骨拳谱》", tier: "0 阶功法", desc: "无名残卷，记载淬体拳路。演练可增长修为与力量，熟练度满 100% 反哺力量。" },
@@ -866,7 +872,14 @@ function renderTab() {
     if (S.inv.heimu) inv.push(["heimu", `黑馍 ×${S.inv.heimu}`]);
     if (S.inv.wood) inv.push(["wood", `柴薪 ×${S.inv.wood}`]);
     if (S.inv.mianao) inv.push(["mianao", "老棉袄"]);
-    if (S.inv.shuinang) inv.push(["shuinang", "水囊"]);    if (S.inv.chaidao) inv.push(["chaidao", "豁口柴刀"]);
+    if (S.inv.shuinang) inv.push(["shuinang", "水囊"]);
+    if (S.inv.quhanTang) inv.push(["quhanTang", `驱寒汤 ×${S.inv.quhanTang}`]);
+    if (S.inv.huoxiangSan) inv.push(["huoxiangSan", `藿香正气散 ×${S.inv.huoxiangSan}`]);
+    if (S.inv.jieduSan) inv.push(["jieduSan", `解毒散 ×${S.inv.jieduSan}`]);
+    if (S.inv.jinchuangYao) inv.push(["jinchuangYao", `金疮药 ×${S.inv.jinchuangYao}`]);
+    if (S.inv.shengjiang) inv.push(["shengjiang", `生姜 ×${S.inv.shengjiang}`]);
+    if (S.inv.gancao) inv.push(["gancao", `甘草 ×${S.inv.gancao}`]);
+    if (S.inv.chaidao) inv.push(["chaidao", "豁口柴刀"]);
     if (S.inv.jiansui) inv.push(["jiansui", "玄铁剑穗"]);
     if (S.inv.quanpu) inv.push(["quanpu", "《锻骨拳谱》"]);
     if (S.inv.yinqi) inv.push(["yinqi", "《引气诀》"]);
@@ -926,6 +939,37 @@ function renderTab() {
         S.inv.medicine--;
         takeDrug("medicine", 0, 6);
         log("药粉洒在伤处，一阵清凉。气血回了些。", "good");
+      })});
+      /* 对症药品：风寒/中暑/丹毒侵脉可立即痊愈（伤病系统的「货」） */
+      if (id === "quhanTang" && (S.inv.quhanTang || 0) > 0) acts.push({ label: "趁热喝下（对症风寒）", fn: closeAnd(() => {
+        S.inv.quhanTang--;
+        if (S.ill && S.ill.name === "风寒") { sys(`【驱寒汤】一碗滚汤下肚，寒气自百窍而出——【风寒】痊愈。`); S.ill = null; }
+        else { S.hp = Math.min(hpMax(), S.hp + 2); log("姜桂浓汤暖了胃。气血 +2。", "good"); }
+      })});
+      if (id === "huoxiangSan" && (S.inv.huoxiangSan || 0) > 0) acts.push({ label: "温水送服（对症中暑）", fn: closeAnd(() => {
+        S.inv.huoxiangSan--;
+        if (S.ill && S.ill.name === "中暑") { sys(`【藿香正气散】散剂化开，烦渴顿解——【中暑】痊愈。`); S.ill = null; }
+        else { S.hp = Math.min(hpMax(), S.hp + 2); log("药散醒神。气血 +2。", "good"); }
+      })});
+      if (id === "jieduSan" && (S.inv.jieduSan || 0) > 0) acts.push({ label: "服散（对症丹毒侵脉）", fn: closeAnd(() => {
+        S.inv.jieduSan--;
+        if (S.ill && S.ill.name === "丹毒侵脉") { sys(`【解毒散】以毒攻毒，丹毒尽化——【丹毒侵脉】痊愈，药蚀 -10。`); S.ill = null; S.yaoshi = Math.max(0, (S.yaoshi || 0) - 10); }
+        else { S.hp = Math.min(hpMax(), S.hp + 3); S.yaoshi = Math.max(0, (S.yaoshi || 0) - 5); log("清热解毒。气血 +3，药蚀 -5。", "good"); }
+      })});
+      if (id === "jinchuangYao" && (S.inv.jinchuangYao || 0) > 0) acts.push({ label: "敷药（气血 +10）", fn: closeAnd(() => {
+        S.inv.jinchuangYao--;
+        takeDrug("jinchuangYao", 0, 10);
+        log("金疮药敷在伤处，剧痛先是一炸，随即化作清凉。气血 +10。", "good");
+      })});
+      if (id === "shengjiang" && (S.inv.shengjiang || 0) > 0) acts.push({ label: "嚼服（风寒病程 -1 日）", fn: closeAnd(() => {
+        S.inv.shengjiang--;
+        if (S.ill && S.ill.name === "风寒") { S.ill.days = Math.max(0, S.ill.days - 1); sys(`【生姜】辛温解表——【风寒】病程 -1 日${S.ill.days <= 0 ? "，就此痊愈" : `（余 ${S.ill.days} 日）`}。`); if (S.ill.days <= 0) S.ill = null; }
+        else { S.hp = Math.min(hpMax(), S.hp + 1); log("姜辣冲鼻，胃里一暖。气血 +1。", "good"); }
+      })});
+      if (id === "gancao" && (S.inv.gancao || 0) > 0) acts.push({ label: "嚼服（气血 +2，药蚀 -2）", fn: closeAnd(() => {
+        S.inv.gancao--;
+        S.hp = Math.min(hpMax(), S.hp + 2); S.yaoshi = Math.max(0, (S.yaoshi || 0) - 2);
+        log("甘草回甜。气血 +2，药蚀 -2。", "good");
       })});
       if (id === "gongfuTea" && (S.inv.gongfuTea || 0) > 0) acts.push({ label: "泡饮（吐纳大增）", fn: closeAnd(() => {
         S.inv.gongfuTea--;
@@ -1643,7 +1687,7 @@ function night() {
   if (S.day >= 31 && !S.flags.freeRoam) { ending(); return; }
   autoSave(); // 每天清晨自动落笔
   const foes = Object.entries(S.npc || {}).filter(([n, v]) => v <= -70); // 记恨以上：暗处等你失足
-  if (foes.length && Math.random() < 0.06) {
+  if (foes.length && Math.random() < (hasSpecial("xianyan") ? 0.1 : 0.06)) { // 显眼包：仇家也更容易注意到你（6%→10%）
     const [fn, fv] = foes[Math.floor(Math.random() * foes.length)];
     const self = fv <= -90; // 不死不休：亲至
     log(`<span style="color:var(--blood-hi)">【仇家寻上门】${self ? fn + "亲自来了——不死不休。" : fn + "雇的人摸到了你栖身的地方。"}</span>`);
@@ -1792,7 +1836,7 @@ function applyCore(fx) {
   if (fx.attr) for (const k in fx.attr) { gainAttr(k, fx.attr[k]); const s = `${{str:"力量",agi:"敏捷",int:"智力",con:"体质"}[k]} ${fx.attr[k] > 0 ? "+" : ""}${fx.attr[k]}`; out.push(s); (fx.attr[k] > 0 ? G : L).push(s); } // 途径一·日常磨炼：日常成长有效
   if (fx.item) { const m = /^([a-zA-Z]+):(-?\d+)$/.exec(fx.item); if (m) { const id = m[1], n = +m[2];
     if (n > 0 && (id === "yinqi" || id === "quanpu") && !(S.inv[id] > 0)) techniqueUnlockFx(id); // 首次获得功法：解锁反哺
-    S.inv[id] = Math.max(0, (S.inv[id] || 0) + n); const s = `${{wood:"柴薪",heimu:"黑馍",mianao:"棉袄",shuinang:"水囊",chaidao:"柴刀",jiansui:"玄铁剑穗",quanpu:"《锻骨拳谱》",yinqi:"《引气诀》",juqiDan:"聚气丹"}[id] || id} ${n > 0 ? "+" : ""}${n}`; out.push(s); (n > 0 ? G : L).push(s); } }
+    S.inv[id] = Math.max(0, (S.inv[id] || 0) + n); const s = `${{wood:"柴薪",heimu:"黑馍",mianao:"棉袄",shuinang:"水囊",quhanTang:"驱寒汤",huoxiangSan:"藿香正气散",jieduSan:"解毒散",jinchuangYao:"金疮药",shengjiang:"生姜",gancao:"甘草",chaidao:"柴刀",jiansui:"玄铁剑穗",quanpu:"《锻骨拳谱》",yinqi:"《引气诀》",juqiDan:"聚气丹"}[id] || id} ${n > 0 ? "+" : ""}${n}`; out.push(s); (n > 0 ? G : L).push(s); } }
   if (fx.clearWood) { S.inv.wood = 0; }
   if (fx.skill) { const m = /^(.+):(-?\d+)$/.exec(fx.skill); if (m) { const cap = TECH_CAPS[m[1]] || 100; S.skills[m[1]] = Math.min(cap, (S.skills[m[1]] || 0) + (+m[2])); checkSkillMilestone(m[1]); const s = `技艺「${m[1]}」 ${+m[2] > 0 ? "+" : ""}${m[2]}`; out.push(s); (+m[2] > 0 ? G : L).push(s); } }
   if (fx.wx) { const m = /^(jin|mu|shui|huo|tu):(-?\d+)$/.exec(fx.wx); if (m) { const wx = wxOf(); wx[m[1]] = Math.min(100, Math.max(0, wx[m[1]] + (+m[2]))); const s = `${WX_NAMES[m[1]]}行亲和 ${+m[2] > 0 ? "+" : ""}${m[2]}`; out.push(s); (+m[2] > 0 ? G : L).push(s); } } // 后天亲和，可破先天总和
@@ -1976,8 +2020,16 @@ function runSpecial(sp, fx) {
     if (Math.random() < attr("luck") * 0.015) { gainCult(20); sys(`【顿悟】灵光毫无预兆地炸开，修为大涨一截！`); }
     log(`你五心朝天，感一丝凉意自鼻尖沉入丹田。灵气潮汐正涨。`, "dim");
     advanceSlot();
-  } else if (sp === "train") {
-    const sk = S.inv.yinqi ? "引气诀" : S.inv.quanpu ? "锻骨拳谱" : "乱拳";
+  } else if (sp === "seeDoctor") {
+    /* 寻医诊治（AI 剧情可给出的治病路径；30 文，药到病除） */
+    if (S.money < 30) { log("你摸遍全身也凑不出诊金，只能干熬。", "hurt"); advanceSlot(); return; }
+    S.money -= 30;
+    if (S.ill) { sys(`【诊治】郎中指法老辣，一剂汤药下去，【${S.ill.name}】症结解开。`); S.ill = null; }
+    else sys(`【诊治】郎中替你活络了经脉。无大恙。`);
+    S.hp = Math.min(hpMax(), S.hp + 8);
+    log("药香里，你长长舒了一口气。气血 +8。", "good");
+    advanceSlot();
+  } else if (sp === "train") {    const sk = S.inv.yinqi ? "引气诀" : S.inv.quanpu ? "锻骨拳谱" : "乱拳";
     const cap = TECH_CAPS[sk] || 100;
     const wxm = wxTrainMult(sk); // 功法五行修炼速度 = 1 + 亲和×0.005；亲和 <10 强行修炼减半
     S.skills[sk] = Math.min(cap, (S.skills[sk] || 0) + 8 * (1 + (S.mods.trainP || 0) / 100) * wxm);
@@ -2229,6 +2281,15 @@ function resolveCombat(enemy, mode, onEnd) {
     const cast = technique && Math.random() < 0.35 && (!isSpell || S.mp >= 5); // 法力不足则退为普攻
     if (cast && isSpell) S.mp = Math.max(0, S.mp - 5);
     if (j1.kind === "dodge") parts.push(`你的${cast ? "一式「" + technique + "」" : "攻势"}被它闪开`);
+    else if (!cast && hasSpecial("wubian") && Math.random() < 0.35) {
+      /* 闪电五连鞭：五鞭各 30% 攻击力、逐鞭独立命中（50%+敏捷差×5%，20%~95%），全中=150% 总伤 */
+      let hits = 0, total = 0;
+      const lashP = Math.max(0.2, Math.min(0.95, 0.5 + (myAgi - eAgi) * 0.05));
+      for (let w = 0; w < 5; w++) if (Math.random() < lashP) { total += Math.max(1, Math.round(atkP * 0.3)); hits++; }
+      total = Math.round(total * myDmg);
+      eHp -= total;
+      parts.push(`【闪电五连鞭】五连击，中 ${hits}/5 鞭（单鞭命中 ${Math.round(lashP * 100)}%），共 ${total} 点伤害${hits === 0 ? "——五鞭全空" : hits === 5 ? "，鞭鞭到肉" : ""}，${enemy.name} ${seen ? `余 ${Math.max(0, Math.round(eHp))}/${eHpMax}` : `【${eHpState()}】`}`);
+    }
     else {
       let dmg = (cast ? myStr * skillMult : atkP) * (fl[0] + Math.random() * (fl[1] - fl[0])) * myDmg * j1.mult; // 普攻＝攻击力；运功另有公式（myStr×功法倍率）
       dmg = Math.max(1, Math.round(dmg));

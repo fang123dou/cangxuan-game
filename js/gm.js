@@ -206,7 +206,7 @@ const GM = (() => {
       },
     },
     {
-      id: "old_woman", cond: c => true, w: () => 2,
+      id: "old_woman", cond: c => true, w: () => 2, social: true,
       build() {
         return {
           scene: `石桥上坡，卖炭婆的独轮车陷在雪辙里，怎么推都纹丝不动。她喘着白气回头看你。`,
@@ -218,7 +218,7 @@ const GM = (() => {
       },
     },
     {
-      id: "stray_dog", cond: c => c.weatherBad, w: c => c.weatherBad ? 3 : 0,
+      id: "stray_dog", cond: c => true, w: c => c.weatherBad ? 3 : 1, social: true, // 哈基米：任何天气都可能撞见这条狗（坏天气更频）
       build() {
         if (hasSpecial("hajimi")) return {
           scene: `寒潮里一条瘦狗拦路，红着眼涎水结冰——可它凑近你嗅了嗅，忽然摇起尾巴，趴在你脚边不动了。【哈基米】词条在发烫。`,
@@ -235,7 +235,7 @@ const GM = (() => {
       },
     },
     {
-      id: "thief", cond: c => S.money >= 5 && !c.flag("thiefMet"), w: () => 2,
+      id: "thief", cond: c => S.money >= 5 && !c.flag("thiefMet"), w: () => 2, social: true,
       build() {
         return {
           scene: `人潮里，一只脏手悄悄探向你的衣兜——是个比你还瘦的小贼，手快，眼神更快。`,
@@ -272,7 +272,7 @@ const GM = (() => {
       },
     },
     {
-      id: "xiuxiu", cond: c => c.realm >= 2, w: c => c.realm >= 2 ? 2 : 0,
+      id: "xiuxiu", cond: c => c.realm >= 2, w: c => c.realm >= 2 ? 2 : 0, social: true,
       build() {
         const sect = (typeof regionOf === "function" ? regionOf(S.place) : REGIONS.yunzhou).sect || REGIONS.yunzhou.sect; // 切磋者随出生地宗门
         const short = sect.npc.replace(/^.*(?:弟子|勇士|沙弥|巫徒)/, ""); // 道号：陆沉/乌勒/沈青梧/了尘/蓝朵
@@ -433,6 +433,8 @@ const GM = (() => {
   function compose() {
     const rng = makeRng();
     const ctx = buildCtx();
+    /* 显眼包：结缘类（social）遭遇权重 ×1.5——贵人更容易注意到你 */
+    const wOf = s => Math.max(0.1, s.w(ctx)) * (s.social && hasSpecial("xianyan") ? 1.5 : 1);
     // 防重复：近期 8 次 + 当日全部（同一天内剧情不重复）
     const seen = new Set((S.gmRecent || []).slice(-8).concat(S.daySeen || []));
     let pool = SITUATIONS.filter(s => {
@@ -446,9 +448,9 @@ const GM = (() => {
     });
     if (!pool.length) pool = SITUATIONS.filter(s => { try { return s.cond(ctx); } catch (e) { return false; } });
     if (!pool.length) return fallbackScene(ctx);
-    let tot = pool.reduce((a, s) => a + Math.max(0.1, s.w(ctx)), 0);
+    let tot = pool.reduce((a, s) => a + wOf(s), 0);
     let r = rng() * tot, sit = pool[0];
-    for (const s of pool) { r -= Math.max(0.1, s.w(ctx)); if (r <= 0) { sit = s; break; } }
+    for (const s of pool) { r -= wOf(s); if (r <= 0) { sit = s; break; } }
     const built = sit.build(rng, ctx);
     built.scene = polish(built.scene, ctx);
     // 压入记忆 + 当日已见
