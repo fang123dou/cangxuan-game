@@ -1553,7 +1553,7 @@ function renderTab() {
         v > -40 ? "猜疑、微怨。冷脸与绊子，都从小事起。" :
         v > -70 ? "记恨在心。当心背后。" :
         v > -90 ? "深仇大恨。他会在暗处等你失足。" : "不死不休。见之即杀。";
-      return `<div class="p-row" data-npc="${esc(n)}"><span>${esc(n)}</span><b>${v > 0 ? "+" : ""}${v} ${relText(v)}</b></div>
+      return `<div class="p-row" data-npc="${esc(n)}"><span>${esc(n)}</span><b>${v > 0 ? "+" : ""}${v} ${relText(v)}${stagedProgressText(n)}</b></div>
         <div style="display:none" data-flavor="${esc(n)}">${flavor}</div>`;
     }).join("") : `<div class="empty">缘分簿空白。你遇到的每个人，都会被记下。</div>`;
     body.querySelectorAll("[data-npc]").forEach(el => el.onclick = () => {
@@ -1564,6 +1564,27 @@ function renderTab() {
     });
   }
 }
+/* ---------- 分期 NPC 衍生：人物页剧情线进度 / AI 素材 / 镇魔 ---------- */
+function stagedByName(nm) { if (typeof STAGED_NPCS === "undefined") return null; for (const n of STAGED_NPCS) if (n.name === nm) return n; return null; }
+function stagedProgressText(nm) { // 缘分簿行内：剧情线进度（相识☑ 相助☐ 生死之交☐）
+  const n = stagedByName(nm); if (!n) return "";
+  const st = S.staged && S.staged[n.id]; if (!st) return "";
+  const LABELS = { p20: "相识", p40: "相助", p60: "折服", p80: "生死之交", m40: "结怨", m70: "杀局" };
+  const marks = Object.keys(n.story || {}).map(t => (st.fired.includes(t) ? "☑" : "☐") + (LABELS[t] || t)).join(" ");
+  return ` <span style="opacity:.7;font-size:11px">剧情线 ${marks}</span>`;
+}
+function stagedPrompt() { // AI 执笔素材：已入册 NPC 的剧情线进度（防重复编排已演剧情，未触发阈值给方向）
+  if (!S.staged || typeof STAGED_NPCS === "undefined") return "";
+  const out = [];
+  for (const n of STAGED_NPCS) {
+    const st = S.staged[n.id]; if (!st) continue;
+    const v = S.npc[n.name];
+    const tiers = Object.keys(n.story || {}).map(t => `${t}:${st.fired.includes(t) ? "已演" : "未触发"}`).join(" ");
+    out.push(`${n.name}(${n.pers}·缘${typeof v === "number" ? v : "?"}·${n.title})[${tiers}]`);
+  }
+  return out.join("；");
+}
+function stagedByName0(){} /* 占位防旧档误引 */
 function relText(v) { return v >= 80 ? "生死之交" : v >= 40 ? "贵人" : v >= 20 ? "好感" : v > -20 ? "路人" : v > -40 ? "微怨" : v > -70 ? "记恨" : v > -90 ? "深仇" : "不死不休"; }
 
 /* ---------- 编年史（时间线） ---------- */
@@ -2174,6 +2195,16 @@ function night() {
       ? ["梦里有人用你的声音问：「这一世，又要死在哪？」", "它给你看了一扇门——门后是另一个世界的灯火。你惊醒时，枕边一片凉。"]
       : ["梦里有人用你的声音问：「值得吗？」", "你在梦里数你怕的东西，数到天亮。", "半梦半醒间，有什么东西替你翻了个身。"];
     lines.push(`<span style="color:var(--paper-70,#cbb)">${whispers[Math.floor(Math.random() * whispers.length)]}</span>`);
+  }
+  /* 羁绊镇魔（设定：生死之交是抗衡心魔的锚）：缘分 ≥80 者每逢旬日，有一半可能替你镇住心魔 */
+  if ((S.xinmo || 0) > 0 && S.day % 10 === 0) {
+    const anchors = Object.entries(S.npc || {}).filter(([n, v]) => v >= 80);
+    if (anchors.length && Math.random() < 0.5) {
+      const an = anchors[Math.floor(Math.random() * anchors.length)][0];
+      const calm = 3 + Math.floor(Math.random() * 3);
+      addXinmo(-calm);
+      lines.push(`<span style="color:var(--gold-dim)">【镇魔 · ${an}】${an}差人捎来一句惦记、一盏夜灯——识海里的低语，今夜安静了许多。（心魔 -${calm}）</span>`);
+    }
   }
   S.day++;
   S.slot = 0;

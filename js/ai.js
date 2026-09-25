@@ -204,7 +204,7 @@ const AI = (() => {
       药石: "对症（商铺有售，行囊可用）：驱寒汤→风寒、藿香正气散→中暑、解毒散→丹毒侵脉、金疮药→外伤、生姜→风寒-1日、驱瘴草→防瘴（南岭）、甘草→药蚀-2；寻医 fx.special=\"seeDoctor\"（30文，病除+气血+8）",
       钱财: `${S.money}文/${S.stones}灵石/${S.points}万象点`,
       词条: cardNames.join("、") || "无", 物品: JSON.stringify(S.inv),
-      职业: S.job || "无", 主职业: (typeof mainJobTitle === "function") ? mainJobTitle() : (S.job || "无"), 灵根: linggen().name, 称号: (META.titles || []).map(t => TITLES[t].name + (S.wornTitle === t ? "(佩戴中)" : "")).join("、") || "无", 系统等级: "Lv" + ((typeof META !== "undefined" && META.sysLv) || 1), 缘分: npcs, 伏笔标记: flags, 近期剧情脉络: recent,
+      职业: S.job || "无", 主职业: (typeof mainJobTitle === "function") ? mainJobTitle() : (S.job || "无"), 灵根: linggen().name, 称号: (META.titles || []).map(t => TITLES[t].name + (S.wornTitle === t ? "(佩戴中)" : "")).join("、") || "无", 系统等级: "Lv" + ((typeof META !== "undefined" && META.sysLv) || 1), 缘分: npcs, 伏笔标记: flags, 剧情线: (typeof stagedPrompt === "function") ? stagedPrompt() : "", 近期剧情脉络: recent,
       近日大事: chronicleSummary(),
       历世轮回: livesSummary(),
       可破境: checkBreakthrough(),
