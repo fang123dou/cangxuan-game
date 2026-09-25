@@ -1078,6 +1078,7 @@ function renderTab() {
     if (S.inv.gancao) inv.push(["gancao", `甘草 ×${S.inv.gancao}`]);
     if (S.inv.chaidao) inv.push(["chaidao", "豁口柴刀"]);
     if (S.inv.jiansui) inv.push(["jiansui", "玄铁剑穗"]);
+    if (S.inv.guxin) inv.push(["guxin", "上古信物 · 残片（半块）"]);
     if (S.inv.quanpu) inv.push(["quanpu", "《锻骨拳谱》"]);
     if (S.inv.yinqi) inv.push(["yinqi", "《引气诀》"]);
     if (S.inv.juqiDan) inv.push(["juqiDan", `聚气丹 ×${S.inv.juqiDan}`]);

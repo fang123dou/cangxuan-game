@@ -1,5 +1,6 @@
 /* 苍玄界 · 任务系统（天道卷宗）
-   主线按世界设定推进：卷一「潜龙在渊」——活过冬天 → 青岩门应试 → 外门立足。
+   主线按世界设定推进：卷一「潜龙在渊」——活过冬天 → 求武之路 → 小宗门应试 → 外门立足 →
+   岁末大比 → 后山枯井（上古信物）→ 灭门之夜（卷一终局）；修行线「问道之途」「大世之巅」并行。
    【设定集 · 灵根恒定（01:51 定稿）】主角首世恒为杂灵根（五行各 20，天定不得置换）——
    青岩门测灵碑择根而取，杂灵根灵光不过尺，必遭拒收：「拜入青岩门」对杂灵根主角不可完成，
    拒收后主线改道隐藏线「杂灵根的逆袭」（mq_sanxiu 散修之路）；再世 roll 出三灵根以上方可走仙门线。
@@ -39,6 +40,7 @@ const QU = (() => {
   for (const k in REGIONS) for (const op of (REGIONS[k].openings || [])) SURVIVE_BY_OPENING[op.id] = { name: REGIONS[k].surviveName, desc: REGIONS[k].surviveDesc };
   const regionOfSafe = () => (typeof regionOf === "function") ? regionOf(S.place) : null;
   const curSect = () => { const r = regionOfSafe() || REGIONS.yunzhou; return r.sect || REGIONS.yunzhou.sect; }; // 出生地所属小宗门（五域各一），主线宗门名与引路弟子随之变化
+  const elderName = () => `${curSect().name}内门长老`; // 卷一后半段的关键引路人（上宗眼线，角色不可知）
   const DEFS = {
     /* ===== 主线 · 卷一 潜龙在渊 ===== */
     mq_survive: {
@@ -106,6 +108,45 @@ const QU = (() => {
       ],
       reward: { points: 120, cult: 40, luckCharm: 1 },
       doneText: "凡阶六境，你一境一境走过来了。抬头看——灵泉之上，还有玄、圣，还有那件传说中的东西，和藏在它后面的影子。路，才刚刚开始。",
+    },
+
+    /* ===== 主线 · 卷一后半段（仙门线专属；散修线无此劫）=====
+       外门大比崭露头角 → 长老差遣探后山枯井（出土不该存在的信物）→ 灭门之夜，第一世以逃亡收束。
+       终局事件锁定、过程自由；与「问道之途」并行不悖（一个是故事线，一个是修行线）。 */
+    mq_dabi: {
+      get name() { return `主线：${curSect().name}岁末大比`; }, type: "main",
+      get desc() { return `岁末大比，外门弟子只取前十。名次即资源，资源即命——长老们会来看台，站上去，让他们看见你。`; },
+      auto: () => !!S.flags.qingyan && (S.quests.done || []).includes("mq_outer"),
+      objectives: [
+        { text: () => "登台连过三阵（报名即入册）", done: () => !!S.flags.dabiJoin },
+        { text: () => "跻身大比前十", done: () => !!S.flags.dabiWin },
+      ],
+      get reward() { return { points: 60, stones: 2, npc: { [elderName()]: 20 } }; },
+      get doneText() { return `前十的朱榜上有了你的名字。看台上，${elderName()}朝你这边多看了两眼——恰好在大比这日「路过」看台的，偏偏是他。`; },
+    },
+    mq_jing: {
+      get name() { return `主线：后山枯井`; }, type: "main",
+      get desc() { return `${elderName()}把你单独叫到偏殿：后山那口枯了三百年的井，昨夜开始往外冒灵气。宗门决定让你下去看看——只探，不取。可井下的东西，未必是宗门的东西。`; },
+      auto: () => !!S.flags.qingyan && (isDone("mq_dabi") || isFailed("mq_dabi")), // 大比无论成败，你都已被「看见」
+      objectives: [
+        { text: () => "受长老之托，探后山枯井", done: () => !!S.flags.jingGo },
+        { text: () => "下到井底", done: () => !!S.flags.jingDeep },
+        { text: () => "寻得井底之物", done: () => !!S.flags.xianRelic },
+      ],
+      rewardFn: () => { S.flags.jingDoneDay = S.day; return applyReward({ points: 60, stones: 3, luckCharm: 1 }); },
+      doneText: "你活着从井里上来了。暮色里长老等在井口，第一句话不是问伤势，而是问：「拿到什么了？」——他说过，只探，不取。",
+    },
+    mq_mie: {
+      get name() { return `主线：灭门之夜`; }, type: "main", passive: true,
+      get desc() { return `宗门传讯符烧到一半就灭了。回去，或者不回去——有些东西，从你带出井底那一刻起，就已经在路上了。`; },
+      auto: () => !!S.flags.xianRelic && !!S.flags.jingDoneDay && S.day >= S.flags.jingDoneDay + 2,
+      objectives: [
+        { text: () => "赶回山门", done: () => !!S.flags.mieStart },
+        { text: () => "活着出山", done: () => !!S.flags.mieEsc },
+        { text: () => "在渡口做个了断", done: () => !!S.flags.mieDone },
+      ],
+      reward: { points: 100, dao: 3, luckCharm: 1 },
+      get doneText() { return `${curSect().name}成了焦土。你站在渡口，怀里是半块不该存在的玉佩——从今往后，你没有宗门，只有债。`; },
     },
 
     /* ===== 仙品任务（第十一章 · 隐藏设定） =====
@@ -545,6 +586,28 @@ const QU = (() => {
         act: () => startTrials(),
       });
     }
+    // 主线行动：卷一后半段（外门大比 → 后山枯井 → 灭门之夜回山）
+    if (isActive("mq_dabi") && !S.flags.dabiJoin) {
+      list.push({
+        kind: "act", type: "main", label: `参加${curSect().name}岁末大比`,
+        hint: "岁末大比，只取前十。长老们会来看台。",
+        act: () => startDabi(),
+      });
+    }
+    if (isActive("mq_jing") && !S.flags.jingGo) {
+      list.push({
+        kind: "act", type: "main", label: `后山枯井：${elderName()}的差事`,
+        hint: "枯了三百年的井冒灵气。长老说：只探，不取。",
+        act: () => startJing(),
+      });
+    }
+    if (isActive("mq_mie") && !S.flags.mieStart) {
+      list.push({
+        kind: "act", type: "main", label: "宗门火讯：连夜回山",
+        hint: "传讯符烧到一半就灭了。晚了，可能就见不到了。",
+        act: () => startMie(),
+      });
+    }
     // 支线邀约：情境合适才出现——间隔两日、优先与方才剧情相关者
     if (S.day - (ensure().lastOfferDay || -9) >= 2) {
       const recent = ((S.gmRecent || []).join(">")) + (S.echoLine || "");
@@ -653,6 +716,236 @@ const QU = (() => {
       }
       if (!S.over) advanceSlot();
     });
+  }
+
+  /* ---------- 卷一后半段 · 三个主线演出（大比 → 枯井 → 灭门之夜） ---------- */
+  /* 外门大比：三阵连过，跻身前十；看台上「恰好」路过的长老（上宗眼线，角色不可知） */
+  function startDabi() {
+    S.flags.dabiJoin = 1;
+    const sect = curSect().name;
+    sys(`【${sect}岁末大比。演武台四座，外门弟子只取前十。教习唱名，声落即战。】`);
+    log("第一场——「铁塔」赵猛。一个满脸横肉的汉子跳上台，冲你咧嘴：「新来的？小心筋骨。」", "dim");
+    combat({ name: "外门师兄赵猛", power: 12, el: "jin", canBeg: false, desc: "（大比较技，点到为止）" }, res => {
+      if (res === "win" || res === "cheated") {
+        log("赵猛抱拳下台：「兄弟好力气。」看台起了一片嗡嗡声。", "good");
+        dabiRound2();
+      } else dabiStop(res);
+    });
+  }
+  function dabiRound2() {
+    log("第二场——教习韩厉亲自下场压阵：「能接我二十招的，外门不出五人。」", "dim");
+    combat({ name: "外门教习韩厉", power: 14, el: "huo", canBeg: false, desc: "（大比较技，点到为止）" }, res => {
+      if (res === "win" || res === "cheated") {
+        log("韩厉收势，深深看你一眼：「去吧。最后的台子，给你留了个老熟人。」", "good");
+        dabiFinal();
+      } else dabiStop(res);
+    });
+  }
+  function dabiFinal() {
+    const bond = S.npc[curSect().npc] || 0;
+    if (bond >= 40) { // 与引路弟子缘分到份：决赛相逢，台下皆惊
+      log(`最后一座台——${curSect().npc}抱剑而立，朝你一笑：「我等着一天了。别留手。」`, "dim");
+      combat({ name: curSect().npc, power: 16, el: "jin", canBeg: false, desc: "（同门较技，全力以赴）" }, res => {
+        if (res === "win" || res === "cheated") {
+          addNpc(curSect().npc, 10, { special: true });
+          log("双剑相交，三十招后他主动收剑，抱拳大笑：「痛快！这第一，你拿得比我有底气。」", "good");
+          dabiWin();
+        } else dabiStop(res);
+      });
+    } else {
+      log("最后一座台——外门首席顾长风，通脉境，三年没输过。", "dim");
+      combat({ name: "外门首席顾长风", power: 16, el: "feng", canBeg: false, desc: "（大比较技，点到为止）" }, res => {
+        if (res === "win" || res === "cheated") dabiWin();
+        else dabiStop(res);
+      });
+    }
+  }
+  function dabiWin() {
+    S.flags.dabiWin = 1;
+    chronicle(`${curSect().name}岁末大比跻身前十`, "quest");
+    log(`前十的朱榜贴上影壁，你的名字在列。看台上，${elderName()}朝这边多看了两眼——恰好在大比这日「路过」看台的，偏偏是他。`, "good");
+    addNpc(elderName(), 20, { special: true });
+    applyCore({ coincidence: 1 }); // 伏笔：长老的「恰好」
+    check(); // 当场结算 mq_dabi
+    if (!S.over) advanceSlot();
+  }
+  function dabiStop(res) {
+    if (res === "fled") log("你跳下了台。教习摇头：「怯战者，不与评。」", "hurt");
+    log("大比之路到此为止。朱榜上没有你，但看台上那双眼睛，似乎已经记住了你。", "dim");
+    fail("mq_dabi", "大比止步十名之外。来年再战——若有来年。");
+    if (!S.over) advanceSlot();
+  }
+  /* 后山枯井：井下石函里的半块上古信物（仙品任务「雪泥鸿爪」的 xianRelic 由此开启） */
+  function startJing() {
+    S.flags.jingGo = 1;
+    const elder = elderName();
+    sys(`【${elder}把你单独叫到偏殿：后山那口枯了三百年的井，昨夜开始往外冒灵气。宗门决定——让你下去看看。】`);
+    log(`${elder}把一枚旧铜铃塞进你手心：「井深三十丈，铃响为号。记住——只探，不取。井下的东西，未必是宗门的东西。」他说这话时，眼睛亮得反常。`, "dim");
+    addNpc(elder, 5, { special: true });
+    chronicle(`受${elder}之托，探后山枯井`, "quest");
+    setChoices([
+      { label: "先绕井口查探一圈", hint: "智者先看出什么不能吃。", fn: async () => {
+        const r = await AI.judge("int*8+d25>40", judgeState());
+        if (r.success) {
+          S.flags.jingScout = 1;
+          log("你俯身细看：井口的青苔断口新鲜，井壁凿痕里隐约有阵纹流转——这不是一口井，是一道封。你默默记下了几处落脚的石棱。", "good");
+        } else log("井口除了湿气和一股说不清的旧土味，什么也看不出来。", "dim");
+        jingDescend();
+      } },
+      { label: "系绳下井", hint: "三十丈枯井，绳结与腿脚都是命。", fn: () => jingDescend() },
+    ]);
+  }
+  async function jingDescend() {
+    const r = await AI.judge("agi*8+luck*4+d30>" + (S.flags.jingScout ? "45" : "55"), judgeState());
+    if (r.success) log("你贴着井壁一寸寸下放，绳结咬得死紧，脚底石棱蹬得稳稳的——三十丈，有惊无险。", "good");
+    else { log("下到一半井绳猛地一荡，你在井壁上撞得七荤八素，硬撑着滑到了底。（气血折损）", "hurt"); S.hp = Math.max(1, Math.round(S.hp - hpMax() * 0.15)); }
+    S.flags.jingDeep = 1;
+    log("井底竟是一座石室。一具坐化的骸骨盘膝守着一方石函，函上无锁，只覆着一层薄薄的青光——像是等了很多年，等一个够格打开它的人。", "dim");
+    jingBox();
+  }
+  function jingBox() {
+    setChoices([
+      { label: "开函", hint: "禁制认手段，也认人心。", fn: async () => {
+        const r = await AI.judge("int*8+d25>40", judgeState());
+        if (r.success) jingRelic();
+        else {
+          S.hp = Math.max(1, Math.round(S.hp - hpMax() * 0.1));
+          log("指尖刚碰到青光，一股柔力把你弹开，胸口像挨了一记闷捶。这禁制不讲蛮力——换个法子。", "hurt");
+          jingBox();
+        }
+      } },
+      { label: "先向骸骨行礼", hint: "无主之物，先敬其人。", fn: () => {
+        S.daoXin = Math.min(100, S.daoXin + 2);
+        log("你整衣，向坐化的骸骨恭恭敬敬行了一个弟子礼。礼毕，骸骨垂着的指尖忽然滑落，正落在石函的青光上——光，熄了。", "good");
+        jingRelic();
+      } },
+      { label: "不碰，原路返回", hint: "长老说，只探，不取。", fn: () => {
+        log("你退出两步——石室四壁的阵纹骤然亮起，风压从四面八方挤过来，逼得你寸步难行。这口井不许空手而归。你回过头，重新看向那方石函。", "hurt");
+        jingBox();
+      } },
+    ]);
+  }
+  function jingRelic() {
+    S.flags.xianRelic = 1;
+    S.inv.guxin = 1; // 上古信物·残片（剧情道具，不入商铺）
+    log("石函中没有金银。锦垫之上，静静躺着半块温凉的玉佩——玉质非金非石，纹路古拙，你从没见过，却在看见它的第一眼，心口莫名一紧。", "good");
+    sys("【获得：上古信物 · 残片（半块）——它不该出现在三流宗门的后山枯井里。】");
+    applyCore({ coincidence: 1 }); // 伏笔：不该存在的东西
+    log("就在玉佩入怀的一瞬，井壁剧震，古阵苏醒——头顶传来「啪」的一声脆响：绳，断了。", "hurt");
+    chronicle("枯井石函，得半块上古信物", "quest");
+    jingClimb();
+  }
+  function jingClimb() {
+    setChoices([
+      { label: "攀井壁而上", hint: "三十丈湿壁，九死一生。", fn: async () => {
+        const r = await AI.judge("agi*8+con*4+d30>60", judgeState());
+        if (r.success) { log("你抠着石缝、蹬着阵纹的凹槽，一寸一寸把自己钉了上去。指甲翻了两片，但你出来了。", "good"); jingOut(); }
+        else { log("爬到一半气力一泄，你从半空摔回井底——与此同时，古阵的杀意凝成了一道虚影。", "hurt"); jingArray(); }
+      } },
+      { label: "摇响铜铃求援", hint: "铃响为号——长老还在井口。", fn: () => {
+        addNpc(elderName(), 5, { special: true });
+        log("你把铜铃摇得山响。片刻，一条新绳垂了下来，绳尾系着长老的手书：「抓住。」你被一寸寸拽出了黑暗。", "good");
+        jingOut();
+      } },
+    ]);
+  }
+  function jingArray() {
+    combat({ name: "枯井古阵·杀意虚影", power: 15, el: "tu", canBeg: false, desc: "（古阵残灵，无智，只有杀意）" }, res => {
+      if (res === "win" || res === "cheated") log("虚影溃散成漫天光屑。井壁露出一线微光——是出口。", "good");
+      else log("你且战且退，从古阵崩开的裂缝里连滚带爬挤了出去——狼狈，但活着。", "hurt");
+      if (!S.over) jingOut();
+    });
+  }
+  function jingOut() {
+    const elder = elderName();
+    log(`暮色里，${elder}负手等在井口。他看你的第一眼，落在你的怀间，第二眼，才落在你的脸上。`, "dim");
+    log(`「拿到什么了？」——他问得又轻又快。你想起他交代的那四个字：只探，不取。`, "dim");
+    log("你没有答。他盯了你很久，忽然笑了，摆摆手：「活着回来就好。下去吧。」——那笑意没有到眼底。", "hurt");
+    addNpc(elder, 10, { special: true });
+    applyCore({ coincidence: 1 }); // 伏笔：长老早知道井里有什么
+    check(); // 当场结算 mq_jing（rewardFn 记账 jingDoneDay）
+    if (!S.over) advanceSlot();
+  }
+  /* 灭门之夜：卷一终局。终点事件锁定（山门成焦土、渡口了断），死活由玩家的刀、腿与运气决定 */
+  function startMie() {
+    S.flags.mieStart = 1;
+    const sect = curSect().name;
+    if (typeof META !== "undefined") { META.story = META.story || {}; META.story.sectBurnt = regionOfSafe() ? regionOfSafe().key : "yunzhou"; saveMeta(); } // 卷二伏笔：宗门焦土，时间线继承
+    sys(`【连夜回山。离山门还有三里，你看见了火光。】`);
+    chronicle(`${sect}遇袭，山门火光冲天`, "quest");
+    log("喊杀声顺着北风压下来。一个满脸是血的杂役抓住你的袖子：「同时……所有峰头同时遇袭！护山大阵连一刻都没撑住……」", "hurt");
+    log("太巧了。巧得像有一只手，把每一座峰头的时辰，掐得分毫不差。", "dim");
+    applyCore({ coincidence: 1 }); // 伏笔：被安排的灭门
+    setChoices([
+      { label: "冲进去救人", hint: "宗门在烧。你的同门在里面。", fn: () => mieCharge(false) },
+      { label: "先伏在暗处看清来路", hint: "看清楚是谁再动——智力定生死。", fn: async () => {
+        const r = await AI.judge("int*8+d25>40", judgeState());
+        if (r.success) {
+          log("你伏在雪沟里看清了：黑衣人进退有序，不伤山下凡人，不劫库房的灵石——专杀人，专烧殿。不是山贼，不是仇家。是灭口。", "good");
+          S.daoXin = Math.max(0, S.daoXin - 1); // 看清了的代价
+        } else log("夜太黑，你只看见火光里晃动的人影，数不清，也认不出。", "dim");
+        mieCharge(true);
+      } },
+    ]);
+  }
+  function mieCharge(scouted) {
+    const elder = elderName();
+    log(`一道熟悉的身影从火里撞出来，一把攥住你的手腕——${elder}，道袍烧去半幅，须发皆焦。`, "hurt");
+    log(`「宗门没了。」他把一只储物袋狠狠按进你怀里，推着你往山后的密道去，「你还活着。走密道，去渡口，离开云州——别回头！」`, "dim");
+    log("你回头的那一刻，看见他转身迎向追来的黑衣人，枯瘦的背影在火光里站得笔直。", "hurt");
+    S.stones += 5; addNpc(elder, 20, { special: true });
+    chronicle(`${elder}以死断后`, "evt");
+    combat({ name: "黑衣灭门者", power: 20, el: "shui", canBeg: false, desc: "（远超凡阶——正面对上，九死一生）" }, res => {
+      if (S.over) return; // 身死道消，结算由 die() 接管
+      if (res === "win" || res === "cheated") log("你拼着一身伤撕开了包围圈，撞进密道。身后火光冲天，无人再追。", "good");
+      else log("你挨了一记重的，借着密道的岔口和黑暗，连滚带爬甩掉了追兵。", "hurt");
+      mieDukou();
+    });
+  }
+  function mieDukou() {
+    S.flags.mieEsc = 1;
+    log("密道尽头是河。天将亮未亮，渡口的薄雾里立着一个人——斗笠，麻衣，抱刀，像等了你很久。", "dim");
+    log("「井底的东西。」斗笠人开口，声音不高，「留下。你走。」", "hurt");
+    sys("【对方战力：？？？（深不可测——系统建议：跑。可你跑得掉吗？）】");
+    setChoices([
+      { label: "交出玉佩", hint: "舍财保命。但交出去的，还回得来吗？", fn: () => mieGive() },
+      { label: "纵身跳河", hint: "敏捷与气运，全都押上。", fn: async () => {
+        const r = await AI.judge("agi*10+luck*5+d40>70", judgeState());
+        if (r.success) {
+          S.hp = Math.max(1, Math.round(S.hp - hpMax() * 0.3));
+          mieResolve("kept", "你抱着玉佩扎进冰河，潜流卷着你冲出半里。爬上对岸时你只剩半条命——但玉佩还在你怀里。");
+        } else {
+          log("你刚起势，斗笠人已经到了河边，刀背轻轻巧巧一挑，把你拍回了渡口。「再想想。」", "hurt");
+          mieDukou(); // 摔回来，重新抉择
+        }
+      } },
+      { label: "拔刀，死战", hint: "有些东西，交出去比死还难受。", fn: () => {
+        combat({ name: "渡口斗笠人", power: 30, el: "shui", canBeg: false, desc: "（远超凡阶——这一战，几乎没有胜算）" }, res => {
+          if (S.over) return; // 死于渡口：第一世以死亡收束，结算由 die() 接管
+          if (res === "win" || res === "cheated") {
+            log("你不知道自己是怎么站着的。斗笠人退开半步，斗笠下传出一声很轻的「咦」——然后他收刀入怀，侧身让开了路。", "good");
+            sys("【「有趣。」他丢下两个字，消失在雾里。这一战的分量，你很多年后才会明白。】");
+            mieResolve("kept", "你赢了——或者说，他被你吓住了。玉佩还在你怀里，渡口的风冷得刺骨。");
+          } else {
+            log("你输了，但斗笠人没有补刀。他取下你怀里的玉佩，掂了掂，转身走入雾中——从头到尾，没再看你第二眼。", "hurt");
+            mieResolve("taken", "玉佩没了。你躺在渡口，听着自己的心跳，一下，一下。命还在，债也在。");
+          }
+        });
+      } },
+    ]);
+  }
+  function mieGive() {
+    delete S.inv.guxin;
+    log("你取出那半块玉佩，放在渡口的船板上。斗笠人拾起它，对着天光看了看——就在那一瞬，你分明看见，雾散了一线。", "dim");
+    mieResolve("taken", "他收了玉佩，抱刀一礼，走入雾中。你空着手站在渡口，忽然觉得怀间轻得发慌。");
+  }
+  function mieResolve(how, text) {
+    S.flags.mieDone = 1; S.flags.xianChoice = 1; // 仙品「雪泥鸿爪」的「了断」随之勾销（交出或守住，皆是了断）
+    if (typeof META !== "undefined") { META.story = META.story || {}; META.story.relic = how; saveMeta(); } // 卷二伏笔：信物的下落
+    log(text, "good");
+    chronicle(`渡口了断：信物${how === "kept" ? "仍在怀" : "易主"}`, "quest");
+    check(); // 当场结算 mq_mie（及联动的 xian_henji）
+    if (!S.over) advanceSlot();
   }
 
   return { DEFS, check, offers, refuse, activate, isActive, isDone, isFailed, staleList, nudge, nudgeAct, questAct };
