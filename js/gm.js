@@ -1028,6 +1028,103 @@ const GM = (() => {
       },
     },
 
+    /* ---------- 断灵大劫 · 劫兆事件（第一章：走火入魔者十倍于平日、妖兽发狂、灵脉枯死） ----------
+       权重随 doomLevel 升档：劫数越深，末世征兆越密。进食断后（doomLevel 归 0）不再出现。 */
+    {
+      id: "doom_omen",
+      cond: () => doomLevel() >= 1,
+      w: () => doomLevel() * 1.5,
+      build(r) {
+        const v = Math.floor(r() * 3);
+        if (v === 0) return {
+          scene: "街角一阵骚动——一个散修当众走火入魔，双目赤红，见人就扑。围观者退开一圈，没人敢上前。近来这样的疯子，越来越多了。",
+          choices: [
+            { label: "上前替他导顺灵力", hint: "境界判定。成则救人一命，结份善缘。", fx: { check: "realm*6+int*4+d20>55",
+              success: { npc: { "路人缘": 5 }, dao: 1 },
+              fail: { hp: -6, xinmo: 3 },
+              successText: "你一掌抵住他后心，逆冲的灵力被你生生导回经脉。他瘫软下去，醒来时冲你深深一揖。",
+              failText: "他的灵力乱得超乎预料，反震得你气血翻涌——旁人七手八脚把他按住了，你默默退开。" } },
+            { label: "远远绕开", hint: "乱世先顾己。", fx: { dao: 0.1 } },
+          ],
+        };
+        if (v === 1) return {
+          scene: "城郊传来消息：又一条灵脉枯了。前去碰运气的修士扑了个空，回程时个个脸色灰败。有老人喃喃：「洞天崩、灵脉枯、古阵废……这天，是真的不如从前了。」",
+          choices: [
+            { label: "去枯脉看一眼", hint: "也许能捡到枯脉余烬；也许什么都剩不下。", fx: { check: "luck*6+d20>60",
+              success: { stones: 2, coincidence: 1 },
+              fail: { sta: -3 },
+              successText: "枯脉深处，你捡到两枚未及消散的灵石——还有一道说不清的、被「抽干」的痕迹，不像自然枯竭。",
+              failText: "枯脉里只剩灰白的石头，连苔藓都死透了。" } },
+            { label: "记下这桩事", hint: "末世的症状，多记一笔是一笔。", fx: { coincidence: 1 } },
+          ],
+        };
+        return {
+          scene: "夜里城外妖兽嚎叫连成一片，比往年凶了数倍。守夜的更夫说，兽群的眼睛红得反常——像被什么东西从界壁外头撩拨着。",
+          choices: [
+            { label: "上城头帮着守一夜", hint: "气血小损，路人缘 +3。", fx: { hp: -4, npc: { "路人缘": 3 } } },
+            { label: "关紧门窗", hint: "天塌下来，有个高的顶着——暂时还轮不到你。", fx: { sta: 1 } },
+          ],
+        };
+      },
+    },
+
+    /* ---------- 历练之机（三日之期【历练】选项的专属后续剧情） ----------
+       设定依据：规则14——每三日必有一次提升实力的机缘；五维打熬/功法精研/武技磨砺三分支。
+       trainingEvent 结算后由引擎记下 S.trainScene，下一回合 AI 提示词（历练之机）与离线引擎（本景）
+       双双承接——写打熬余韵、进境被瞧见、瓶颈契机；build 时即焚，不空转不滞留。 */
+    {
+      id: "train_after",
+      cond: () => !!S.trainScene,
+      w: () => 12,
+      build() {
+        const m = S.trainScene; S.trainScene = null; // 用完即焚
+        if (m.kind === "五维打熬") {
+          const flavor = {
+            str: "你捏了捏拳，指节咯咯作响——卖炭婆那车炭，今日你推得格外轻。",
+            agi: "你下意识垫了垫脚，身子竟比念头先动——屋檐那道灰影，再落不到你眼里。",
+            int: "柳先生今日的段子，你只听过一遍便在心里排出了脉络——通透的感觉还在。",
+            con: "冰水淬过的血脉仍在低鸣，寒气侵到三寸之外便自行溃散。",
+          }[m.attr] || "血肉里发烫的感觉还在。";
+          return {
+            scene: `打熬的余韵还在筋骨里发烫。${flavor}街坊看你的眼神，已与昨日不同。`,
+            choices: [
+              { label: "趁热再练一轮", hint: `体力 -2，${m.attrName}再进半分。`, fx: { attr: { [m.attr]: Math.round(m.amt * 50) / 100 }, sta: -2 } },
+              { label: "见好就收，好生将养", hint: "张弛有度。体力 +4，气血 +3。", fx: { sta: 4, hp: 3 } },
+            ],
+          };
+        }
+        if (m.kind === "武技磨砺") return {
+          scene: `拳面上的血痂结了又裂。老槐树下，一个路过的瘸腿老卒驻足看了半晌，忽然开口：「拳是直的，意是浮的。你这一千拳，有三百拳在赌气。」`,
+          choices: [
+            { label: "拜请老卒指点", hint: "判定：诚心求教——乱拳熟练大涨，缘分 +5。", fx: { check: "dao*0.5+d20>18",
+                success: { skill: "乱拳:5", npc: { "瘸腿老卒": 5 }, attr: { str: 0.03 } }, fail: { skill: "乱拳:2", npc: { "瘸腿老卒": 2 } },
+                successText: "老卒捡起一根枯枝，替你拆了半套拳。「记住这个劲。」",
+                failText: "老卒摇摇头，还是顺手替你扶正了一处肘架。" } },
+            { label: "不服，再打一千拳", hint: "乱拳 +2，体力 -3，气血 -2。", fx: { skill: "乱拳:2", sta: -3, hp: -2 } },
+            { label: "敷药歇息", hint: "拳面要紧。气血 +5。", fx: { hp: 5 } },
+          ],
+        };
+        if (m.nearCap) return { // 功法精研·逼近瓶颈：破关契机
+          scene: `石窝里的雪沫被你劲气卷成了旋儿。「${(m.techs || []).join("与")}」行至此处，关隘薄得只剩一纸——路过的云游修士忽然驻足，眯眼看了你许久：「小友的功法，要破关了。」`,
+          choices: [
+            { label: "当场再练，一鼓作气", hint: `「${(m.techs || [])[0]}」熟练 +3，修为 +3。瓶颈在望。`, fx: { skill: `${(m.techs || [])[0]}:3`, cult: 3, sta: -2 } },
+            { label: "向修士请教破关之法", hint: "判定：投缘则得一句真言。", fx: { check: "int*5+luck*4+d20>42",
+                success: { cult: 8, dao: 0.5 }, fail: { cult: 2 },
+                successText: "修士拈须一笑，只说了八个字。你如遭雷击，识海一片透亮。",
+                failText: "修士摇摇头：「时候未到。」却也祝你早日破关。" } },
+          ],
+        };
+        return { // 功法精研·默认：精研余韵
+          scene: `精研的余韵还在经脉里流转。「${(m.techs || []).join("与")}」的招式拆过了、重练了，此刻一招一式都像长进了筋骨里。你抬手起式——雪沫未扬，气已先至。`,
+          choices: [
+            { label: "趁热再研一式", hint: `「${(m.techs || [])[0]}」熟练 +2，修为 +2。`, fx: { skill: `${(m.techs || [])[0]}:2`, cult: 2, sta: -2 } },
+            { label: "温养气机，水到渠成", hint: "修为 +4。", fx: { cult: 4 } },
+            { label: "记下今日心得", hint: "「读书」技艺 +2，道心 +0.3。", fx: { skill: "读书:2", dao: 0.3 } },
+          ],
+        };
+      },
+    },
+
   ];
 
   /* ---------- 上下文 ---------- */
@@ -1058,10 +1155,13 @@ const GM = (() => {
     const wOf = s => Math.max(0.1, s.w(ctx)) * (s.social && hasSpecial("xianyan") ? 1.5 : 1);
     // 防重复：近期 8 次 + 当日全部（同一天内剧情不重复）
     const seen = new Set((S.gmRecent || []).slice(-8).concat(S.daySeen || []));
-    // 修行记事待承接时（med_*）：不受当日去重限制——一日多次参悟，每次都有回响
-    const medPending = !!S.medScene;
+    // 待承接的专属剧情不受当日去重限制——修行记事（med_*）与历练之机（train_after）：
+    // 一日多次参悟/砥砺，每次都要有回响
+    const repeatOK = new Set();
+    if (S.medScene) ["med_teacher", "med_after"].forEach(i => repeatOK.add(i));
+    if (S.trainScene) repeatOK.add("train_after");
     let pool = SITUATIONS.filter(s => {
-      if (seen.has(s.id) && !(medPending && s.id.indexOf("med_") === 0)) return false;
+      if (seen.has(s.id) && !repeatOK.has(s.id)) return false;
       try { return s.cond(ctx); } catch (e) { return false; }
     });
     // 当日耗尽才放宽到「近期不重复」

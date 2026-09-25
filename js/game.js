@@ -1275,7 +1275,8 @@ function renderTab() {
     const unlocked = SHOP_UNLOCK.filter(it => { try { return it.cond(); } catch (e) { return false; } });
     const lockedN = SHOP_UNLOCK.length - unlocked.length;
     const foodMult = rg ? rg.foodMult : 1;
-    const priceOf = it => { const p = it.kind === "食物" ? Math.round(it.price * foodMult) : it.price; return hasTitle("caishen") ? Math.ceil(p * 0.9) : p; }; // 地域物价：食物按当地倍率（北原×1.5、中州×1.3、西漠×1.8、南岭×1.2）
+    const doomP = 1 + doomLevel() * 0.08; // 劫数通胀：灵物逐档涨价（+8%/档），进食断后回落
+    const priceOf = it => { let p = it.kind === "食物" ? Math.round(it.price * foodMult) : it.price; p = Math.round(p * doomP); return hasTitle("caishen") ? Math.ceil(p * 0.9) : p; }; // 地域物价：食物按当地倍率（北原×1.5、中州×1.3、西漠×1.8、南岭×1.2）
     if (foodMult > 1) html += `<div class="pityline"><span>🗺 ${esc(rg.foodNote)}——本地食物价比云州贵 ${Math.round((foodMult - 1) * 100)}%。</span></div>`;
     const row = (it, isNew) => {
       const price = priceOf(it);
@@ -2026,6 +2027,19 @@ function night() {
       lines.push(`【旅途】前往${rg.name}的路上（余 ${S.travel.left} 日）。`);
     }
   }
+  // 劫数渐强（第一章 · 断灵大劫将至）：升档当日压一行劫兆
+  const dl = doomLevel();
+  if (dl > (S.flags.doomLv || 0)) {
+    S.flags.doomLv = dl;
+    const omens = {
+      1: "【劫兆 · 风起】近来城里的丹药似乎不如古方记载的药性了。老修士们没头没尾地感慨：「天，不如从前了。」",
+      2: "【劫兆 · 灵物贵】灵脉又枯了两条。灵物的价一天一个样，商会掌柜们收货的手都在收紧。",
+      3: "【劫兆 · 走火众】走火入魔的传闻一日多过一日——十倍于平日。茶棚里说书人压低了嗓子：上次这样，是赤霄大劫之前。",
+      4: "【劫兆 · 前夜】灵气骤降，夜里妖兽发狂撞城的嚎叫再没停过。天罚将至，而你知道——天罚，是人招来的。",
+    };
+    lines.push(`<span style="color:var(--blood-hi)">${omens[dl]}</span>`);
+  }
+  if (S.flags.devourSlain && (S.flags.doomLv || 0) > 0) { S.flags.doomLv = 0; lines.push(`【天地一轻】进食既断，压在众生头顶的那口气，松了。`); }
   profDailyTick(); // 职业经验：从业时长 + 技艺印证（第三章 3.3）
   if (S.day % 30 === 0) { // 岁月发酵（第四章·4）：±40 以下的缘分每月向 0 衰减 10%；深仇与生死之交只会发酵
     let faded = 0;
@@ -2098,6 +2112,7 @@ async function gmTurn() {
     toast("AI 未接管：" + (why ? esc(why) : "未知原因") + "，本回合由离线引擎推演");
   }
   if (S.medScene) S.medScene = null; // 修行记事：本回合剧情（AI 或离线引擎）已承接参悟/讨教，钩子用完即焚
+  if (S.trainScene) S.trainScene = null; // 历练之机：同理，砥砺余韵已被承接
   // 承接上文的引子
   if (S.echoLine) { log(esc(S.echoLine), "dim"); chronicle(S.echoLine, "evt"); S.echoLine = null; }
   const srcKey = turn._src === "ai" || turn._src === "server" ? turn._src : "gm";
@@ -2351,6 +2366,7 @@ function injectTraining(choices) {
 function trainingEvent() {
   S.lastTrainDay = S.day;
   S.sta = Math.max(0, S.sta - 2);
+  let trainNote = null; // 历练之机：三个分支各自记账，喂给下一回合 AI 提示词与离线引擎（用完即焚）
   const ownedGf = GONGFU.filter(g => (S.inv[g.id] || 0) > 0).sort((a, b) => b.tier - a.tier);
   const hasGongfa = ownedGf.length > 0;
   const sk = hasGongfa ? ownedGf[0].name : "乱拳";
@@ -2368,6 +2384,7 @@ function trainingEvent() {
     gainCult(cultBase * wxm); gainAttr("str", 0.05);
     log(`【历练 · 功法精研】你寻了处背风的石窝，把「${bothTech ? tTechs.join("与") : sk}」一式一式拆开重练。雪沫被劲气卷起，又纷纷落下。`, "dim");
     sys(`【功法精研】${bothTech ? "双功同修（" + (hasSpecial("moyu") ? "摸鱼减罚 ÷√2" : "多线分心 ÷2") + "），各" : "「" + sk + "」"}熟练度 +${inc}（${tTechs.map(t => `${t} ${Math.round(S.skills[t])}/${TECH_CAPS[t] || 100}`).join("、")}），修为 +${Math.round(cultBase * wxm)}，力量 +0.05。`);
+    trainNote = { kind: "功法精研", techs: tTechs, inc, nearCap: tTechs.some(t => (S.skills[t] || 0) >= (TECH_CAPS[t] || 100) - 15) };
   } else if (roll < (hasGongfa ? 80 : 70)) {
     /* 五维打熬 */
     const pickAttr = [["str", "力量"], ["agi", "敏捷"], ["int", "智力"], ["con", "体质"]][Math.floor(Math.random() * 4)];
@@ -2382,6 +2399,7 @@ function trainingEvent() {
     if (hasGongfa) gainCult(2); // 未修功法者不懂吐纳炼化——打熬只长筋骨，不长修为
     log(scenes[pickAttr[0]], "dim");
     sys(`【五维打熬】${pickAttr[1]} +${amt}${hasGongfa ? "，修为 +2" : ""}。`);
+    trainNote = { kind: "五维打熬", attr: pickAttr[0], attrName: pickAttr[1], amt };
   } else {
     /* 武技磨砺 */
     const inc = 3 + Math.floor(Math.random() * 4);
@@ -2391,7 +2409,9 @@ function trainingEvent() {
     log(`【历练 · 武技】你对着庙后老槐树出拳一千次。树皮上的霜震落又凝上，拳面渗血，拳路却越来越直。`, "dim");
     sys(`【武技磨砺】「乱拳」熟练度 +${inc}（${Math.round(S.skills["乱拳"])}/${TECH_CAPS["乱拳"] || 100}），力量 +0.08${hasGongfa ? "，修为 +2" : ""}。`);
     checkSkillMilestone("乱拳");
+    trainNote = { kind: "武技磨砺", inc };
   }
+  if (trainNote) S.trainScene = Object.assign({ slot: S.slot, day: S.day }, trainNote);
   S.stats.trains = (S.stats.trains || 0) + 1;
   computeMods(); renderPanel(); advanceSlot();
 }
@@ -2399,6 +2419,12 @@ function trainingEvent() {
 /* ---------- special 动作 ---------- */
 // 远行脚程（第五章）：境界越高，日行越远——灵阶(7) 6 日，玄阶(13) 4 日，地阶(19) 3 日
 function travelDaysFor(key) { return S.realm >= 19 ? 3 : S.realm >= 13 ? 4 : 6; }
+/* 断灵大劫 · 劫数进度（第一章：按周期推算，不远了）——0 无感 ｜ 1 风起（120 日）｜ 2 灵物贵（240 日）｜ 3 走火众（360 日）｜ 4 大劫前夜（480 日）。
+   终结进食（devourSlain）后劫云散去：归 0，只留「天地一轻」的余韵。 */
+function doomLevel() {
+  if (!S || S.flags.devourSlain) return 0;
+  return S.day >= 480 ? 4 : S.day >= 360 ? 3 : S.day >= 240 ? 2 : S.day >= 120 ? 1 : 0;
+}
 function runSpecial(sp, fx) {
   if (sp.indexOf("end:") === 0) { // 终局抉择（第十一章 · 五结局）：由终局场景给出，endGame 结算
     const kind = sp.slice(4);
