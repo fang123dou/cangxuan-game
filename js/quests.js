@@ -191,6 +191,20 @@ const QU = (() => {
       rewardFn: () => { if (typeof META !== "undefined") { META.story.stage = 4; saveMeta(); } return applyReward({ points: 120, dao: 3 }); },
       doneText: "旧档合上的那一刻，拼图成了：世间有一只看不见的手，在安排强者相杀，在喂养这场三万年不止的乱。再往上走——灵阶、玄阶、圣域。站得够高，才看得见那只手的胳膊。",
     },
+    /* ===== 主线 · 卷三 大世之争（构件已备，此卷将其锁成一条明线）=====
+       涨潮大世五域争锋（mq_dingfeng 修行线并行）→ 亲历断灵大劫 → 听完裂缝低语（吞世者递话）→ 问天（系统异样暴露）。终点之后，归墟终局自启。 */
+    mq_dashi: {
+      name: "主线：大世之争", type: "main",
+      desc: "涨潮大世，秘境频出、天骄并起，你被裹入五域争锋。断灵大劫的征兆已在天边聚云——老祖们接连「莫名寻衅」，而系统开始「恰好」把你推向北方。站住，看清这只手是怎么运作的。",
+      auto: () => (S.quests.done || []).includes("mq_dingfeng"),
+      objectives: [
+        { text: () => `亲历断灵大劫之威（劫数 ${Math.min(S.flags.doomLv || 0, 4)} / 风起）`, done: () => (S.flags.doomLv || 0) >= 1 || !!S.flags.devourSlain },
+        { text: () => "听完界壁裂缝里的「低语」（北地 · 渊口）", done: () => !!S.flags.devourWhisper },
+        { text: () => "向「系统」问出那句话", done: () => !!S.flags.sysQuestioned },
+      ],
+      reward: { points: 200, dao: 5 },
+      doneText: "低语听过，问天问过。大劫是天罚，还是人喂出来的——你心里已经有了答案的轮廓。它要的那缕「鸿蒙紫气」，天道要的那把刀，都是局。归墟在北，它又要去进食了。",
+    },
 
     /* ===== 仙品任务（第十一章 · 隐藏设定） =====
        伏笔碎屑（coincidence）攒够三笔，尘封的卷宗自行浮现——只留痕、不点破、不命名。

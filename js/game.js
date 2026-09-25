@@ -3405,7 +3405,8 @@ function endGame(kind) {
     stats: [["周目", "第 " + S.world + " 世"], ["境界", REALM_NAMES[S.realm]], ["存活", S.day + " 日"],
       ["先驱遗痕", (["pioneer_kezi", "pioneer_xinwu", "pioneer_fen"].filter(f => S.flags[f]).length) + " / 3"],
       ["真相", known ? "已知（天有二心）" : "未知"], ["千秋录", META.ach.length + " 项"]],
-    note: `结局已随魂封存（千秋录 · 成就名录，死亡不回收）。轮回馈赠：初始万象点 ${rb.points}，身份掷骰「${rb.pool}」档${rb.dice === "adv" ? "（掷二取优）" : ""}。`,
+    note: `结局已随魂封存（千秋录 · 成就名录，死亡不回收）。轮回馈赠：初始万象点 ${rb.points}，身份掷骰「${rb.pool}」档${rb.dice === "adv" ? "（掷二取优）" : ""}。`
+      + ((META.story && META.story.l2Choice) ? `<br>卷二那桩「了断」（${{ war: "以战", deal: "以钱", frame: "嫁祸", giveup: "放手" }[META.story.l2Choice]}）隔世回响，一路跟你到了棋盘尽头。` : ""),
     btns: [
       { label: "再入轮回", fn: () => {
         META.rebirth = { points: rb.points, attrBonus: 2, identity: pickIdentity(rb.pool, rb.dice),
