@@ -316,9 +316,9 @@ function daoText() { const d = S.daoXin; return d >= 80 ? "坚如磐石" : d >= 
 function gainAttr(k, amt) {
   const cap = attrCeiling(); // 磨炼上限随大阶抬升（凡阶之躯冲不过 10）
   const cur = S.base[k];
-  if (cur >= cap) return 0;
+  if (cur >= cap && amt >= 0) return 0;
   const eff = amt * Math.pow(0.8, Math.floor(cur - 2)) * (1 + (S.mods.trainP || 0) / 100);
-  S.base[k] = Math.min(cap, cur + Math.max(0.02, eff));
+  S.base[k] = amt < 0 ? Math.max(0, cur + eff) : Math.min(cap, cur + Math.max(0.02, eff)); // 负值照常磨损，不吃 0.02 保底
   if (S.realm < 5 && S.base.str >= 10 && S.base.agi >= 10 && S.base.con >= 10) gainAch("renji"); // 凡俗之巅：不入聚气境，纯以凡躯将力/敏/体全部磨到 10
   return eff;
 }
@@ -2168,6 +2168,8 @@ function judgeState() {
 /* 选项门槛引擎兜底（01:42 补丁）：付不起的钱不花、没有的东西不用 */
 function choiceBlocked(fx) {
   if (!fx) return false;
+  // 伤病门槛：无疾无伤（暗伤为永久印记，不算伤病）时，寻医/治伤选项直接不出（呼应规则23）
+  if (fx.special === "seeDoctor" && !S.ill && (typeof injuryTier === "function") && injuryTier().name === "无恙") return true;
   // 递归合计 fx 内的铜钱负值（跳过 check 分支，分支单独按最省路径计）
   const sumNeg = (o) => {
     if (!o || typeof o !== "object") return 0;
@@ -2229,11 +2231,11 @@ function applyCore(fx) {
   num("money", "铜钱", " 文"); num("stones", "灵石", " 枚"); num("hp", "气血"); num("sta", "体力");
   num("mp", "法力"); num("hunger", "饱食"); num("cult", "修为"); num("dao", "道心"); num("points", "万象点"); num("xinmo", "心魔");
   if (fx.attr) for (const k in fx.attr) { // 途径一·日常磨炼：日常成长有效
-    const prev = S.base[k]; gainAttr(k, fx.attr[k]); const d = fmt1(S.base[k] - prev);
+    const prev = S.base[k]; gainAttr(k, fx.attr[k]); const raw = S.base[k] - prev; const d = fmt1(raw);
     const nm = { str: "力量", agi: "敏捷", int: "智力", con: "体质" }[k];
-    if (d === 0) { note(`${nm} 无实际变动（已至本境磨炼上限）`); continue; }
-    const s = `${nm} +${d}`; out.push(s); G.push(s);
-    if (d !== fx.attr[k]) note(`${nm} 账面 +${fx.attr[k]}，高基数磨砺递减/加成折算实得 +${d}`);
+    if (d === 0) { note(raw === 0 ? `${nm} 无实际变动（已至本境磨炼上限）` : `${nm} ${raw > 0 ? "增幅" : "磨损"}过微（${raw > 0 ? "+" : ""}${raw.toFixed(2)}），已计入根基`); continue; }
+    const s = `${nm} ${d > 0 ? "+" : ""}${d}`; out.push(s); (d > 0 ? G : L).push(s);
+    if (d !== fx.attr[k]) note(`${nm} 账面 ${fx.attr[k] > 0 ? "+" : ""}${fx.attr[k]}，高基数磨砺递减/加成折算实得 ${d > 0 ? "+" : ""}${d}`);
   }
   if (fx.item) { const m = /^([a-zA-Z]+):(-?\d+)$/.exec(fx.item); if (m) { const id = m[1], n = +m[2];
     if (n > 0 && GONGFU_BY_ID[id] && !(S.inv[id] > 0)) techniqueUnlockFx(id); // 首次获得功法：解锁反哺（谱系通用）

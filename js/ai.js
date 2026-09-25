@@ -66,26 +66,14 @@ const AI = (() => {
 但这类生灵一身是宝：妖兽内丹、皮毛骨血，灵族元核，皆是硬通货——结善缘（长线羁绊）还是当场猎杀（立取材料），必须是玩家真实面临的两难，不得替玩家预设立场。
 机制：猎杀得手用 fx.slay="名字"（引擎自动道心 -2 微颤、缘分钉死为不死不休；若它曾是认魂灵宠，跨世羁绊就此断绝；其同类与亲族会在后续剧情寻仇——用 fx.npc 给未死的相关者记仇）。取材用 fx.drop="材料名"（入材料账，可用名录之名——如影豹内丹、赤血芝——也可按品阶体系自命名；玄品以上材料一次一件）。材料在收购、炼丹、炼器剧情里折算（money/stones 或 attr 机缘，幅度守 fx 限制）。猎杀有灵智者可用 fx.dao 小幅为负表现冲击；凡阶未开智的野兽猎杀无道心负担，但滥杀无故染血仍会招来麻烦。
 
-【炼丹炼器 · 规则（严格执行）】
-玩家解锁副职业「丹师」「炼器师」后可开炉。你须遵守：
-一、辅材坊市通贩（灵炭、山泉、妖兽骨之流，铜钱可购）；主材（赤血芝、石钟乳、九叶玄芝、精铁坯、玄铁，及同级材料）只能走三通道——任务奖励、与特殊 NPC 交易、击杀取材。绝不可让商铺或摊贩卖主材，也不得用 fx.drop 无来由白送主材：给主材，必给来路。
-二、成功率与品质：七分在人（境界+副职熟练度）、两分在料、一分在器（丹炉/炼锤，授器可用 fx.item="ludian:1" 或 fx.item="lianchui:1"）、一丝气运；六品质效力五~六成至二十成。绝品出世引动异象（丹云百里——千秋录「丹动一城」）。
-三、丹药药蚀按品阶：凡品 3~5、灵品 8~12、玄品 15~25、圣品 30+；同种递减。洗髓丹（玄品）为散修硬通货——清除一道暗伤。
-四、玩家获得高阶主材或配方（如洗髓丹方）时，可开启「帮取辅材/同材」支线，但来路必须写进剧情。
+【丹器与师徒 · 规则（条件注入）】玩家踏上丹师/炼器师之路（前置职业修炼、持丹炉炼锤、相关支线进行中）时，本轮注入炼丹炼器与师徒细则；未注入时不要编排炼丹、炼器、师徒进阶剧情。
+§§CRAFT§§
 
-【师徒与瓶颈 · 规则（严格执行）】
-丹师、炼器师两脉不系固定 NPC（云游四方），名号每世随机（见状态「云游师傅名册」）。你须在主角前置职业（药庐学徒→药师／铁匠学徒→铸师）熟练度登顶、瓶颈之期到来时，让对应师傅随机现身（背药篓的游方人、背锤的风尘客……）并触发进阶支线。铁律：前置熟练度满绝不自动进阶——必须由玩家手动承接进阶支线（你可引导选项，不得代替玩家解锁）。
+【成就 · 千秋录（条件注入）】重大时刻（突破、杀敌、救人、奇观）可生成本世成就：fx.ach="名号|品级0~4|描述|奖励"（格式同第 3 条 ach）；历练日与翻页临近时本轮注入品级奖励区间细则，未注入时不必强行生成。
+§§ACH§§
 
-【成就 · 千秋录（第十三章，严格执行）】
-千秋录刻「值得被记住的事」——自动达成、即时结算；分五品（凡/灵/玄/圣/仙），按难度×稀有度×对世界的影响定品；奖励以自由属性点、称号、专属词条为主、万象点为辅；当世首达 ×1.5、万古首达 ×2；隐藏成就达成才揭晓；名声即因果。你可自由生成本世成就，须守奖励区间：凡品：万象点 10~30 或单项属性 +0.5~2；灵品：自由属性 3~8／万象点 50／称号；玄品：自由属性 20~50／称号／万象点 150；圣品：自由属性 100~300／气运 +1（极稀有）／万象点 500；仙品：？？？（只可用 fx.ach 记名，奖励写「？？？」）。
-录入格式（严格）：fx.ach="名号|品级(0凡~4仙)|一句话描述|奖励"，奖励为 points:N / attr:N / dao:N / luck:1（仅圣品以上）/ title:称号名 五选一。示例：fx.ach="雪夜渡人|0|大雪天把最后半张饼让给了濒死的陌生人|points:15"。引擎机械成就照常触发。每满 10 项翻页赠「天命一抽」，不必你操心。判定一律写 fx.check 表达式由引擎结算，你只写剧情与结果。
-
-【词条 · 万象轮盘可扩池（可从设定集衍生，不得凭空捏造）】
-词条不必局限引擎名录——山川精怪、天材地宝、功法武技、人物典故、异族天赋皆可入词（如「瘴里明灯」「夜行无声」），名号须贴合剧情来路。品级效力锚定同品级引擎词条幅度（凡品单维 ±3% 上下，逐品递增，仙品为规则级），六品体系与五行归属不得逾越；来路必须合理（重大机缘走伏笔，不得凭空发高品）。
-录入格式（严格）：fx.newcard="词条名|品级(0凡~5仙)|效果描述|mod键:值,mod键:值"（mod 可省略）。mod 白名单（效果写入命格，旁不可见）：strP/agiP/intP/conP/allP（百分比±）、luckFlat（±3）、moneyP/trainP/escapeP/defP/dmgP/foodP/hpRegenP（百分比）、hungerR/staRegen（系数）。示例：fx.newcard="夜行无声|2|影豹一族的天赋，夜里你的脚步比风轻|agiP:8,escapeP:6"。新词入盘随魂封存，后世抽卡亦可遇。
-【法宝】同理：fx.fabao="法宝名|品级|效果描述|mod键:值"（品阶与当前境界相称），认主后效力折算入命格词条（天机独闻——旁人只见你气息微变）。
-【兵器】fx.wuqi="兵器名|攻伐加成%|品阶(凡器/灵器/玄器/圣器/仙器)"，如 fx.wuqi="青霜剑|12|灵器"。攻伐幅度守品阶（凡器≤5、灵器≤15、玄器≤25、圣器≤35、仙器≤40）。
-【功法/材料/NPC】功法沿用 fx.drop="功法名" 入账并在剧情落实修习；材料 fx.drop 与 NPC fx.npc 本就可自命名——一切以设定集为基，不得凭空捏造。
+【词条扩池（条件注入）】重大机缘窗口（伏笔计数≥1、气运护身）时，本轮注入 fx.newcard/fx.fabao/fx.wuqi 细则（词条、法宝、兵器入轮盘，格式见第 3 条）；未注入时重大机缘只走 luckCharm/coincidence。
+§§POOL§§
 
 世界细则：四阶二十四境，每阶六境——凡阶：淬体/炼皮/锻骨/通脉/聚气/开元；灵阶：灵泉/气海/丹轮/玄府/紫府/神游；玄阶：化神/渡厄/洞虚/法相/合体/天人；圣阶：涅槃/圣域/轮回/天尊/帝境/登仙，每境四小层。当世格局：帝境不出、天尊隐世，明面至强者是圣域境老怪物。词条分凡良灵玄圣仙六品。五行亲和先天总和恒 100，金克木、木克土、土克水、水克火、火克金，克制方威力约 +20%，亲和不足 10 修炼该行事倍功半。丹药累积「药蚀」。道心（0~100）对抗心魔，战力涨得比道心快是大忌。死亡即轮回：词条回收、记忆封存、身份重掷（吉/平/劣/狱四档），时间线继承——上一世因果真实地留在原地。
 
@@ -123,12 +111,59 @@ const AI = (() => {
 20. 【结算一致 · 铁律】fx 里每个收获/损失都要在剧情里有来路：scene（或 successText/failText）写明缘由，结算栏才出现——禁止剧情什么都没给、结算却+铜钱/修为/物品；反之剧情写了得失，fx 就要给出对应字段（赏钱二十文就 money:20，捡了捆柴就 item="wood:1"）。判定分支得失写进 success/fail，并用 successText/failText 点明。
 21. 【钱袋门槛 · 铁律】花钱的选项（购买、请客、行贿、下注、雇车、打点），hint 注明花费，fx.money 写负值；玩家铜钱不足时不得给出该选项，也不要给「钱不够」的废选项。引擎会自动拦截付不起的选项（含判定成败两分支的花费）。
 22. 【承接 · 铁律】scene 必须直接承接「上回合」：先用一两句话交代上一手选择的直接后果，再展开新事件；场景、人物、时辰、地点默认延续，唯有 scene 明确写出动身、换装、时间流逝才可切换。
-23. 【伤病 · 铁律】「伤病」字段非「无」时，必须给出至少一条治病疗伤路径——按「药石」字段对症开方（买药 money+item 负值、服丹、寻医 special:"seeDoctor"、采药煎服），hint 注明花费与对症；中伤以上给「寻医/敷药/静养」选项。伤病皆无时不许硬塞吃药剧情。痊愈叙事与对症药品一致（风寒用驱寒汤/生姜、中暑用藿香正气散、丹毒侵脉用解毒散），不可张冠李戴。
+23. 【伤病 · 铁律】「伤病」字段非「无」时，必须给出至少一条治病疗伤路径——按「药石」字段对症开方（买药 money+item 负值、服丹、寻医 special:"seeDoctor"、采药煎服），hint 注明花费与对症；中伤以上给「寻医/敷药/静养」选项。伤病皆无时不许硬塞吃药剧情。痊愈叙事与对症药品一致（风寒用驱寒汤/生姜、中暑用藿香正气散、丹毒侵脉用解毒散），不可张冠李戴。暗伤永久（药石无功），不作给治伤选项的理由；伤病皆无（暗伤不计）时不得再给治伤/寻医选项（引擎拦截）。
 24. 【功法求法 · 铁律】「可求功法」非空时：检索获取路径（宗门传功/内门考核/散修求法），自然引出机缘并给出获取选项（fx.item 用字段给出的功法 id，可配 money 或 check）。功法圆满或瓶颈时绝不能让玩家无路可求；3阶圣品以上只可作风闻伏笔，绝不可直接授予。
 25. 【名录人物 · 铁律】「当地人物」列出当前地域的一方强者（boss）、中立人物与隐藏角色。(a) 可自然登场：强者可拜谒/讨教（远高于玩家时写成指教而非险胜）、中立人物可攀谈/交易；(b) 结识用 fx.flag="metcast_<id>" 与 fx.npc 记缘，性情按规则16；(c) 隐藏角色只可远观留痕（fx.coincidence），玩家伏笔计数≥2 才可安排接触，结果含蓄克制；圣域级隐藏角色永不可交互，只可留痕。(d) 名录人物境界名号来路严格按名录，不得自造一方强者。
 26. 【宗门日常 · 铁律】「宗门」非空时：呼应门内身份（点卯、杂务、月供、同门与执事的倾轧）。宗门资源走贡献与月供两套账（贡献由点卯/差事积攒，月供每月初一引擎发放，缺卯过多减半）——不得凭空让玩家获得宗门资源。内门弟子不再点卯，剧情转向内门事务与师承。
 27. 【远行 · 铁律】「旅途」非「无」时：场景必须在路途（驿道/山坳/渡口/客栈通铺），绝不可写已抵达；抵达由引擎跨日结算。灵阶起可自然引出远行念头，启程由引擎选项执行。四海需舟楫，海外剧情暂不开放。
-28. 【终局 · 铁律】「终局」字段记录终局链进度（遗痕/低语/问天/真相/进食）。真相分层揭开：遗痕未齐只写「巧合碎屑」；已闻低语可借 NPC 之口半真半假暗示「天有二心」，要打折再打折；「真相：已知」前绝不写出天道「没安好心」的定论；「进食：未断」时可写大劫将至的末世征兆，断后写天地一轻的余韵。终局五结局由引擎结算，你只铺垫，绝不可替玩家宣告结局或让天道提前现身摊牌；(f) 界外暗线（面板错字、故乡语言的梦、世界边缘的「框」）只可惊鸿一瞥地偶发，绝不可解释其含义、不可让系统就此作答——它自己也想知道答案。`;
+28. 【终局 · 铁律】「终局」字段记录终局链进度（遗痕/低语/问天/真相/进食）。真相分层揭开：遗痕未齐只写「巧合碎屑」；已闻低语可借 NPC 之口半真半假暗示「天有二心」，要打折再打折；「真相：已知」前绝不写出天道「没安好心」的定论；「进食：未断」时可写大劫将至的末世征兆，断后写天地一轻的余韵。终局五结局由引擎结算，你只铺垫，绝不可替玩家宣告结局或让天道提前现身摊牌；(f) 界外暗线（面板错字、故乡语言的梦、世界边缘的「框」）只可惊鸿一瞥地偶发，绝不可解释其含义、不可让系统就此作答——它自己也想知道答案。
+29. 【自检 · 铁律】输出前自检：剧情写出的每份得失，fx 必有同向同量对应键（写捡到银子就必有 fx.money 正值），剧情与结算不一致视为事故；选项先核对面板——伤病皆无不给治伤、行囊没有不给用、铜钱不足不给买、境界未至不写破境；fx 键名只用白名单，生造键名会被引擎归一或丢弃，丢弃等于说谎。`;
+
+
+  /* ---------- 按需注入章节（算力优化：非每回合必需的规则只在相关时发送） ---------- */
+  const SEC_CRAFT = `【炼丹炼器 · 规则（严格执行）】
+玩家解锁副职业「丹师」「炼器师」后可开炉。你须遵守：
+一、辅材坊市通贩（灵炭、山泉、妖兽骨之流，铜钱可购）；主材（赤血芝、石钟乳、九叶玄芝、精铁坯、玄铁，及同级材料）只能走三通道——任务奖励、与特殊 NPC 交易、击杀取材。绝不可让商铺或摊贩卖主材，也不得用 fx.drop 无来由白送主材：给主材，必给来路。
+二、成功率与品质：七分在人（境界+副职熟练度）、两分在料、一分在器（丹炉/炼锤，授器可用 fx.item="ludian:1" 或 fx.item="lianchui:1"）、一丝气运；六品质效力五~六成至二十成。绝品出世引动异象（丹云百里——千秋录「丹动一城」）。
+三、丹药药蚀按品阶：凡品 3~5、灵品 8~12、玄品 15~25、圣品 30+；同种递减。洗髓丹（玄品）为散修硬通货——清除一道暗伤。
+四、玩家获得高阶主材或配方（如洗髓丹方）时，可开启「帮取辅材/同材」支线，但来路必须写进剧情。
+
+【师徒与瓶颈 · 规则（严格执行）】
+丹师、炼器师两脉不系固定 NPC（云游四方），名号每世随机（见状态「云游师傅名册」）。你须在主角前置职业（药庐学徒→药师／铁匠学徒→铸师）熟练度登顶、瓶颈之期到来时，让对应师傅随机现身（背药篓的游方人、背锤的风尘客……）并触发进阶支线。铁律：前置熟练度满绝不自动进阶——必须由玩家手动承接进阶支线（你可引导选项，不得代替玩家解锁）。`;
+  const SEC_ACH = `【成就 · 千秋录（第十三章，严格执行）】
+千秋录刻「值得被记住的事」——自动达成、即时结算；分五品（凡/灵/玄/圣/仙），按难度×稀有度×对世界的影响定品；奖励以自由属性点、称号、专属词条为主、万象点为辅；当世首达 ×1.5、万古首达 ×2；隐藏成就达成才揭晓；名声即因果。你可自由生成本世成就，须守奖励区间：凡品：万象点 10~30 或单项属性 +0.5~2；灵品：自由属性 3~8／万象点 50／称号；玄品：自由属性 20~50／称号／万象点 150；圣品：自由属性 100~300／气运 +1（极稀有）／万象点 500；仙品：？？？（只可用 fx.ach 记名，奖励写「？？？」）。
+录入格式（严格）：fx.ach="名号|品级(0凡~4仙)|一句话描述|奖励"，奖励为 points:N / attr:N / dao:N / luck:1（仅圣品以上）/ title:称号名 五选一。示例：fx.ach="雪夜渡人|0|大雪天把最后半张饼让给了濒死的陌生人|points:15"。引擎机械成就照常触发。每满 10 项翻页赠「天命一抽」，不必你操心。判定一律写 fx.check 表达式由引擎结算，你只写剧情与结果。`;
+  const SEC_POOL = `【词条 · 万象轮盘可扩池（可从设定集衍生，不得凭空捏造）】
+词条不必局限引擎名录——山川精怪、天材地宝、功法武技、人物典故、异族天赋皆可入词（如「瘴里明灯」「夜行无声」），名号须贴合剧情来路。品级效力锚定同品级引擎词条幅度（凡品单维 ±3% 上下，逐品递增，仙品为规则级），六品体系与五行归属不得逾越；来路必须合理（重大机缘走伏笔，不得凭空发高品）。
+录入格式（严格）：fx.newcard="词条名|品级(0凡~5仙)|效果描述|mod键:值,mod键:值"（mod 可省略）。mod 白名单（效果写入命格，旁不可见）：strP/agiP/intP/conP/allP（百分比±）、luckFlat（±3）、moneyP/trainP/escapeP/defP/dmgP/foodP/hpRegenP（百分比）、hungerR/staRegen（系数）。示例：fx.newcard="夜行无声|2|影豹一族的天赋，夜里你的脚步比风轻|agiP:8,escapeP:6"。新词入盘随魂封存，后世抽卡亦可遇。
+【法宝】同理：fx.fabao="法宝名|品级|效果描述|mod键:值"（品阶与当前境界相称），认主后效力折算入命格词条（天机独闻——旁人只见你气息微变）。
+【兵器】fx.wuqi="兵器名|攻伐加成%|品阶(凡器/灵器/玄器/圣器/仙器)"，如 fx.wuqi="青霜剑|12|灵器"。攻伐幅度守品阶（凡器≤5、灵器≤15、玄器≤25、圣器≤35、仙器≤40）。
+【功法/材料/NPC】功法沿用 fx.drop="功法名" 入账并在剧情落实修习；材料 fx.drop 与 NPC fx.npc 本就可自命名——一切以设定集为基，不得凭空捏造。`;
+  function extraSections() {
+    const ex = [];
+    try {
+      if (typeof S === "undefined" || !S) return ex;
+      const profs = Object.keys(S.professions || {});
+      const craftChain = ["yaoshi", "danshi", "tiejiang", "zhushi", "qishi"];
+      const hasCraftProf = profs.some(x => craftChain.includes(x));
+      const hasCraftItem = !!(S.inv && (S.inv.ludian || S.inv.lianchui));
+      let craftQuest = false;
+      try {
+        craftQuest = (S.quests.active || []).some(id => /^sq_(dandao|qidao|dan_cai|qi_cai)$/.test(id));
+      } catch (e) {}
+      if (hasCraftProf || hasCraftItem || craftQuest) ex.push(["§§CRAFT§§", SEC_CRAFT]);
+      const achFlip = ((typeof META !== "undefined" && META.ach) || []).length % 10 >= 7;
+      const trainDay = (S.day - (S.lastTrainDay || 0)) >= 3;
+      if (trainDay || achFlip) ex.push(["§§ACH§§", SEC_ACH]);
+      if ((S.flags.coincidence || 0) >= 1 || S.flags.luckCharm) ex.push(["§§POOL§§", SEC_POOL]);
+    } catch (e) {}
+    return ex;
+  }
+  function buildSystem() {
+    let sys = SYSTEM;
+    for (const [marker, sec] of extraSections()) sys = sys.replace(marker, sec);
+    return sys.replace(/\n?§§[A-Z]+§§\n?/g, "\n").replace(/\n{3,}/g, "\n\n");
+  }
 
   function chronicleSummary() {
     try {
@@ -157,14 +192,14 @@ const AI = (() => {
       第几世: S.world, 身份: S.iden ? S.iden.name : "乞丐阿七",
       时间: `冬第${S.day}日/${["晨", "午", "昏", "夜"][S.slot]}(${S.slot === 3 ? "即将入夜" : ""})`, 天气: S.weather,
       境界: REALM_NAMES[S.realm] + `(修为${Math.round(S.cult)}/${REALM_NEED[S.realm + 1] || "圆满"}·${TABLES.REALMS.tierNames[S.realm]})`,
-      云游师傅名册: (S.masters && Object.keys(S.masters).length) ? Object.entries(S.masters).map(([pid, m]) => `${profDef(pid) ? profDef(pid).name : pid}:${m}(${S.npc[m] || 0})`).join("、") : "尚无（丹师/器火一脉师傅于瓶颈期现身）",
+      云游师傅名册: (S.masters && Object.keys(S.masters).length) ? Object.entries(S.masters).map(([pid, m]) => `${profDef(pid) ? profDef(pid).name : pid}:${m}(${S.npc[m] || 0})`).join("、") : "无",
       求法之路: (typeof gongfuLead === "function") ? (gongfuLead().map(l => `《${l.g.name}》(${l.g.tierName})：${l.path}`).join("；") || "暂无可求功法（境界未至门槛）") : "未知",
       主修功法: (typeof mainTechnique === "function") ? (mainTechnique() ? `${mainTechnique().name}(${mainTechnique().tierName})` : "无（野路乱拳）") : "未知",
       五维: `力${attr("str")}敏${attr("agi")}智${attr("int")}体${attr("con")}运${attr("luck")}`,
       五行亲和: WX_ELS.map(e => WX_NAMES[e] + (wxOf()[e] || 0)).join("/") + `（主行:${WX_NAMES[dominantWxEl()]}）`,
       状态: `气血${Math.round(S.hp)}/${hpMax()} 体力${Math.round(S.sta)} 饱食${Math.round(100 - S.hunger)} 道心${Math.round(S.daoXin)} 心魔${Math.round(S.xinmo || 0)}/100(${xinmoStage().name}) 战力${combatPower()} 康健${injuryTier().name} 药蚀${Math.round(S.yaoshi || 0)}/100`,
-      伤病: `疾病:${S.ill ? S.ill.name + "（余" + S.ill.days + "日，" + S.ill.desc + "）" : "无"} 伤势:${typeof woundText === "function" ? woundText() : "未知"}${(() => { const d = Object.keys(S.darkWounds || {}).filter(k => S.darkWounds[k] > 0); return d.length ? " 暗伤:" + d.map(k => k + "-" + S.darkWounds[k]).join("、") : ""; })()}`,
-      药石: "对症药品（商铺有售，行囊可用）：驱寒汤→风寒、藿香正气散→中暑、解毒散→丹毒侵脉、金疮药/跌打药→外伤回血、生姜→风寒病程-1日、驱瘴草→瘴毒侵体（南岭瘴雨/山雾之夜可防瘴）、甘草→调和（药蚀-2）；寻医诊治 fx.special=\"seeDoctor\"（30文，病除+气血+8）",
+      伤病: `疾病:${S.ill ? S.ill.name + "（余" + S.ill.days + "日，" + S.ill.desc + "）" : "无"} 伤势:${typeof woundText === "function" ? woundText() : "未知"}${(() => { const d = Object.keys(S.darkWounds || {}).filter(k => S.darkWounds[k] > 0); return d.length ? " 暗伤:" + d.map(k => k + "-" + S.darkWounds[k]).join("、") + "（永久印记·此世药石无功，勿给治伤选项）" : ""; })()}`,
+      药石: "对症（商铺有售，行囊可用）：驱寒汤→风寒、藿香正气散→中暑、解毒散→丹毒侵脉、金疮药→外伤、生姜→风寒-1日、驱瘴草→防瘴（南岭）、甘草→药蚀-2；寻医 fx.special=\"seeDoctor\"（30文，病除+气血+8）",
       钱财: `${S.money}文/${S.stones}灵石/${S.points}万象点`,
       词条: cardNames.join("、") || "无", 物品: JSON.stringify(S.inv),
       职业: S.job || "无", 主职业: (typeof mainJobTitle === "function") ? mainJobTitle() : (S.job || "无"), 灵根: linggen().name, 称号: (META.titles || []).map(t => TITLES[t].name + (S.wornTitle === t ? "(佩戴中)" : "")).join("、") || "无", 系统等级: "Lv" + ((typeof META !== "undefined" && META.sysLv) || 1), 缘分: npcs, 伏笔标记: flags, 近期剧情脉络: recent,
@@ -250,6 +285,10 @@ const AI = (() => {
   const CHECK_RE = /^[a-zA-Z0-9+\-*/().<>=!\s]{1,80}$/;
   function clampFx(src, depth) {
     const fx = {};
+    if (src && typeof src === "object" && !Array.isArray(src)) { // 键名归一：AI 生造的银钱别名并入 money（丢弃=剧情说谎，规则29）
+      const ALIAS = { silver: 1, coin: 1, coins: 1, wen: 1, copper: 1, silver2: 1 };
+      for (const a in ALIAS) if (src[a] != null && src.money == null && !isNaN(+src[a])) src = Object.assign({}, src, { money: +src[a] });
+    }
     for (const k in src) {
       if (!FX_KEYS.includes(k)) continue;
       let v = src[k];
@@ -418,7 +457,7 @@ const AI = (() => {
     const prompt = statePrompt();
     lastCtx = prompt;
     lastFail = null;
-    const SYS = (typeof regionOf === "function" && typeof S !== "undefined" && S) ? SYSTEM + "\n【出生地地域风物 · 定稿】\n" + regionOf(S.place).aiHint + "\n（当前地点：" + (S.place || "未知") + "。本世剧情必须符合上述当地风物：环境、物价、NPC 类型、生存压力皆依此地，不得写成云州青石城的雪夜。）" : SYSTEM;
+    const SYS = (typeof regionOf === "function" && typeof S !== "undefined" && S) ? buildSystem() + "\n【出生地地域风物 · 定稿】\n" + regionOf(S.place).aiHint + "\n（当前地点：" + (S.place || "未知") + "。本世剧情必须符合上述当地风物：环境、物价、NPC 类型、生存压力皆依此地，不得写成云州青石城的雪夜。）" : buildSystem();
     // 1) BYOK 真 AI
     if (cfg && cfg.key) {
       for (const base of baseCandidates(cfg.base)) {
@@ -537,6 +576,7 @@ const AI = (() => {
 
   return { narrate, getCfg, saveCfg, testKey, listModels, judge, failInfo: () => lastFail,
     __statePrompt: statePrompt, // 测试探针：状态提示词快照
-    debugInfo: () => ({ system: SYSTEM, prompt: lastCtx, fail: lastFail }),
+    __coreSystem: () => SYSTEM, // 测试探针：不含按需注入的核心提示词
+    debugInfo: () => ({ system: buildSystem(), prompt: lastCtx, fail: lastFail }),
     __clamp: (o) => clampFx(o || {}, 0) };
 })();
