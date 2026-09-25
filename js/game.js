@@ -208,6 +208,7 @@ function gearText() {
   const g = [];
   if (S.gear && S.gear.weapon) g.push(`⚔ ${S.gear.weapon.name}（攻伐 +${S.gear.weapon.dmgP}%）`);
   if (S.inv.mianao) g.push("老棉袄（御寒）");
+  if (S.inv.shuinang) g.push("水囊（防暑）");
   if (S.flags.fangcunUsed) g.push("方寸戒（储物法器）");
   return g.length ? g.join("、") : "身无长物";
 }
@@ -646,6 +647,7 @@ const ITEM_INFO = {
   heimu: { name: "黑馍", tier: "凡物", desc: "又冷又硬的黑面馍馍，乞丐的主食。磨牙，但顶饿。食用恢复饱食 22 点——点开即可直接吃，不必等剧情选项。" },
   wood: { name: "柴薪", tier: "凡物", desc: "城外矮林砍来的干柴。雪天柴贵，市集六文一捆；夜里生火可御风寒（柴薪 ×2）。" },
   mianao: { name: "老棉袄", tier: "凡物", desc: "厚实的老棉袄，浆洗得发硬。穿上它，风雪与寒潮夜不再冻伤气血。" },
+  shuinang: { name: "水囊", tier: "凡物", desc: "牛皮水囊，西市杂货 40 文。带着它，西漠酷热、热风、沙暴之夜不再暑热伤气，也不会中暑。" },
   chaidao: { name: "豁口柴刀", tier: "凡物", desc: "一柄磨得只剩半个豁口的柴刀。砍柴效率 +1，关键时刻也能当兵器使。" },
   jiansui: { name: "玄铁剑穗", tier: "来历不明", desc: "一截乌沉沉的剑穗，非金非铁，坠手冰凉。识货的人见了会变色——它不该出现在一个乞丐手里。" },
   quanpu: { name: "《锻骨拳谱》", tier: "0 阶功法", desc: "无名残卷，记载淬体拳路。演练可增长修为与力量，熟练度满 100% 反哺力量。" },
@@ -864,7 +866,7 @@ function renderTab() {
     if (S.inv.heimu) inv.push(["heimu", `黑馍 ×${S.inv.heimu}`]);
     if (S.inv.wood) inv.push(["wood", `柴薪 ×${S.inv.wood}`]);
     if (S.inv.mianao) inv.push(["mianao", "老棉袄"]);
-    if (S.inv.chaidao) inv.push(["chaidao", "豁口柴刀"]);
+    if (S.inv.shuinang) inv.push(["shuinang", "水囊"]);    if (S.inv.chaidao) inv.push(["chaidao", "豁口柴刀"]);
     if (S.inv.jiansui) inv.push(["jiansui", "玄铁剑穗"]);
     if (S.inv.quanpu) inv.push(["quanpu", "《锻骨拳谱》"]);
     if (S.inv.yinqi) inv.push(["yinqi", "《引气诀》"]);
@@ -1560,10 +1562,22 @@ function night() {
       if (Math.random() < 0.3 && (!S.ill || S.ill.name !== "风寒")) setIll("风寒", 3, "寒气入体，夜间气血回复减半"); // 受寒成疾
     } else lines.push(`你把破毯裹紧了些，硬是扛过了这夜的寒。`);
   }
+  /* 酷热地域（西漠）：酷热/热风/沙暴之夜无水囊且未生火，暑热伤气、可能中暑 */
+  const rgNight = regionOf(S.place);
+  const hot = rgNight.hazard === "heat" && ["酷热", "热风", "沙暴"].includes(S.weather);
+  if (hot && !S.inv.shuinang && !S.flags.fireTonight) {
+    const chk = attr("con") * 10 + attr("luck") * 4;
+    if (chk < 50) {
+      const dmg = Math.max(1, Math.round((2 + Math.floor(Math.random() * 2)) * (hasTitle("xiaoqiang") ? 0.9 : 1)));
+      S.hp -= dmg; S.daoXin -= 0.5;
+      lines.push(`<span style="color:var(--blood-hi)">暑气整夜烙在身上，帐篷里闷得像口锅。你干熬到天亮，嘴唇裂了缝。气血 -${dmg}。</span>`);
+      if (Math.random() < 0.3 && (!S.ill || S.ill.name !== "中暑")) setIll("中暑", 2, "酷热伤津，夜间气血回复减半"); // 受热成疾
+    } else lines.push(`你把身体贴在帐篷背阴的一面，硬扛过了这夜的闷热。`);
+  }
   if (hasSpecial("bigu")) { /* 辟谷 */ }
   else if (S.hunger >= 100) { S.hp -= 4; S.base.con = Math.max(1, Math.round((S.base.con - 0.05) * 100) / 100); computeMods(); lines.push(`<span style="color:var(--blood-hi)">胃里像有把钝刀在搅。气血 -4，长期饥饿啃食根本——体质 -0.05。</span>`); }
   else if (S.hunger > 85) { S.hp -= 2; lines.push(`【极度饥饿】啃噬着你。气血 -2。`); }
-  if (S.hunger < 70 && S.hp > 0) S.hp = Math.min(hpMax(), S.hp + attr("con") * 0.8 * (1 + (S.mods.hpRegenP || 0) / 100) * (S.ill && S.ill.name === "风寒" ? 0.5 : 1)); // 风寒：夜间气血回复减半
+  if (S.hunger < 70 && S.hp > 0) S.hp = Math.min(hpMax(), S.hp + attr("con") * 0.8 * (1 + (S.mods.hpRegenP || 0) / 100) * (S.ill && (S.ill.name === "风寒" || S.ill.name === "中暑") ? 0.5 : 1)); // 风寒/中暑：夜间气血回复减半
   S.sta = staMax() * (S.mods.staRegen >= 2 ? 1 : 0.85);
   if (S.realm >= 5 && S.mp < mpMax()) S.mp = Math.min(mpMax(), S.mp + mpMax() * 0.3 * (S.linggen === "za" ? 1.5 : 1)); // 杂灵根：回蓝 ×1.5
   if (S.debuff === "weak") { S.debuffDays = (S.debuffDays || 0) - 1; if (S.debuffDays <= 0) { S.debuff = null; lines.push(`元气终于回转，手脚重新有了力气。`); } }
@@ -1778,7 +1792,7 @@ function applyCore(fx) {
   if (fx.attr) for (const k in fx.attr) { gainAttr(k, fx.attr[k]); const s = `${{str:"力量",agi:"敏捷",int:"智力",con:"体质"}[k]} ${fx.attr[k] > 0 ? "+" : ""}${fx.attr[k]}`; out.push(s); (fx.attr[k] > 0 ? G : L).push(s); } // 途径一·日常磨炼：日常成长有效
   if (fx.item) { const m = /^([a-zA-Z]+):(-?\d+)$/.exec(fx.item); if (m) { const id = m[1], n = +m[2];
     if (n > 0 && (id === "yinqi" || id === "quanpu") && !(S.inv[id] > 0)) techniqueUnlockFx(id); // 首次获得功法：解锁反哺
-    S.inv[id] = Math.max(0, (S.inv[id] || 0) + n); const s = `${{wood:"柴薪",heimu:"黑馍",mianao:"棉袄",chaidao:"柴刀",jiansui:"玄铁剑穗",quanpu:"《锻骨拳谱》",yinqi:"《引气诀》",juqiDan:"聚气丹"}[id] || id} ${n > 0 ? "+" : ""}${n}`; out.push(s); (n > 0 ? G : L).push(s); } }
+    S.inv[id] = Math.max(0, (S.inv[id] || 0) + n); const s = `${{wood:"柴薪",heimu:"黑馍",mianao:"棉袄",shuinang:"水囊",chaidao:"柴刀",jiansui:"玄铁剑穗",quanpu:"《锻骨拳谱》",yinqi:"《引气诀》",juqiDan:"聚气丹"}[id] || id} ${n > 0 ? "+" : ""}${n}`; out.push(s); (n > 0 ? G : L).push(s); } }
   if (fx.clearWood) { S.inv.wood = 0; }
   if (fx.skill) { const m = /^(.+):(-?\d+)$/.exec(fx.skill); if (m) { const cap = TECH_CAPS[m[1]] || 100; S.skills[m[1]] = Math.min(cap, (S.skills[m[1]] || 0) + (+m[2])); checkSkillMilestone(m[1]); const s = `技艺「${m[1]}」 ${+m[2] > 0 ? "+" : ""}${m[2]}`; out.push(s); (+m[2] > 0 ? G : L).push(s); } }
   if (fx.wx) { const m = /^(jin|mu|shui|huo|tu):(-?\d+)$/.exec(fx.wx); if (m) { const wx = wxOf(); wx[m[1]] = Math.min(100, Math.max(0, wx[m[1]] + (+m[2]))); const s = `${WX_NAMES[m[1]]}行亲和 ${+m[2] > 0 ? "+" : ""}${m[2]}`; out.push(s); (+m[2] > 0 ? G : L).push(s); } } // 后天亲和，可破先天总和
@@ -2527,8 +2541,8 @@ function ending() {
     grade: win ? "潜 龙" : "存 活", color: win ? "#d4af6e" : "#6fa8a0", score: "",
     quote: win
       ? (S.flags.qingyan
-        ? "青岩门的山门在春风里矗立。你握着身份木牌回头望了一眼青石城——破庙、雪夜，都只是序章。「现在，你的每一次选择，都在改写这个世界的剧本。」"
-        : "青岩门的山门在春风里矗立——它没收你，你也凭一己之力走到了今天。无门无派，破庙、雪夜，都只是序章。「现在，你的每一次选择，都在改写这个世界的剧本。」")
+        ? `${S.sect || "宗门"}的山门在春风里矗立。你握着身份木牌回头望了一眼来路——濒死的那一夜，都只是序章。「现在，你的每一次选择，都在改写这个世界的剧本。」`
+        : `${S.sect || "仙门"}的山门在春风里矗立——它没收你，你也凭一己之力走到了今天。无门无派，濒死的那一夜，都只是序章。「现在，你的每一次选择，都在改写这个世界的剧本。」`)
       : "冬天过去了，你还活着。没有仙缘，没有奇遇，但命是自己的。下一个冬天到来之前，也许来得及变得更强。",
     stats: [["存活", S.day + " 日"], ["境界", REALM_NAMES[S.realm]], ["词条", S.cardOrder.length + " 条"], ["缘分", Object.keys(S.npc).length + " 人"], ["成就", META.ach.length + " 项"], ["周目", "第 " + S.world + " 世"]],
     note: "可继续在此世漫游（自由模式），或再入轮回开启下一世——身份随机，因果继承。",
@@ -2600,9 +2614,13 @@ function migrateSave(d) {
     v = 8;
   }
   if (v < 9) { // v8 → v9：首世开局身份补录——随机惨境落定后身份/地点 UI 曾恒显「青石城 · 乞丐」，按开局背景回填 S.iden
-    if (!d.S.iden && d.S.flags && d.S.flags.opening && OP_IDEN[d.S.flags.opening]) {
-      d.S.iden = OP_IDEN[d.S.flags.opening];
-      d.S.place = d.S.place || d.S.iden.place;
+    if (!d.S.iden && d.S.flags && d.S.flags.opening) {
+      let iden = OP_IDEN[d.S.flags.opening] || null;
+      if (!iden) for (const k in REGIONS) { // 区域惨境（北原/中州/西漠/南岭）自带身份
+        const hit = (REGIONS[k].openings || []).find(o => o.id === d.S.flags.opening);
+        if (hit && hit.iden) { iden = hit.iden; break; }
+      }
+      if (iden) { d.S.iden = iden; d.S.place = d.S.place || iden.place; }
     }
     v = 9;
   }
@@ -2767,12 +2785,22 @@ function startLife() {
   gmBusy = false;
   if (S.first) {
     askName(() => {
-    const op = OPENINGS[Math.floor(Math.random() * OPENINGS.length)]; // 惨境背景随机；际遇由 AI 生成
+    /* 首世开局：五域随机（设定铁律修订——首世不再恒定云州青石城；云州权重 50%，北原/中州/西漠/南岭均分其余） */
+    const rr = Math.random();
+    let rg = REGIONS.yunzhou, pool = OPENINGS;
+    if (rr >= 0.5) {
+      const others = [REGIONS.beiyuan, REGIONS.zhongzhou, REGIONS.ximo, REGIONS.nanling];
+      rg = others[Math.min(others.length - 1, Math.floor((rr - 0.5) / 0.5 * others.length))];
+      pool = rg.openings;
+    }
+    const op = pool[Math.floor(Math.random() * pool.length)]; // 惨境背景随机；际遇由 AI 生成
+    S.flags.region = rg.key;
     S.flags.opening = op.id;
-    S.iden = OP_IDEN[op.id] || null; // 身份随开局落定（首世此前恒为 null，UI 只能回退显示「青石城 · 乞丐」）
+    S.iden = op.iden || OP_IDEN[op.id] || null; // 身份随开局落定（区域惨境自带身份；云州惨境查 OP_IDEN）
     S.place = (S.iden && S.iden.place) || op.place; // 随机开局落定，地点随之同步（顶栏常显）
+    S.weather = rg.weatherW[Math.floor(Math.random() * rg.weatherW.length)]; // 初日天气随地域
     log(`<div class="scene-head"><div class="place">${op.place}</div>
-      <h1>${op.title}</h1><div class="sub">仙陨历三万年 · 冬 · 大雪 —— 灵气潮汐三百年一涨一落，你穿越之时，正值涨潮之初。</div></div>`);
+      <h1>${op.title}</h1><div class="sub">仙陨历三万年 · 冬 · ${rg.name} · ${S.weather} —— 灵气潮汐三百年一涨一落，你穿越之时，正值涨潮之初。</div></div>`);
     [
       { t: "sys", s: "【万象轮盘已激活。】" },
       { t: "sys", s: "【开局赠礼：万象点 ×100（仅此一次，用完即止）。】" },
@@ -2781,7 +2809,7 @@ function startLife() {
       { t: "sys", s: "【宿魂来源：界外。此界因果：无。】" },
       { t: "sys", s: "【正在以宿主灵魂最熟悉的方式重构交互界面……完成。】" },
       ...op.lines.map(l => ({ t: "dim", s: typeof l === "function" ? l(S.name) : l })),
-      { t: "sys", s: `【凡品任务已发布：${OPENING_QUEST[op.id] || "活过眼前这一关"}。奖励：万象点 ×20。】` },
+      { t: "sys", s: `【凡品任务已发布：${op.quest || OPENING_QUEST[op.id] || "活过眼前这一关"}。奖励：万象点 ×20。】` },
       { t: "sys", s: "【多余的话，没有。跑好你自己的。】" },
     ].filter(l => l.s).forEach(l => log(l.s, l.t));
     S.gmRecent = ["anchor"];
@@ -2796,7 +2824,7 @@ function startLife() {
       } },
       { label: "寻个背风处蜷着", hint: "保存体力，熬过最冷的时辰。", fn: () => {
         S.sta = Math.min(staMax(), S.sta + 3); S.hp = Math.min(hpMax(), S.hp + 2); S.hunger = Math.min(100, S.hunger + 4);
-        log("你缩进最背风的角落，把仅剩的体温抱成一团。雪声远了些，你迷迷糊糊熬过了最冷的时辰。", "dim");
+        log("你缩进最背风的角落，把仅剩的体温抱成一团。风声远了些，你迷迷糊糊熬过了最难熬的时辰。", "dim");
         computeMods(); renderPanel(); gmTurn();
       } },
       { label: "睁着眼，想活的路", hint: "打量四周，记住每一条生路。", fn: () => {

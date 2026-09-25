@@ -261,8 +261,9 @@ const GM = (() => {
     {
       id: "aura_spot", cond: c => c.realm >= 1 && !c.flag("auraSpot"), w: c => c.realm >= 1 ? 3 : 0,
       build() {
+        const sect = (typeof regionOf === "function" ? regionOf(S.place) : REGIONS.yunzhou).sect || REGIONS.yunzhou.sect; // 宗门随出生地地域
         return {
-          scene: `你在青岩山脚打坐时，忽觉周身灵气一滞——某处岩缝里的灵气比别处浓了三成，像雪地里一口看不见的温泉。`,
+          scene: `你在${sect.name}后山山脚打坐时，忽觉周身灵气一滞——某处岩缝里的灵气比别处浓了三成，像雪地里一口看不见的温泉。`,
           choices: [
             { label: "占据此处苦修", hint: "修为大涨。但福地会不会有主？", fx: { plot: true, cult: 22, attr: { int: 0.05 }, flag: "auraSpot", wx: "shui:2" } },
             { label: "记下位置，日后再来", hint: "稳妥。", fx: { cult: 8, flag: "auraSpot" } },
@@ -273,11 +274,13 @@ const GM = (() => {
     {
       id: "xiuxiu", cond: c => c.realm >= 2, w: c => c.realm >= 2 ? 2 : 0,
       build() {
+        const sect = (typeof regionOf === "function" ? regionOf(S.place) : REGIONS.yunzhou).sect || REGIONS.yunzhou.sect; // 切磋者随出生地宗门
+        const short = sect.npc.replace(/^.*(?:弟子|勇士|沙弥|巫徒)/, ""); // 道号：陆沉/乌勒/沈青梧/了尘/蓝朵
         return {
-          scene: `一个佩剑的年轻修士拦住你，抱拳：「在下陆沉，青岩门外门。看道友气血沉稳，可愿切磋一二？」`,
+          scene: `一个佩剑的年轻修士拦住你，抱拳：「在下${short}，${sect.name}外门。看道友气血沉稳，可愿切磋一二？」`,
           choices: [
-            { label: "应战", hint: "赢了涨声望，输了涨记性。", fx: { special: "combat:陆沉:" + (7 + S.realm * 2) } },
-            { label: "拱手推辞", hint: "多一事不如少一事。", fx: { npc: { "青岩门外门弟子陆沉": 5 } } },
+            { label: "应战", hint: "赢了涨声望，输了涨记性。", fx: { special: "combat:" + short + ":" + (7 + S.realm * 2) } },
+            { label: "拱手推辞", hint: "多一事不如少一事。", fx: { npc: { [sect.npc]: 5 } } },
           ],
         };
       },
@@ -309,8 +312,9 @@ const GM = (() => {
     {
       id: "qingyan_rumor", cond: c => S.day >= 10 && !c.flag("qingyanRumor"), w: () => 2,
       build() {
+        const sect = (typeof regionOf === "function" ? regionOf(S.place) : REGIONS.yunzhou).sect || REGIONS.yunzhou.sect; // 收徒榜文随出生地宗门
         return {
-          scene: `城门口新贴了榜文，里三层外三层——三流小宗「青岩门」大开山门收徒。涨潮之初，连小宗门都在抢人。有人说这是大世将启的征兆。也有老人撇嘴：测灵碑择根，杂灵根的娃娃连门槛都摸不着——年年贴榜，年年有人白跑一趟。`,
+          scene: `城门口新贴了榜文，里三层外三层——三流小宗「${sect.name}」大开山门收徒。涨潮之初，连小宗门都在抢人。有人说这是大世将启的征兆。也有老人撇嘴：测灵碑择根，杂灵根的娃娃连门槛都摸不着——年年贴榜，年年有人白跑一趟。`,
           choices: [
             { label: "去凑近看看榜文", hint: "记下规矩：测灵碑、问心、演武。", fx: { flag: "qingyanRumor", cult: 2, attr: { int: 0.03 } } },
             { label: "宗门与我何干", hint: "散修也有散修的路。", fx: { flag: "qingyanRumor", dao: 0.5 } },

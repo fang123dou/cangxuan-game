@@ -37,6 +37,7 @@ const QU = (() => {
   };
   for (const k in REGIONS) for (const op of (REGIONS[k].openings || [])) SURVIVE_BY_OPENING[op.id] = { name: REGIONS[k].surviveName, desc: REGIONS[k].surviveDesc };
   const regionOfSafe = () => (typeof regionOf === "function") ? regionOf(S.place) : null;
+  const curSect = () => { const r = regionOfSafe() || REGIONS.yunzhou; return r.sect || REGIONS.yunzhou.sect; }; // 出生地所属小宗门（五域各一），主线宗门名与引路弟子随之变化
   const DEFS = {
     /* ===== 主线 · 卷一 潜龙在渊 ===== */
     mq_survive: {
@@ -57,8 +58,8 @@ const QU = (() => {
       doneText: "吐纳入体、拳意入骨——从这一刻起，你不再是任人拿捏的凡骨。武道之门，正式踏入。",
     },
     mq_qingyan: {
-      name: "主线：拜入青岩门", type: "main",
-      desc: "三流小宗青岩门大开山门收徒。测灵碑、问心关、演武台——三关皆过，才是仙途起点。",
+      get name() { return `主线：拜入${curSect().name}`; }, type: "main",
+      get desc() { return `三流小宗${curSect().name}大开山门收徒。测灵碑、问心关、演武台——三关皆过，才是仙途起点。`; },
       auto: () => S.day >= 10 || !!S.flags.qingyanRumor,
       objectives: [
         { text: () => "前往山门，参加三关应试", done: () => !!S.flags.qy_tried },
@@ -66,8 +67,8 @@ const QU = (() => {
         { text: () => "过问心关（道心可鉴）", done: () => !!S.flags.qy_step2 },
         { text: () => "过演武台（胜外门教习）", done: () => !!S.flags.qy_step3 },
       ],
-      reward: { points: 50, cult: 30, npc: { "青岩门外门弟子陆沉": 20 } },
-      doneText: "青袍加身，木牌入手。从今往后，你是有宗门的人了。",
+      get reward() { return { points: 50, cult: 30, npc: { [curSect().npc]: 20 } }; },
+      get doneText() { return `青袍加身，木牌入手。从今往后，你是有${curSect().name}的人了。`; },
     },
     /* 【杂灵根的逆袭】测灵碑拒收杂灵根后的主线改道（设定集：灵根恒定，仙门捷径不通则无门无派自证大道） */
     mq_sanxiu: {
@@ -83,15 +84,15 @@ const QU = (() => {
       doneText: "无门无派，你一境一境凿上来。说书人拍案：「仙门不收的杂灵根，走到了凡阶圆满。」——杂灵根的逆袭，自此有了第一段实证。",
     },
     mq_outer: {
-      name: "主线：外门立足", type: "main",
-      desc: "外门弟子三千，资源只向强者倾斜。锻骨境与同门之谊，是你立足的根本。",
+      get name() { return `主线：${curSect().name}外门立足`; }, type: "main",
+      get desc() { return `外门弟子三千，资源只向强者倾斜。锻骨境与同门之谊，是你立足${curSect().name}的根本。`; },
       auto: () => !!S.flags.qingyan,
       objectives: [
         { text: () => `踏入锻骨境（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 3 },
-        { text: () => `与陆沉结成同门之谊（缘分 ${S.npc["青岩门外门弟子陆沉"] || 0} / 20）`, done: () => (S.npc["青岩门外门弟子陆沉"] || 0) >= 20 },
+        { text: () => `与${curSect().npc}结成同门之谊（缘分 ${S.npc[curSect().npc] || 0} / 20）`, done: () => (S.npc[curSect().npc] || 0) >= 20 },
       ],
       reward: { points: 80, attr: { con: 0.3 }, dao: 2 },
-      doneText: "外门名册上，你的名字被朱笔圈了一道——资源、功法、师承，从此向你敞开一线。",
+      get doneText() { return `外门名册上，你的名字被朱笔圈了一道——${curSect().name}的资源、功法、师承，从此向你敞开一线。`; },
     },
     mq_dengfeng: {
       name: "主线：问道之途", type: "main",
@@ -412,10 +413,10 @@ const QU = (() => {
     if (!S || S.over) return [];
     ensure();
     const list = [];
-    // 主线行动：青岩门应试
+    // 主线行动：拜入出生地所属小宗门（五域各一，三关应试）
     if (isActive("mq_qingyan") && !S.flags.qy_step1 && S.day >= 11) {
       list.push({
-        kind: "act", type: "main", label: "前往青岩山，闯三关应试",
+        kind: "act", type: "main", label: `前往${curSect().name}山门，闯三关应试`,
         hint: S.linggen === "za"
           ? "测灵碑择根而取——杂灵根灵光不过尺，此路多半不通。但不走这一趟，心不甘。"
           : "测灵碑、问心、演武。败则今年无缘。",
@@ -453,20 +454,20 @@ const QU = (() => {
     log("你暂且推辞了。机缘不等人，但也不会一夜就跑光。", "dim");
   }
 
-  /* ---------- 青岩门三关（主线演出） ---------- */
+  /* ---------- 小宗门三关（主线演出，宗门随出生地地域） ---------- */
   async function startTrials() {
     S.flags.qy_tried = 1; // 应试足迹：主线第一目标「前往山门」就此勾销（成败另说）
-    sys("【你踏上了青岩山九百级石阶。山门之前，测灵碑如剑倒插，碑前已排了百余凡人。】");
+    sys(`【你踏上了${curSect().name}山门前的九百级石阶。测灵碑如剑倒插，碑前已排了百余凡人。】`);
     log("外门执事瞥你一眼：「排队。灵光过三尺者，留。」", "dim");
     await lingTest();
   }
   async function lingTest() {
-    // 【设定集 · 灵根恒定】杂灵根五行均分，测灵碑灵光不过尺——青岩门不予收录（01:51 定稿：此主线对杂灵根不可完成）
+    // 【设定集 · 灵根恒定】杂灵根五行均分，测灵碑灵光不过尺——小宗门不予收录（此主线对杂灵根不可完成）
     if (S.linggen === "za") {
       S.flags.qy_za_reject = 1;
-      log("碑身只浮起一寸微光，五色杂驳，转瞬即散。执事看都懒得细看：「五行均分的杂灵根，碑灵不显——青岩门收不得。回吧。」", "hurt");
+      log(`碑身只浮起一寸微光，五色杂驳，转瞬即散。执事看都懒得细看：「五行均分的杂灵根，碑灵不显——${curSect().name}收不得。回吧。」`, "hurt");
       log("身后有人嗤笑，有人叹息。你攥紧拳头下了山——仙门的梯子抽走了，路，还得自己一镐一镐地凿。", "dim");
-      fail("mq_qingyan", "测灵碑前止步：杂灵根灵光不过尺，青岩门不予收录。仙门捷径，此世已断。");
+      fail("mq_qingyan", `测灵碑前止步：杂灵根灵光不过尺，${curSect().name}不予收录。仙门捷径，此世已断。`);
       sys("【仙途改道】大道朝天，各走一边。隐藏线「杂灵根的逆袭」开启——无门无派，以五份地基自证大道。");
       activate("mq_sanxiu");
       gainCult(5);
@@ -515,11 +516,11 @@ const QU = (() => {
   }
   function wuTest() {
     log("演武台上，外门教习抱剑而立：「接我十招，或把我打下去。」", "dim");
-    combat({ name: "青岩外门教习", power: 10, canBeg: false, desc: "（演武较技，点到为止）" }, res => {
+    combat({ name: `${curSect().name}外门教习`, power: 10, canBeg: false, desc: "（演武较技，点到为止）" }, res => {
       if (res === "win" || res === "cheated") {
         S.flags.qy_step3 = 1;
-        S.flags.qingyan = 1; S.sect = "青岩门";
-        sys("【三关皆过。青袍加身，木牌入手——「青岩门外门弟子」。】");
+        S.flags.qingyan = 1; S.sect = curSect().name;
+        sys(`【三关皆过。青袍加身，木牌入手——「${curSect().name}外门弟子」。】`);
         log("教习收剑，难得一笑：「有点东西。明日辰时，外门演武场点卯。」", "good");
         check();
       } else {
