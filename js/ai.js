@@ -270,7 +270,8 @@ const AI = (() => {
       if (k === "wx") { const m = /^(jin|mu|shui|huo|tu):([1-3])$/.exec(v); if (m) fx.wx = v; continue; }
       if (k === "spell") { // 具名法术：仅放行名录内 id（data.js SPELLS），且境界须达修炼门槛（越阶授予不放行）
         if (typeof v === "string" && /^sp_[a-z]+$/.test(v) && typeof SPELLS_BY_ID !== "undefined" && SPELLS_BY_ID[v]
-          && (typeof S === "undefined" || !S.realm || S.realm >= SPELLS_BY_ID[v].gate)) fx.spell = v;
+          && (typeof S === "undefined" || !S.realm || S.realm >= SPELLS_BY_ID[v].gate)
+          && (!SPELLS_BY_ID[v].linggen || (typeof S !== "undefined" && S.linggen === SPELLS_BY_ID[v].linggen))) fx.spell = v; // 灵根专属法术唯对应灵根可授
         continue;
       }
       if (k === "npc" && v && typeof v === "object") {

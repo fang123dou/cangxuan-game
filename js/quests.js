@@ -192,7 +192,47 @@ const QU = (() => {
       },
       doneText: "云游师傅把一块精铁坯抛给你：「料正，火才正。去吧，锤底下见真章。」",
     },
+
+    /* ===== 灵根专属支线：专属法术唯对应灵根可修（data.js SPELLS linggen 字段） ===== */
+    sq_za_diji: {
+      name: "支线：五份地基", type: "side",
+      desc: "五行均分，各亲和二十。旁人笑你废根，你自己知道——前期慢，是在打五份地基。气海既开，把这份「慢」走成「全」。",
+      offer: () => S.linggen === "za" && S.realm >= 3,
+      offerText: "夜深人静，你内视气海——五缕灵力各行其道，互不侵扰。一个念头浮上来：五份地基，能不能打出一份别人没有的杀伐？",
+      objectives: [
+        { text: () => `踏入聚气境，以五份地基证道（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 5 },
+        { text: () => `修习法术，触类旁通（${knownSpells().length} / 2 门）`, done: () => knownSpells().length >= 2 },
+      ],
+      rewardFn: () => { learnSpell("sp_wuxingci"); applyReward({ points: 40 }); return "习得杂灵根专属法术「五行刺」，万象点 +40"; },
+      doneText: "五气随手而转，刺出皆成兵——杂灵根不是废，是五行俱全。你的故事，在说书人那里有了新段子。",
+    },
+    sq_za_nixi: {
+      name: "隐藏：杂灵根的逆袭", type: "side", passive: true,
+      desc: "测灵碑前的一寸微光，仙门拒收；但凡阶之上还有灵阶——以杂灵根之身踏入灵阶，再把一门法术磨至圆满，让「逆袭」从安慰变成实证。",
+      auto: () => S.linggen === "za" && S.realm >= 6 && (S.quests.done || []).includes("sq_za_diji"),
+      objectives: [
+        { text: () => `踏入灵泉境，脱凡入灵（当前：${REALM_NAMES[S.realm]}）`, done: () => S.realm >= 7 },
+        { text: () => `任一法术修至圆满（${knownSpells().filter(sp => spellProf(sp.id) >= spellCap(sp)).length} / 1 门）`, done: () => knownSpells().some(sp => spellProf(sp.id) >= spellCap(sp)) },
+      ],
+      rewardFn: () => { learnSpell("sp_wuchao"); applyReward({ points: 80, attr: { int: 0.5 } }); return "习得杂灵根专属法术「五气朝元」，智力 +0.5，万象点 +80"; },
+      doneText: "五气朝元，五行归一——当年碑前被拒的杂灵根，站上了灵阶。逆袭是设定，不是安慰。",
+    },
   };
+
+  /* ===== 变异灵根试炼（六脉）：天生特性之外各有一门专属法术，只认本根骨——以战养术，施法五次，它自会认主 ===== */
+  const VARIANT_SPELL = { lei: "sp_palm", jian: "sp_jianzhi", bing: "sp_bingfeng", feng: "sp_fengren", du: "sp_duzhang", ying: "sp_yingxi" };
+  if (typeof LINGGENS !== "undefined" && typeof SPELLS_BY_ID !== "undefined") for (const lg in VARIANT_SPELL) {
+    const spId = VARIANT_SPELL[lg], Lg = LINGGENS[lg];
+    DEFS["sq_lg_" + lg] = {
+      name: `支线：${Lg.name}的试炼`, type: "side",
+      desc: `${Lg.desc}——变异灵根是天赋，也是枷锁：这一门的专属法术，只认你这一脉的根骨。`,
+      offer: () => S.linggen === lg && S.realm >= 5,
+      offerText: `气海之中，${Lg.name}的灵力躁动不安——它在等一场真正的战斗，把血脉里的东西逼出来。`,
+      objectives: [{ text: () => `实战中施法（${Math.min(S.stats.spellCasts || 0, 5)} / 5 次）`, done: () => (S.stats.spellCasts || 0) >= 5 }],
+      rewardFn: () => { learnSpell(spId); applyReward({ points: 30 }); return `习得${Lg.name}专属法术「${SPELLS_BY_ID[spId].name}」，万象点 +30`; },
+      doneText: "血脉里的东西被逼了出来——从此这门术，只认你。",
+    };
+  }
 
   /* ===== 副职业入行支线（设定补丁 v5 · 第三章 职业系统） =====
      遇到生活职业者（行当 NPC 缘分 ≥20「好感」）→ 邀约入行支线 →

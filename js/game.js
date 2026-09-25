@@ -67,7 +67,7 @@ function newLife() {
     xinmo: META.world > 1 ? 10 : 0, // 心魔（0~100，半隐藏）：前世死亡记忆是它的养料
     quests: { active: [], done: [], failed: [], refused: {} },
     chronicle: [], lifeAch: [], // lifeAch：本世新刻成就（轮回结算用；千秋录本体每世清零，从新人生重新刻起）
-    stats: { trains: 0, meditates: 0, begs: 0, chops: 0, gambles: 0, maxMoney: money },
+    stats: { trains: 0, meditates: 0, begs: 0, chops: 0, gambles: 0, spellCasts: 0, maxMoney: money },
   };
   S.wx = genWx(S.linggen); // 先天五行亲和：总和恒 100
   if (!first && rb && rb.echo && findCard(rb.echo)) { // 词条残影：上一世词条半效伴生
@@ -164,7 +164,7 @@ function profAttrBonus(k) {
 function hpMax() { return Math.max(10, Math.round(attr("con") * 10)); }
 function staMax() { return Math.max(5, Math.round(attr("con") * 5)); }
 function mpMax() { const v = S.realm >= 6 ? attr("int") * 10 : S.realm >= 5 ? attr("int") * 5 : 0; return Math.round(v * (S.linggen === "za" ? 1.2 : 1)); }
-/* ---------- 具名法术（设定集「法力与技能威力」）：威力 = 基础 × 智力系数 × 存量系数 ---------- */
+/* ---------- 具名法术（设定集「法力与技能威力」）：威力 = 基础 × 智力系数 × 存量系数；熟练度对齐「等阶 + 熟练度」体系 ---------- */
 function knownSpells() { return (typeof SPELLS !== "undefined") ? SPELLS.filter(sp => ((S.spells || {})[sp.id] || 0) > 0) : []; }
 function realmAttrAvg() { return S.realm >= 19 ? 1000 : S.realm >= 13 ? 100 : S.realm >= 7 ? 10 : 1; } // 同境均值：基准取当前境界属性下限（灵泉境 10、化神境 100，依此类推）
 function spellIntCoef() { return Math.round((0.5 + 0.5 * attr("int") / realmAttrAvg()) * 100) / 100; } // 智力系数：智力每高于同境均值一成 +5%
@@ -173,15 +173,46 @@ function mpReserveCoef() { // 存量系数：满蓝 ×1.0 ｜ 半蓝 ×0.85 ｜ 
   const c = r >= 0.999 ? 1 : r >= 0.5 ? 0.85 + (r - 0.5) * 0.3 : r >= 0.2 ? 0.65 + (r - 0.2) / 0.3 * 0.2 : 0.65;
   return Math.round(c * 100) / 100;
 }
-function spellPower(sp) { return Math.max(1, Math.round(sp.base * spellIntCoef() * mpReserveCoef() * 10) / 10); } // 威力预估（按当前蓝量结算存量系数）
-function learnSpell(id) { // 习得具名法术（玉简/传功；重复习得不叠加）
+function spellCap(sp) { return (typeof SPELL_CAP !== "undefined") ? (SPELL_CAP[sp.tier] || 200) : (sp.tier === 1 ? 200 : 400); }
+function spellProf(id) { return (S.spells || {})[id] || 0; }
+function spellPower(sp) { // 威力预估：基础随熟练成长（圆满 +30%）× 智力系数 × 存量系数（按当前蓝量）
+  const profGrow = 1 + 0.3 * Math.min(1, spellProf(sp.id) / spellCap(sp));
+  return Math.max(1, Math.round(sp.base * profGrow * spellIntCoef() * mpReserveCoef() * 10) / 10);
+}
+function gainSpellProf(sp, why) { // 施法积攒：实战中掐诀求真知（设定·自然习得）；瓶颈（最后 10%）获取减半；小成/圆满反哺智力（法术看智力）
+  S.spells = S.spells || {};
+  const cap = spellCap(sp);
+  const cur = S.spells[sp.id] || 0;
+  if (cur >= cap) return;
+  let g = attr("int") >= realmAttrAvg() * 2 ? 2 : 1; // 智力倍于同境均值者，一次施法多悟一分
+  if (cur >= cap * 0.9) g = Math.max(0.5, Math.round(g * 0.5 * 10) / 10); // 瓶颈：最后 10% 熟练度获取减半（设定原文）
+  S.spells[sp.id] = Math.min(cap, Math.round((cur + g) * 10) / 10);
+  S.stats.spellCasts = (S.stats.spellCasts || 0) + 1;
+  if (S.spells[sp.id] >= cap / 2 && !S.flags["sp50_" + sp.id]) { S.flags["sp50_" + sp.id] = 1; const b = sp.tier === 1 ? 0.5 : 3; gainAttr("int", b); sys(`【法术小成】「${sp.name}」铭刻入微——施法如臂使指，智力 +${b}。`); }
+  if (S.spells[sp.id] >= cap && !S.flags["sp100_" + sp.id]) { S.flags["sp100_" + sp.id] = 1; const b = sp.tier === 1 ? 1 : 6; gainAttr("int", b); sys(`【法术圆满】「${sp.name}」炉火纯青——此术已与你的神识合一，智力 +${b}。`); }
+}
+function learnSpell(id) { // 习得具名法术（玉简/传功/灵根支线；重复习得不叠加；灵根专属唯对应灵根可修）
   const sp = (typeof SPELLS_BY_ID !== "undefined") && SPELLS_BY_ID[id];
   if (!sp) return;
+  if (sp.linggen && S.linggen !== sp.linggen) return; // 灵根专属：非其根不可修
   S.spells = S.spells || {};
   if (S.spells[id]) return;
   S.spells[id] = 1;
   sys(`【习得法术】「${sp.name}」——${sp.desc}`);
   chronicle(`习得法术「${sp.name}」`, "evt");
+}
+/* 法术一击结算（开场/战中共用）：行属（randEl 随机）、trait、判定 → 伤害与战报附注 */
+function spellHit(sp, power, j, eEl0, za) {
+  let el = sp.el, note = "";
+  if (sp.trait === "randEl") { el = WX_ELS[Math.floor(Math.random() * WX_ELS.length)]; note = `（五行轮转·${WX_NAMES[el]}行）`; }
+  let m = 1; // 行属生克（randEl 不乘生克——五行不克，杂灵根设定）
+  if (sp.trait !== "randEl") { if (WX_KE[el] === eEl0) m = 1.2; else if (WX_KE[eEl0] === el && !za) m = 0.8; }
+  let dodged = j.kind === "dodge", mult = j.mult, kind = j.kind;
+  if (dodged && sp.trait === "sure") { dodged = false; mult = 1; kind = "hit"; note += "（敛息·必中）"; }
+  if (!dodged && sp.trait === "critUp" && kind === "hit" && Math.random() * 100 < 15) { mult = TABLES.JUDGE.crit.mult; kind = "crit"; note += "（锋锐·暴）"; }
+  let dmg = dodged ? 0 : Math.max(1, Math.round(power * m * mult));
+  if (dmg > 0 && (sp.trait === "chain" || sp.trait === "bonusDmg")) { const extra = Math.max(1, Math.round(dmg * 0.5)); dmg += extra; note += sp.trait === "chain" ? `（余雷 +${extra}）` : `（毒发 +${extra}）`; }
+  return { dmg, el, dodged, kind, note, m };
 }
 function combatPower() {
   const a = attr("str") + attr("agi") + attr("int") * 0.8 + attr("con") * 0.6;
@@ -1309,7 +1340,7 @@ function renderTab() {
     /* 法术栏（设定·技能面板三标签：类型/主属性/消耗） */
     const spKnown = knownSpells();
     html += `<div class="p-title" style="margin-top:14px"><b>法 术</b><span>具名法术 · 耗法力 · 威力 = 基础 × 智力 × 存量</span></div>`;
-    html += spKnown.length ? spKnown.map(sp => `<div class="p-row" data-spell="${sp.id}"><span>「${sp.name}」</span><b>${sp.tierName} · 耗法 ${sp.mp}</b></div>`).join("")
+    html += spKnown.length ? spKnown.map(sp => `<div class="p-row" data-spell="${sp.id}"><span>「${sp.name}」${sp.linggen ? `<i style="color:var(--gold-dim);font-style:normal"> · ${linggen().name}专属</i>` : ""}</span><b>熟练 ${Math.round(spellProf(sp.id))}/${spellCap(sp)}</b></div>`).join("")
       : (S.realm >= 5 ? `<div class="empty">气海已开，尚无具名法术。宗门传功、古籍玉简、游方货郎——法术之路处处可起。</div>` : `<div class="empty">聚气开海之后，方谈法术。</div>`);
     const life = Object.entries(S.skills).filter(([k]) => !(k in TECH_CAPS)).sort((a, b) => b[1] - a[1]);
     html += `<div class="p-title" style="margin-top:14px"><b>技 艺</b><span>生活技能 · 从业历练积攒</span></div>`;
@@ -1335,8 +1366,8 @@ function renderTab() {
     body.querySelectorAll("[data-spell]").forEach(el => el.onclick = () => { // 法术详情：类型/主属性/消耗 + 威力公式拆解
       const sp = (typeof SPELLS_BY_ID !== "undefined") && SPELLS_BY_ID[el.dataset.spell];
       if (!sp) return;
-      showInfo(`「${sp.name}」`, `<span style="color:var(--gold-dim)">${sp.tierName} · ${WX_NAMES[sp.el]}行 · 类型：法术</span>`, esc(sp.desc),
-        `主属性：智力 ｜ 消耗：法力 ${sp.mp} ｜ 基础威力 ${sp.base} ｜ 当前预估 ≈${spellPower(sp)}（智力系数 ×${spellIntCoef()} · 存量系数 ×${mpReserveCoef()}）｜ ${esc(sp.src)}`);
+      showInfo(`「${sp.name}」`, `<span style="color:var(--gold-dim)">${sp.tierName} · ${sp.el ? WX_NAMES[sp.el] + "行" : "五行皆转"} · 类型：法术${sp.linggen ? " · " + linggen().name + "专属" : ""}</span>`, esc(sp.desc),
+        `主属性：智力 ｜ 消耗：法力 ${sp.mp} ｜ 熟练度 ${Math.round(spellProf(sp.id))}/${spellCap(sp)}（施法积攒，瓶颈最后 10% 减半；小成/圆满反哺智力）｜ 基础威力 ${sp.base} ｜ 当前预估 ≈${spellPower(sp)}（智力系数 ×${spellIntCoef()} · 存量系数 ×${mpReserveCoef()}）${sp.trait && typeof SPELL_TRAIT_TEXT !== "undefined" ? "｜ " + SPELL_TRAIT_TEXT[sp.trait] : ""}｜ ${esc(sp.src)}`);
     });
   } else {
     const ns = Object.keys(S.npc);
@@ -2621,7 +2652,7 @@ function spellMenu(enemy, done) {
   const opts = knownSpells().map(sp => {
     const can = S.mp >= sp.mp;
     return { label: `「${sp.name}」`,
-      hint: `${sp.tierName} · ${WX_NAMES[sp.el]}行 · 耗法 ${sp.mp} ｜ 主属性：智力 ｜ 威力≈${spellPower(sp)}（智力 ×${spellIntCoef()} · 存量 ×${mpReserveCoef()}）${can ? "" : "——法力不足：强行催动将遭反噬"}`,
+      hint: `${sp.tierName} · ${sp.el ? WX_NAMES[sp.el] + "行" : "五行皆转"} · 耗法 ${sp.mp} ｜ 主属性：智力 ｜ 威力≈${spellPower(sp)}（智力 ×${spellIntCoef()} · 存量 ×${mpReserveCoef()}）${can ? "" : "——法力不足：强行催动将遭反噬"}`,
       fn: () => resolveCombat(enemy, (can ? "cast:" : "force:") + sp.id, done) };
   });
   opts.push({ label: "返回", hint: "", fn: () => setChoices(combatOpts(enemy, done)) });
@@ -2706,6 +2737,7 @@ function resolveCombat(enemy, mode, onEnd) {
     return { kind, mult };
   };
   /* 具名法术 · 开场一击（施法菜单/强行催动）：结算后敌方反击一次，再入回合循环 */
+  let spellWeaken = false; // 冰封诀：敌方下次攻击 -30%
   if (/^(cast|force):/.test(mode)) {
     const mc = /^(cast|force):(.+)$/.exec(mode);
     let sp = (typeof SPELLS_BY_ID !== "undefined") && SPELLS_BY_ID[mc[2]];
@@ -2725,21 +2757,21 @@ function resolveCombat(enemy, mode, onEnd) {
         }
       } else S.mp = Math.max(0, S.mp - sp.mp);
       if (sp) {
+        gainSpellProf(sp); // 施法积攒熟练（实战中掐诀求真知）
         const j0 = judge({ agi: myAgi, int: myInt, luck: myLuck }, { agi: eAgi, int: eInt, luck: eLuck });
-        let sm = 1; // 法术行属生克（与普攻同规则）
-        if (WX_KE[sp.el] === eEl) sm = 1.2; else if (WX_KE[eEl] === sp.el && !za) sm = 0.8;
-        if (j0.kind === "dodge") lines.push(`你掐诀催动「${sp.name}」（法力 -${sp.mp}）——它侧身闪开，术法落空。`);
+        const hit = spellHit(sp, power * (fl[0] + Math.random() * (fl[1] - fl[0])), j0, eEl, za);
+        if (hit.dodged) lines.push(`你掐诀催动「${sp.name}」（法力 -${sp.mp}）——它侧身闪开，术法落空。`);
         else {
-          let sd = power * (fl[0] + Math.random() * (fl[1] - fl[0])) * sm * j0.mult;
-          sd = Math.max(1, Math.round(sd));
-          eHp -= sd;
-          lines.push(`你掐诀催动「${sp.name}」，${WX_NAMES[sp.el]}行法力奔涌（法力 -${sp.mp}，智力 ×${ic0} · 存量 ×${rc0}），造成 ${sd} 点伤害${j0.kind === "crit" ? "（暴击×2）" : j0.kind === "weak" ? "（命中弱点×1.5）" : j0.kind === "crit+weak" ? "（暴击+弱点×3）" : ""}${sm > 1 ? "（五行相克 ×1.2）" : sm < 1 ? "（行属被克 ×0.8）" : ""}，${enemy.name} ${seen ? `余 ${Math.max(0, Math.round(eHp))}/${eHpMax}` : `【${eHpState()}】`}`);
+          eHp -= hit.dmg;
+          if (sp.trait === "weaken") spellWeaken = true;
+          lines.push(`你掐诀催动「${sp.name}」，${sp.el ? WX_NAMES[hit.el] + "行" : ""}法力奔涌（法力 -${sp.mp}，智力 ×${ic0} · 存量 ×${rc0}），造成 ${hit.dmg} 点伤害${hit.kind === "crit" ? "（暴击×2）" : hit.kind === "weak" ? "（命中弱点×1.5）" : hit.kind === "crit+weak" ? "（暴击+弱点×3）" : ""}${hit.m > 1 ? "（五行相克 ×1.2）" : hit.m < 1 ? "（行属被克 ×0.8）" : ""}${hit.note}，${enemy.name} ${seen ? `余 ${Math.max(0, Math.round(eHp))}/${eHpMax}` : `【${eHpState()}】`}`);
         }
-        if (eHp > 0) { // 敌方反击一次
+        if (eHp > 0 && sp.trait !== "noCounter") { // 敌方反击一次（风刃先制：敌不及还手）
           const j2 = judge({ agi: eAgi, int: eInt, luck: eLuck }, { agi: myAgi, int: myInt, luck: myLuck });
           if (j2.kind === "dodge") lines.push(`你侧身避过它的反击`);
           else {
-            let dmg = eStr * (fl[0] + Math.random() * (fl[1] - fl[0])) * foeDmg * j2.mult * (enemyTier >= 1 && Math.random() < TABLES.COMBAT.enemySkillChance ? TABLES.COMBAT.enemySkillMult : 1) * (1 - (S.mods.defP || 0) / 100) * (laosouWeak ? 0.5 : 1);
+            let dmg = eStr * (fl[0] + Math.random() * (fl[1] - fl[0])) * foeDmg * j2.mult * (enemyTier >= 1 && Math.random() < TABLES.COMBAT.enemySkillChance ? TABLES.COMBAT.enemySkillMult : 1) * (1 - (S.mods.defP || 0) / 100) * (laosouWeak ? 0.5 : 1) * (spellWeaken ? 0.7 : 1);
+            if (spellWeaken) { lines.push(`【冰封】它血脉僵滞，这一击缓了三成。`); spellWeaken = false; }
             dmg = Math.max(1, Math.round(dmg));
             myHp -= dmg;
             lines.push(`它${j2.kind === "crit" ? "暴击" : j2.kind === "weak" ? "打中你的破绽" : j2.kind === "crit+weak" ? "暴击正中你的破绽" : "反击"}，你受 ${dmg} 点伤害，气血 ${Math.max(0, Math.round(myHp))}/${hpMax()}`);
@@ -2760,15 +2792,14 @@ function resolveCombat(enemy, mode, onEnd) {
     let weavePower = 0, weaveRc = 1;
     if (weave) { weaveRc = mpReserveCoef(); weavePower = spellPower(weave); S.mp = Math.max(0, S.mp - weave.mp); } // 先算威力（含存量系数）再扣费
     else if (cast && isSpell) S.mp = Math.max(0, S.mp - 5);
-    if (j1.kind === "dodge") parts.push(`你的${weave ? "一式「" + weave.name + "」" : cast ? "一式「" + technique + "」" : "攻势"}被它闪开`);
+    if (j1.kind === "dodge" && !(weave && weave.trait === "sure")) parts.push(`你的${weave ? "一式「" + weave.name + "」" : cast ? "一式「" + technique + "」" : "攻势"}被它闪开`);
     else if (weave) {
-      let wm = 1; // 法术行属生克（与普攻同规则）
-      if (WX_KE[weave.el] === eEl) wm = 1.2; else if (WX_KE[eEl] === weave.el && !za) wm = 0.8;
-      let wd = weavePower * (fl[0] + Math.random() * (fl[1] - fl[0])) * wm * j1.mult * (wudeFirst ? 1.3 : 1);
+      gainSpellProf(weave); // 施法积攒熟练（实战中掐诀求真知）
+      const hit = spellHit(weave, weavePower * (fl[0] + Math.random() * (fl[1] - fl[0])) * (wudeFirst ? 1.3 : 1), j1, eEl, za);
       wudeFirst = false;
-      wd = Math.max(1, Math.round(wd));
-      eHp -= wd;
-      parts.push(`你掐诀催动「${weave.name}」（法力 -${weave.mp}，存量 ×${weaveRc}），造成 ${wd} 点伤害${j1.kind === "crit" ? "（暴击×2）" : j1.kind === "weak" ? "（命中弱点×1.5）" : j1.kind === "crit+weak" ? "（暴击+弱点×3）" : ""}，${enemy.name} ${seen ? `余 ${Math.max(0, Math.round(eHp))}/${eHpMax}` : `【${eHpState()}】`}`);
+      if (weave.trait === "weaken" && !hit.dodged) spellWeaken = true;
+      eHp -= hit.dmg;
+      parts.push(`你掐诀催动「${weave.name}」（法力 -${weave.mp}，存量 ×${weaveRc}），造成 ${hit.dmg} 点伤害${hit.kind === "crit" ? "（暴击×2）" : hit.kind === "weak" ? "（命中弱点×1.5）" : hit.kind === "crit+weak" ? "（暴击+弱点×3）" : ""}${hit.note}，${enemy.name} ${seen ? `余 ${Math.max(0, Math.round(eHp))}/${eHpMax}` : `【${eHpState()}】`}`);
     }
     else if (!cast && hasSpecial("wubian") && Math.random() < 0.4) {
       /* 闪电五连鞭（良品·强化）：出鞭概率 40%；五鞭各 35% 攻击力、逐鞭独立命中（55%+敏捷差×6%，25%~95%），全中=175% 总伤；出鞭之合敌方无法反击 */
@@ -2791,7 +2822,8 @@ function resolveCombat(enemy, mode, onEnd) {
       const j2 = judge({ agi: eAgi, int: eInt, luck: eLuck }, { agi: myAgi, int: myInt, luck: myLuck }); // 它出手
       if (j2.kind === "dodge") parts.push(`你侧身避过它的反击`);
       else {
-        let dmg = eStr * (fl[0] + Math.random() * (fl[1] - fl[0])) * foeDmg * j2.mult * (enemyTier >= 1 && Math.random() < TABLES.COMBAT.enemySkillChance ? TABLES.COMBAT.enemySkillMult : 1) * (1 - (S.mods.defP || 0) / 100) * (laosouWeak ? 0.5 : 1); // 老叟戏顽童：碾压局承伤减半
+        let dmg = eStr * (fl[0] + Math.random() * (fl[1] - fl[0])) * foeDmg * j2.mult * (enemyTier >= 1 && Math.random() < TABLES.COMBAT.enemySkillChance ? TABLES.COMBAT.enemySkillMult : 1) * (1 - (S.mods.defP || 0) / 100) * (laosouWeak ? 0.5 : 1) * (spellWeaken ? 0.7 : 1); // 老叟戏顽童：碾压局承伤减半
+        if (spellWeaken) { parts.push(`【冰封】它血脉僵滞，这一击缓了三成。`); spellWeaken = false; }
         dmg = Math.max(1, Math.round(dmg));
         myHp -= dmg;
         parts.push(`它${j2.kind === "crit" ? "暴击" : j2.kind === "weak" ? "打中你的破绽" : j2.kind === "crit+weak" ? "暴击正中你的破绽" : "反击"}，你受 ${dmg} 点伤害，气血 ${Math.max(0, Math.round(myHp))}/${hpMax()}`);

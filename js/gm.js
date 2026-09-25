@@ -473,17 +473,19 @@ const GM = (() => {
     /* ---------- 具名法术 · 古籍玉简（散修线）：气海既开，法术可求 ----------
        1 阶灵品聚气境可修（铜钱可购）；2 阶玄品灵阶可修（灵石计价）——与功法谱系三源同理（data.js SPELLS 名录） */
     {
-      id: "spell_tome", cond: () => S.realm >= 5 && (typeof SPELLS !== "undefined") && SPELLS.some(sp => S.realm >= sp.gate && !((S.spells || {})[sp.id] > 0)),
+      id: "spell_tome", cond: () => S.realm >= 5 && (typeof SPELLS !== "undefined") && SPELLS.some(sp => S.realm >= sp.gate && !((S.spells || {})[sp.id] > 0) && (!sp.linggen || sp.linggen === S.linggen)),
       w: () => 3,
       build(r) {
-        const pool = SPELLS.filter(sp => S.realm >= sp.gate && !((S.spells || {})[sp.id] > 0));
+        // 灵根专属法术不入玉简池（设定：唯对应灵根可修，由灵根支线授予）
+        const pool = SPELLS.filter(sp => S.realm >= sp.gate && !((S.spells || {})[sp.id] > 0) && (!sp.linggen || sp.linggen === S.linggen));
         const sp = pick(pool, r);
         const isT1 = sp.tier === 1;
         const canPay = isT1 ? S.money >= 120 : S.stones >= 8;
+        const elName = sp.el ? WX_NAMES[sp.el] + "行" : "五行轮转";
         return {
-          scene: `城隍庙外的旧书摊，跛脚掌柜从匣底抽出一枚玉简——${WX_NAMES[sp.el]}行灵气隐隐流动：「『${sp.name}』，${sp.tierName}。气海开了的人，才配谈这个。」他瞥你一眼，「${isT1 ? "一百二十文" : "八枚灵石"}，爱要不要。」`,
+          scene: `城隍庙外的旧书摊，跛脚掌柜从匣底抽出一枚玉简——${elName}灵气隐隐流动：「『${sp.name}』，${sp.tierName}。气海开了的人，才配谈这个。」他瞥你一眼，「${isT1 ? "一百二十文" : "八枚灵石"}，爱要不要。」`,
           choices: [
-            { label: `买下「${sp.name}」`, hint: `${sp.tierName} · ${WX_NAMES[sp.el]}行 · 耗法 ${sp.mp}。`, disabled: !canPay, fx: isT1 ? { money: -120, spell: sp.id } : { stones: -8, spell: sp.id } },
+            { label: `买下「${sp.name}」`, hint: `${sp.tierName} · ${elName} · 耗法 ${sp.mp}。`, disabled: !canPay, fx: isT1 ? { money: -120, spell: sp.id } : { stones: -8, spell: sp.id } },
             { label: "看看就走", hint: "玉简不会跑，铜钱会。", fx: { dao: 0.2 } },
           ],
         };
